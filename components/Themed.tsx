@@ -5,7 +5,11 @@
 
 import { Text as DefaultText, View as DefaultView } from 'react-native';
 
-import Colors from '@/constants/Colors';
+import { LightTheme, DarkTheme } from '@/constants/Colors';
+const Colors = {
+  light: { text: LightTheme.text, background: LightTheme.bg, tint: '#3B82F6' },
+  dark: { text: DarkTheme.text, background: DarkTheme.bg, tint: '#3B82F6' },
+};
 import { useColorScheme } from './useColorScheme';
 
 type ThemeProps = {

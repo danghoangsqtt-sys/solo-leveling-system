@@ -5,7 +5,8 @@ import { ExternalLink } from './ExternalLink';
 import { MonoText } from './StyledText';
 import { Text, View } from './Themed';
 
-import Colors from '@/constants/Colors';
+import { LightTheme } from '@/constants/Colors';
+const Colors = { light: { tint: '#3B82F6' } };
 
 export default function EditScreenInfo({ path }: { path: string }) {
   return (

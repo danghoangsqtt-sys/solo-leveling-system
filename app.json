@@ -1,17 +1,17 @@
 {
   "expo": {
-    "name": "temp_expo",
-    "slug": "temp_expo",
+    "name": "System Leveling",
+    "slug": "system-leveling",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "tempexpo",
+    "scheme": "systemleveling",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0F0F23"
     },
     "ios": {
       "supportsTablet": true
@@ -19,10 +19,11 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#0F0F23"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.systemleveling.app"
     },
     "web": {
       "bundler": "metro",
