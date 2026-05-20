@@ -189,12 +189,9 @@ export interface Transaction {
   id: string;
   type: 'income' | 'expense';
   amount: number;
-  categoryId: string;
-  categoryName: string;
-  categoryIcon: string;
+  category: string;
+  description: string;
   note: string | null;
-  date: number;
-  isRecurring: boolean;
   createdAt: number;
 }
 
