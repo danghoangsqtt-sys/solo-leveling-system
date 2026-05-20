@@ -33,6 +33,7 @@ import {
 import type { StatKey } from '@/constants/Types';
 import { useGame } from '@/constants/GameContext';
 import { createUserFromOnboarding, generateDailyQuests, getDefaultTitles, getStarterInventory } from '@/constants/DefaultData';
+import CharacterPreview from '@/components/character/CharacterPreview';
 
 const { width: SW } = Dimensions.get('window');
 
@@ -438,6 +439,21 @@ export default function OnboardingScreen() {
                 </Text>
               </View>
 
+              {currentCategory.id === 'body' && (
+                <View style={st.onboardingLivePreviewWrap}>
+                  <CharacterPreview
+                    stats={{
+                      heightCm: answers['body-height'] || 170,
+                      weightKg: answers['body-weight'] || 65,
+                      STR: 15,
+                      VIT: 15,
+                      AGI: 15,
+                      level: 1,
+                    }}
+                  />
+                </View>
+              )}
+
               {currentCategory.questions.map(q => (
                 <QuestionCard
                   key={q.id}
@@ -481,11 +497,18 @@ export default function OnboardingScreen() {
 
               {/* Preview character */}
               <View style={st.previewWrap}>
-                <Image
-                  source={require('@/assets/images/characters/character_default.png')}
-                  style={st.previewImg}
-                  resizeMode="contain"
-                />
+                <View style={st.previewCharContainer}>
+                  <CharacterPreview
+                    stats={{
+                      heightCm: answers['body-height'] || 170,
+                      weightKg: answers['body-weight'] || 65,
+                      STR: computedStats?.STR || 15,
+                      VIT: computedStats?.VIT || 15,
+                      AGI: computedStats?.AGI || 15,
+                      level: 1,
+                    }}
+                  />
+                </View>
                 {nickname.trim() && (
                   <Text style={[st.previewName, { color: SystemColors.blue }]}>
                     {nickname}
@@ -512,11 +535,18 @@ export default function OnboardingScreen() {
 
               {/* Character preview */}
               <View style={st.resultsChar}>
-                <Image
-                  source={require('@/assets/images/characters/character_default.png')}
-                  style={st.resultsCharImg}
-                  resizeMode="contain"
-                />
+                <View style={st.resultsCharContainer}>
+                  <CharacterPreview
+                    stats={{
+                      heightCm: answers['body-height'] || 170,
+                      weightKg: answers['body-weight'] || 65,
+                      STR: computedStats.STR,
+                      VIT: computedStats.VIT,
+                      AGI: computedStats.AGI,
+                      level: 1,
+                    }}
+                  />
+                </View>
               </View>
 
               {/* Stats */}
@@ -723,4 +753,23 @@ const st = StyleSheet.create({
   backBtnText: { ...Typography.bodyBold },
   nextBtn: { flex: 1, paddingVertical: 12, borderRadius: Radius.md, alignItems: 'center' },
   nextBtnText: { color: '#FFF', ...Typography.bodyBold },
+  onboardingLivePreviewWrap: {
+    width: '100%',
+    height: 180,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 8,
+  },
+  previewCharContainer: {
+    width: 180,
+    height: 220,
+    alignSelf: 'center',
+    marginBottom: 8,
+  },
+  resultsCharContainer: {
+    width: 180,
+    height: 220,
+    alignSelf: 'center',
+    marginBottom: 8,
+  },
 });

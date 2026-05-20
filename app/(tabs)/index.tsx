@@ -21,6 +21,7 @@ import { useTheme, Typography, Spacing, Radius } from '@/constants/Theme';
 import { StatColors, SystemColors, Gradients } from '@/constants/Colors';
 import type { StatKey } from '@/constants/Types';
 import { useGame } from '@/constants/GameContext';
+import CharacterPreview from '@/components/character/CharacterPreview';
 
 const { width: SW } = Dimensions.get('window');
 const CHARACTER_SIZE = Math.min(SW * 0.45, 220);
@@ -185,13 +186,18 @@ export default function HomeScreen() {
 
             {/* CENTER: Character */}
             <View style={s.characterWrap}>
-              {/* Glow behind character */}
-              <View style={[s.charGlow, { backgroundColor: `${SystemColors.blue}12` }]} />
-              <Image
-                source={require('@/assets/images/characters/character_default.png')}
-                style={s.charImg}
-                resizeMode="contain"
-              />
+              <View style={s.previewCharContainer}>
+                <CharacterPreview
+                  stats={{
+                    heightCm: u.heightCm || 170,
+                    weightKg: u.weightKg || 65,
+                    STR: u.stats.STR,
+                    VIT: u.stats.VIT,
+                    AGI: u.stats.AGI,
+                    level: u.level,
+                  }}
+                />
+              </View>
               {/* Title under character */}
               {u.equippedTitle && (
                 <View style={[s.titleBadge, { backgroundColor: `${SystemColors.purple}18`, borderColor: `${SystemColors.purple}30` }]}>
@@ -286,8 +292,12 @@ const s = StyleSheet.create({
 
   // Character center
   characterWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  charGlow: { position: 'absolute', width: CHARACTER_SIZE + 40, height: CHARACTER_SIZE + 40, borderRadius: (CHARACTER_SIZE + 40) / 2 },
-  charImg: { width: CHARACTER_SIZE, height: CHARACTER_SIZE * 1.3 },
+  previewCharContainer: {
+    width: CHARACTER_SIZE * 1.1,
+    height: CHARACTER_SIZE * 1.3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   titleBadge: { marginTop: 6, paddingHorizontal: 10, paddingVertical: 3, borderRadius: Radius.sm, borderWidth: 1 },
   titleText: { ...Typography.label },
 
