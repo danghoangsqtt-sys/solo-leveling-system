@@ -1,159 +1,99 @@
 "use client";
 
-import { useState } from "react";
-import "./finance.css";
-
-// ── Demo Finance Data (DHEbook concept) ──
-const DEMO_TRANSACTIONS = [
-  { id: "tx1", date: "2026-05-21T08:00:00Z", category: "Food", amount: -45000, desc: "Phở sáng" },
-  { id: "tx2", date: "2026-05-20T19:00:00Z", category: "Transport", amount: -12000, desc: "Gửi xe tháng" },
-  { id: "tx3", date: "2026-05-20T12:00:00Z", category: "Income", amount: 5000000, desc: "Freelance Project" },
-  { id: "tx4", date: "2026-05-19T20:00:00Z", category: "System", amount: 50, desc: "Gold Reward (Quest Rank C)" }, // Virtual Currency
-];
+import { DEMO_USER } from "@/lib/types";
 
 export default function FinancePage() {
-  const [activeTab, setActiveTab] = useState<"real" | "virtual">("real");
-
-  // Summary logic
-  const totalBalance = 15500000;
-  const spentThisMonth = 4250000;
-  const budget = 5000000;
-  const budgetPercent = (spentThisMonth / budget) * 100;
+  const user = DEMO_USER;
 
   return (
-    <div className="finance-page">
-      <div className="finance-page__header animate-fadeIn">
-        <h1 className="font-heading" style={{ fontSize: 'var(--text-2xl)', color: 'var(--system-blue)' }}>
-          💳 DHEBOOK SYSTEM
-        </h1>
-        <p style={{ color: 'var(--text-secondary)' }}>Trạm kiểm soát tài chính & tài sản hệ thống</p>
-      </div>
+    <div className="col-span-12 flex flex-col gap-6 relative z-10 pt-16 md:pt-28">
+      {/* Background Atmospheric Void for this specific page */}
+      <div className="fixed inset-0 pointer-events-none z-[-1] bg-cosmic-void"></div>
 
-      <div className="finance__tabs">
-        <button 
-          className={`finance__tab ${activeTab === 'real' ? 'finance__tab--active' : ''}`}
-          onClick={() => setActiveTab('real')}
-        >
-          TIỀN THẬT (VND)
-        </button>
-        <button 
-          className={`finance__tab ${activeTab === 'virtual' ? 'finance__tab--active' : ''}`}
-          onClick={() => setActiveTab('virtual')}
-        >
-          TÀI SẢN ẢO (GOLD/GEM)
-        </button>
-      </div>
+      {/* Hero Card: Net Cashflow */}
+      <section className="glass-panel rare-border rounded-xl p-6 relative overflow-hidden flex flex-col gap-4">
+        {/* Shimmer Effect wrapper inside card */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_4s_infinite]"></div>
+        
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-container/20 to-surface-variant/5 opacity-50"></div>
+        
+        <div className="relative z-10 flex flex-col items-center text-center">
+          <span className="font-label-caps text-label-caps text-on-surface-variant uppercase mb-2">Số Dư Hiện Tại</span>
+          <div className="font-display-lg text-display-lg text-secondary-container drop-shadow-[0_0_15px_rgba(255,219,60,0.4)]">
+            2,350,000 <span className="text-xl">G</span>
+          </div>
+        </div>
+        
+        <div className="relative z-10 flex justify-between gap-4 mt-2">
+          <div className="flex-1 glass-panel rounded-lg p-3 flex flex-col items-center border-tertiary-fixed/30 border shadow-[0_0_10px_rgba(99,255,151,0.1)]">
+            <span className="font-label-caps text-label-caps text-on-surface-variant mb-1">Thu Nhập</span>
+            <span className="font-body-bold text-body-bold text-tertiary-fixed">+ 5,000K</span>
+          </div>
+          <div className="flex-1 glass-panel rounded-lg p-3 flex flex-col items-center border-error/30 border shadow-[0_0_10px_rgba(255,180,171,0.1)]">
+            <span className="font-label-caps text-label-caps text-on-surface-variant mb-1">Chi Tiêu</span>
+            <span className="font-body-bold text-body-bold text-error">- 2,650K</span>
+          </div>
+        </div>
+      </section>
 
-      <div className="finance__content animate-scaleIn">
-        {activeTab === 'real' ? (
-          <>
-            {/* Real World Dashboard */}
-            <div className="finance__summary">
-              <div className="game-card finance__card">
-                <div className="finance__card-label">TỔNG TÀI SẢN</div>
-                <div className="finance__card-value glow-text--blue font-mono">
-                  {totalBalance.toLocaleString()} ₫
-                </div>
+      {/* Quick Stats */}
+      <section className="grid grid-cols-3 gap-3">
+        <div className="glass-panel rounded-lg p-3 flex flex-col items-center justify-center text-center">
+          <span className="font-label-caps text-label-caps text-on-surface-variant mb-1">Tiết Kiệm</span>
+          <span className="font-headline-md-mobile text-headline-md-mobile text-primary">32%</span>
+        </div>
+        <div className="glass-panel rounded-lg p-3 flex flex-col items-center justify-center text-center">
+          <span className="font-label-caps text-label-caps text-on-surface-variant mb-1">Chi TB</span>
+          <span className="font-body-bold text-body-bold text-primary">150k/d</span>
+        </div>
+        <div className="glass-panel rounded-lg p-3 flex flex-col items-center justify-center text-center">
+          <span className="font-label-caps text-label-caps text-on-surface-variant mb-1">Top Chi</span>
+          <span className="font-body-bold text-body-bold text-error">Ăn uống</span>
+        </div>
+      </section>
+
+      {/* Savings Goals */}
+      <section className="flex flex-col gap-4">
+        <h2 className="font-headline-md-mobile text-headline-md-mobile text-primary flex items-center gap-2">
+          <span className="material-symbols-outlined text-secondary-fixed">target</span> Mục Tiêu Tích Lũy
+        </h2>
+        
+        <div className="glass-panel rounded-lg p-4 flex flex-col gap-3">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center border border-white/12">
+                <span className="material-symbols-outlined text-primary">laptop_mac</span>
               </div>
-              <div className="game-card finance__card">
-                <div className="finance__card-label">CHI TIÊU THÁNG</div>
-                <div className="finance__card-value text-danger font-mono">
-                  -{spentThisMonth.toLocaleString()} ₫
-                </div>
-              </div>
-              <div className="game-card finance__card finance__card--budget">
-                <div className="finance__card-label">NGÂN SÁCH CÒN LẠI</div>
-                <div className="finance__card-value text-success font-mono">
-                  {(budget - spentThisMonth).toLocaleString()} ₫
-                </div>
-                <div className="progress-bar" style={{ marginTop: 'var(--space-2)' }}>
-                  <div 
-                    className="progress-bar__fill" 
-                    style={{ 
-                      width: `${budgetPercent}%`, 
-                      background: budgetPercent > 80 ? 'var(--system-red)' : 'var(--system-green)' 
-                    }} 
-                  />
-                </div>
+              <div>
+                <div className="font-body-bold text-body-bold">Mua Laptop</div>
+                <div className="font-label-caps text-label-caps text-on-surface-variant">15M / 20M G</div>
               </div>
             </div>
-
-            <div className="finance__history game-card">
-              <div className="finance__history-header">
-                <h3 className="font-heading">Lịch sử giao dịch</h3>
-                <button className="btn btn-primary btn-sm">+ THÊM GIAO DỊCH</button>
+            <span className="font-body-bold text-body-bold text-primary">75%</span>
+          </div>
+          <div className="h-2 bg-surface-variant rounded-full overflow-hidden">
+            <div className="h-full progress-bar-fill rounded-full" style={{ width: "75%" }}></div>
+          </div>
+        </div>
+        
+        <div className="glass-panel rounded-lg p-4 flex flex-col gap-3">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center border border-white/12">
+                <span className="material-symbols-outlined text-primary">flight_takeoff</span>
               </div>
-              
-              <div className="finance__list">
-                {DEMO_TRANSACTIONS.filter(t => t.category !== 'System').map((tx) => (
-                  <div key={tx.id} className="finance-item">
-                    <div className="finance-item__icon">
-                      {tx.amount > 0 ? '📈' : '📉'}
-                    </div>
-                    <div className="finance-item__info">
-                      <div className="finance-item__desc">{tx.desc}</div>
-                      <div className="finance-item__meta">
-                        {tx.category} • {new Date(tx.date).toLocaleDateString('vi-VN')}
-                      </div>
-                    </div>
-                    <div className={`finance-item__amount font-mono ${tx.amount > 0 ? 'text-success' : 'text-danger'}`}>
-                      {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()} ₫
-                    </div>
-                  </div>
-                ))}
+              <div>
+                <div className="font-body-bold text-body-bold">Quỹ Du Lịch</div>
+                <div className="font-label-caps text-label-caps text-on-surface-variant">2M / 10M G</div>
               </div>
             </div>
-          </>
-        ) : (
-          <>
-            {/* Virtual Currency Dashboard */}
-            <div className="finance__summary" style={{ gridTemplateColumns: '1fr 1fr' }}>
-              <div className="game-card finance__card finance__card--gold">
-                <div className="finance__card-label">GOLD</div>
-                <div className="finance__card-value glow-text--gold font-mono">
-                  12,500 🪙
-                </div>
-                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 'var(--space-2)' }}>
-                  Dùng để mua vật phẩm hỗ trợ trong Shop hệ thống.
-                </div>
-              </div>
-              <div className="game-card finance__card finance__card--gem">
-                <div className="finance__card-label">GEMS</div>
-                <div className="finance__card-value glow-text--purple font-mono">
-                  150 💎
-                </div>
-                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 'var(--space-2)' }}>
-                  Dùng để mở rộng kho đồ hoặc mua vé xoá phạt cao cấp.
-                </div>
-              </div>
-            </div>
-
-            <div className="finance__history game-card">
-              <div className="finance__history-header">
-                <h3 className="font-heading">Lịch sử nhận thưởng</h3>
-                <button className="btn btn-secondary btn-sm" disabled>SHOP HỆ THỐNG (Khóa)</button>
-              </div>
-              
-              <div className="finance__list">
-                {DEMO_TRANSACTIONS.filter(t => t.category === 'System').map((tx) => (
-                  <div key={tx.id} className="finance-item">
-                    <div className="finance-item__icon">🎁</div>
-                    <div className="finance-item__info">
-                      <div className="finance-item__desc">{tx.desc}</div>
-                      <div className="finance-item__meta">
-                        Hệ thống • {new Date(tx.date).toLocaleDateString('vi-VN')}
-                      </div>
-                    </div>
-                    <div className="finance-item__amount font-mono text-warning">
-                      +{tx.amount} 🪙
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-      </div>
+            <span className="font-body-bold text-body-bold text-primary">20%</span>
+          </div>
+          <div className="h-2 bg-surface-variant rounded-full overflow-hidden">
+            <div className="h-full progress-bar-fill rounded-full" style={{ width: "20%" }}></div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

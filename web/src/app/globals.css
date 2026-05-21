@@ -45,6 +45,118 @@
   .exp-bar-fill {
     background: linear-gradient(90deg, #ffdb3c, #ffe16d);
   }
+  .system-grid-bg {
+    background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .bg-system-void {
+    background: radial-gradient(circle at 50% 0%, rgba(20, 30, 80, 0.4) 0%, transparent 60%),
+                radial-gradient(circle at 50% 100%, rgba(70, 20, 120, 0.3) 0%, transparent 50%),
+                theme('colors.background');
+  }
+  .bg-cosmic-void {
+    background: radial-gradient(circle at top right, rgba(74, 158, 255, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at bottom left, rgba(233, 196, 0, 0.05) 0%, transparent 40%),
+                theme('colors.background');
+  }
+  .rare-border {
+    border: 1px solid theme('colors.secondary-fixed');
+    box-shadow: inset 0 0 10px rgba(233, 196, 0, 0.2);
+  }
+  .progress-bar-fill {
+    background: linear-gradient(90deg, theme('colors.primary-container'), theme('colors.primary'));
+    box-shadow: 0 0 10px theme('colors.primary');
+  }
+  .system-glow-gold {
+    box-shadow: inset 0 0 20px rgba(255, 219, 60, 0.2), 0 0 25px rgba(255, 219, 60, 0.5);
+  }
+  .system-glow-blue {
+    box-shadow: inset 0 0 20px rgba(74, 158, 255, 0.2), 0 0 15px rgba(74, 158, 255, 0.4);
+  }
+  .shimmer-wrapper {
+    position: relative;
+    overflow: hidden;
+  }
+  .shimmer-wrapper::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent 45%, rgba(255, 255, 255, 0.15) 50%, transparent 55%);
+    transform: rotate(30deg) translateY(-100%);
+    animation: sweep 4s infinite linear;
+    pointer-events: none;
+  }
+  .holographic-glass {
+    background-color: rgba(18, 18, 34, 0.65);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .holo-card-epic {
+    border: 1px solid theme('colors.tertiary');
+    box-shadow: 0 0 15px rgba(64, 225, 126, 0.15);
+  }
+  .holo-card-rare {
+    border: 1px solid theme('colors.primary');
+    box-shadow: 0 0 15px rgba(164, 201, 255, 0.15);
+  }
+  .shimmer-legendary {
+    position: relative;
+    overflow: hidden;
+  }
+  .shimmer-legendary::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(to right, transparent, rgba(255, 219, 60, 0.1), transparent);
+    transform: rotate(30deg);
+    animation: shimmer-legendary-anim 4s infinite linear;
+    pointer-events: none;
+  }
+  .particle-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    background-image: radial-gradient(rgba(164, 201, 255, 0.1) 1px, transparent 1px);
+    background-size: 32px 32px;
+    opacity: 0.3;
+  }
+  .floating {
+    animation: float 4s ease-in-out infinite;
+  }
+  .glow-blue { box-shadow: 0 0 15px rgba(164,201,255,0.4); }
+  .glow-red { box-shadow: 0 0 15px rgba(255,100,100,0.4); }
+  .glow-orange { box-shadow: 0 0 15px rgba(255,150,50,0.4); }
+  .glow-purple { box-shadow: 0 0 15px rgba(200,100,255,0.4); }
+  .glow-green { box-shadow: 0 0 15px rgba(100,255,150,0.4); }
+  .glow-white { box-shadow: 0 0 15px rgba(255,255,255,0.2); }
+  .pulse-energy { animation: pulse 2s infinite; }
+}
+
+@keyframes pulse {
+  0% { opacity: 0.8; box-shadow: 0 0 10px rgba(164,201,255,0.5); }
+  50% { opacity: 1; box-shadow: 0 0 20px rgba(164,201,255,0.8); }
+  100% { opacity: 0.8; box-shadow: 0 0 10px rgba(164,201,255,0.5); }
+}
+@keyframes shimmer-legendary-anim {
+  0% { transform: translateX(-100%) rotate(30deg); }
+  100% { transform: translateX(100%) rotate(30deg); }
+}
+@keyframes sweep {
+  0% { transform: translateY(-100%) translateX(-100%) rotate(30deg); }
+  100% { transform: translateY(100%) translateX(100%) rotate(30deg); }
 }
 
 /* ═══ CSS RESET ═══ */

@@ -28,7 +28,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" className="dark" data-theme="dark">
-      <body className="text-on-surface antialiased min-h-screen flex flex-col pb-24 md:pb-0 pt-20">
+      <body
+        className="bg-background text-on-background system-grid-bg min-h-screen pb-24 md:pb-8 flex flex-col font-body-base overflow-x-hidden"
+      >
         {children}
       </body>
     </html>

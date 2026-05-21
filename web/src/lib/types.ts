@@ -28,6 +28,31 @@ export interface User {
   updated_at: string;
 }
 
+export const DEMO_USER: User = {
+  id: "demo-id",
+  nickname: "Jin-Woo",
+  avatar_path: null,
+  class_name: "Warrior",
+  level: 42,
+  current_exp: 1500,
+  exp_to_next_level: 3000,
+  gold: 12450,
+  gems: 340,
+  equipped_title_id: null,
+  str: 150,
+  int_stat: 85,
+  agi: 105,
+  vit: 95,
+  wis: 60,
+  cha: 50,
+  debt_points: 0,
+  streak_days: 12,
+  total_quests_completed: 145,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+};
+
+
 export type ClassName =
   | "Warrior"
   | "Mage"

@@ -25,6 +25,12 @@ export default function MainLayout({
 
   return (
     <>
+      {/* Ambient Glow Effects */}
+      <div className="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/10 rounded-full blur-[100px]"></div>
+        <div className="absolute bottom-[20%] right-[-10%] w-[40%] h-[40%] bg-tertiary/5 rounded-full blur-[100px]"></div>
+      </div>
+
       {/* TopAppBar */}
       <header className="fixed top-0 w-full z-50 bg-surface/60 backdrop-blur-3xl border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.5)] flex justify-between items-center px-margin-mobile py-4">
         <div className="flex items-center gap-3">
