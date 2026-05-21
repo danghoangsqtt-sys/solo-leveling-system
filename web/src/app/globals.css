@@ -1,10 +1,51 @@
+/* ── Google Fonts ── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Cinzel:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
 /* ═══════════════════════════════════════════════════════════════
    SOLO LEVELING SYSTEM — Design System
    A gamified life management platform
    ═══════════════════════════════════════════════════════════════ */
 
-/* ── Google Fonts ── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Cinzel:wght@400;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .glass-panel {
+    background-color: rgba(30, 30, 47, 0.65); /* surface-container */
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .glass-panel-rare {
+    background-color: rgba(30, 30, 47, 0.65);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 219, 60, 0.4); /* System Gold border */
+    box-shadow: inset 0 0 20px rgba(255, 219, 60, 0.05);
+  }
+  .shimmer-wrapper {
+    position: relative;
+    overflow: hidden;
+  }
+  .shimmer-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    animation: shimmer 2.5s infinite;
+  }
+  .stat-bar-fill {
+    background: linear-gradient(90deg, #4a9eff, #a4c9ff);
+  }
+  .exp-bar-fill {
+    background: linear-gradient(90deg, #ffdb3c, #ffe16d);
+  }
+}
 
 /* ═══ CSS RESET ═══ */
 *, *::before, *::after {

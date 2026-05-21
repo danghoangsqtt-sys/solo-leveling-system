@@ -27,8 +27,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi" data-theme="dark">
-      <body>{children}</body>
+    <html lang="vi" className="dark" data-theme="dark">
+      <body className="text-on-surface antialiased min-h-screen flex flex-col pb-24 md:pb-0 pt-20">
+        {children}
+      </body>
     </html>
   );
 }
