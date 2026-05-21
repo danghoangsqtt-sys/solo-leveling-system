@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Skill, SkillLevel } from "@/lib/types";
+import type { Skill } from "@/lib/types";
 import { SKILL_LEVEL_NAMES, SKILL_LEVEL_SP } from "@/lib/types";
 import "./skills.css";
 

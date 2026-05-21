@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { InventoryItem, Rarity } from "@/lib/types";
+import type { InventoryItem } from "@/lib/types";
 import { RARITY_INFO } from "@/lib/types";
 import "./inventory.css";
 

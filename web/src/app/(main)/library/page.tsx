@@ -23,7 +23,7 @@ export default function LibraryPage() {
   const completed = items.filter(i => i.status === "completed");
   const planned = items.filter(i => i.status === "want_to_read");
 
-  const renderCard = (item: any) => {
+  const renderCard = (item: { id: string; title: string; author?: string; provider?: string; total: number; read: number; status: string; type: string }) => {
     const percent = Math.round((item.read / item.total) * 100);
     
     return (

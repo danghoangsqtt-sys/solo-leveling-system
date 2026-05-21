@@ -96,14 +96,20 @@ export default function AuraCharacter({
 
         {/* Particles */}
         <div className="aura-npc__particles">
-          {[...Array(5)].map((_, i) => (
+          {[
+            { left: "10%", delay: "0s", duration: "2s" },
+            { left: "30%", delay: "1.2s", duration: "3s" },
+            { left: "50%", delay: "0.5s", duration: "2.5s" },
+            { left: "70%", delay: "1.8s", duration: "3.2s" },
+            { left: "90%", delay: "0.8s", duration: "2.8s" },
+          ].map((particle, i) => (
             <div
               key={i}
               className="aura-npc__particle"
               style={{
-                left: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 2}s`,
-                animationDuration: `${2 + Math.random() * 2}s`,
+                left: particle.left,
+                animationDelay: particle.delay,
+                animationDuration: particle.duration,
               }}
             />
           ))}

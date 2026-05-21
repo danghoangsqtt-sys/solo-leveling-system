@@ -8,7 +8,7 @@ const DEMO_USER: User = {
   id: "1",
   nickname: "Vua Bóng Tối",
   avatar_path: null,
-  class_name: "Giả Kim Thuật Sư",
+  class_name: "Alchemist",
   level: 42,
   current_exp: 8450,
   exp_to_next_level: 10000,
@@ -72,6 +72,7 @@ export default function HomePage() {
           <div className="home__npc-orbit-1" />
           <div className="home__npc-orbit-2" />
           <div className="home__npc-glow" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img 
             className="home__npc-image" 
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuChmP0ou5ba51c6SQUPAKv2TAAnBTmFQjJdb2ttEQtcGrL34sufFHFYNCQWeBYfj5AQK0HN0QyVWpb_Yqe0sC45RVLjEWimBB-MAY3QOvzrzZbk6Ajp7_BSTBAkJPY8h6fMXTE8LVNKRDR_EgvJgFVIV_gvjqjcLz2EPTrIPWorxf41J9-o26hUomkUAOe1acEL9zBRXSaTagixM6Ytn_GmAiIwFzD3bVBKTl5LDP9r8wdL_WCGvZKZ_1htWhDFukzCc4QI6XVgPQ" 

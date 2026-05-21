@@ -1,6 +1,6 @@
 "use client";
 
-import type { Title, Rarity } from "@/lib/types";
+import type { Title } from "@/lib/types";
 import { RARITY_INFO } from "@/lib/types";
 import "./titles.css";
 

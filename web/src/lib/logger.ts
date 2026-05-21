@@ -9,12 +9,12 @@ interface LogEvent {
   level: LogLevel;
   module: string;
   message: string;
-  data?: any;
+  data?: unknown;
   timestamp: string;
 }
 
 class Logger {
-  private log(level: LogLevel, module: string, message: string, data?: any) {
+  private log(level: LogLevel, module: string, message: string, data?: unknown) {
     const event: LogEvent = {
       level,
       module,
@@ -45,19 +45,19 @@ class Logger {
     }
   }
 
-  info(module: string, message: string, data?: any) {
+  info(module: string, message: string, data?: unknown) {
     this.log("INFO", module, message, data);
   }
 
-  warn(module: string, message: string, data?: any) {
+  warn(module: string, message: string, data?: unknown) {
     this.log("WARN", module, message, data);
   }
 
-  error(module: string, message: string, data?: any) {
+  error(module: string, message: string, data?: unknown) {
     this.log("ERROR", module, message, data);
   }
 
-  debug(module: string, message: string, data?: any) {
+  debug(module: string, message: string, data?: unknown) {
     this.log("DEBUG", module, message, data);
   }
 }
