@@ -6,7 +6,7 @@ export default function TitlesPage() {
   const user = DEMO_USER;
 
   return (
-    <div className="col-span-12 flex flex-col gap-container-gap relative z-10 pt-16 md:pt-28">
+    <div className="flex flex-col gap-container-gap relative z-10">
       {/* Background Atmospheric Void for Titles */}
       <div className="fixed inset-0 pointer-events-none z-[-1]" style={{
         backgroundImage: "radial-gradient(circle at 50% 0%, rgba(74, 158, 255, 0.15), transparent 60%), radial-gradient(circle at 80% 100%, rgba(255, 219, 60, 0.05), transparent 50%)"

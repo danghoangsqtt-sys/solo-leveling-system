@@ -22,8 +22,8 @@ export default function HomePage() {
 
   return (
     <>
-      {/* Left Pane: Character & Core Info (Spans 5 cols on desktop) */}
-      <section className="md:col-span-5 flex flex-col gap-container-gap">
+      {/* Left Pane: Character & Core Info */}
+      <section className="flex flex-col gap-container-gap">
         {/* Player Nameplate (Glass Card) */}
         <div className="glass-panel-rare rounded-xl p-6 relative overflow-hidden flex flex-col items-center text-center">
           <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-transparent via-secondary-container to-transparent opacity-50"></div>
@@ -81,8 +81,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Right Pane: Attributes & Quests (Spans 7 cols on desktop) */}
-      <section className="md:col-span-7 flex flex-col gap-container-gap">
+      {/* Right Pane: Attributes & Quests */}
+      <section className="flex flex-col gap-container-gap">
         {/* Attributes Panel */}
         <div className="glass-panel rounded-xl p-6 flex flex-col gap-6">
           <div className="flex items-center gap-2 mb-2 border-b border-white/10 pb-4">

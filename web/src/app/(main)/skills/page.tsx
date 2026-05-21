@@ -4,7 +4,7 @@ import { DEMO_USER } from "@/lib/types";
 
 export default function SkillsPage() {
   return (
-    <div className="col-span-12 relative z-10 pt-16 md:pt-28">
+    <div className="relative z-10">
       {/* Particle Background just for this page */}
       <div className="particle-bg"></div>
 

@@ -6,7 +6,7 @@ export default function FinancePage() {
   const user = DEMO_USER;
 
   return (
-    <div className="col-span-12 flex flex-col gap-6 relative z-10 pt-16 md:pt-28">
+    <div className="flex flex-col gap-6 relative z-10">
       {/* Background Atmospheric Void for this specific page */}
       <div className="fixed inset-0 pointer-events-none z-[-1] bg-cosmic-void"></div>
 

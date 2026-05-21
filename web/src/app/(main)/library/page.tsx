@@ -6,7 +6,7 @@ export default function LibraryPage() {
   const user = DEMO_USER;
 
   return (
-    <div className="col-span-12 flex flex-col gap-container-gap relative z-10 pt-16 md:pt-28">
+    <div className="flex flex-col gap-container-gap relative z-10">
       {/* Search Bar */}
       <div className="relative group">
         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-on-surface-variant group-focus-within:text-primary transition-colors">

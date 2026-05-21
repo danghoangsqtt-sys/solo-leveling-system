@@ -86,7 +86,7 @@ export default function QuestsPage() {
   ];
 
   return (
-    <div className="col-span-12 relative z-10 pt-16 md:pt-28">
+    <div className="relative z-10">
       {/* Dashboard Header */}
       <section className="mb-container-gap relative">
         <div className="bg-surface/65 backdrop-blur-[40px] border border-white/12 rounded-xl p-6 glow-blue relative overflow-hidden">

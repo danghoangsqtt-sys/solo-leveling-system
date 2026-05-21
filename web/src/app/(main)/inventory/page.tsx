@@ -8,9 +8,9 @@ export default function InventoryPage() {
   const [selectedItem, setSelectedItem] = useState("mythic_dagger");
 
   return (
-    <div className="col-span-12 flex flex-col gap-container-gap md:grid md:grid-cols-12 md:items-start relative z-10 pt-16 md:pt-28">
+    <div className="flex flex-col gap-container-gap relative z-10">
       {/* Left/Top Pane: Character Mini-View & Categories */}
-      <div className="md:col-span-4 flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
         {/* Character Mini-View */}
         <div className="bg-surface-container/65 backdrop-blur-[40px] rounded-xl border border-white/12 p-4 flex items-center gap-4 shadow-[0_8px_32px_0_rgba(0,0,0,0.4)]">
           <div className="relative">
@@ -51,7 +51,7 @@ export default function InventoryPage() {
       </div>
 
       {/* Right Pane: Item Grid & Detail */}
-      <div className="md:col-span-8 flex flex-col gap-4 h-full">
+      <div className="flex flex-col gap-4 h-full">
         {/* Item Grid */}
         <div className="bg-surface-container/65 backdrop-blur-[40px] rounded-xl border border-white/12 p-4 shadow-[0_8px_32px_0_rgba(0,0,0,0.4)]">
           <div className="flex justify-between items-center mb-4">
