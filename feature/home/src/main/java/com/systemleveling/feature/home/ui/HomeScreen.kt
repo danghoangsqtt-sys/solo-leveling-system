@@ -52,11 +52,13 @@ fun HomeScreen(
     onNavigateToLibrary: () -> Unit = {},
     onNavigateToJournal: () -> Unit = {},
     onNavigateToCalendar: () -> Unit = {},
-    onNavigateToNpc: () -> Unit = {}
+    onNavigateToNpc: () -> Unit = {},
+    onNavigateToAdvancement: () -> Unit = {}
 ) {
     val user by viewModel.user.collectAsState()
     val stats by viewModel.stats.collectAsState()
     val questSummary by viewModel.questSummary.collectAsState()
+    val isAdvancementReady by viewModel.isAdvancementReady.collectAsState()
 
     Box(
         modifier = Modifier
@@ -70,6 +72,10 @@ fun HomeScreen(
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             TopSystemBar(user = user)
+
+            if (isAdvancementReady) {
+                AdvancementBanner(onClick = onNavigateToAdvancement)
+            }
 
             Column(
                 modifier = Modifier
@@ -463,6 +469,55 @@ private fun QuickActionsRow(
                     )
                 }
             }
+        }
+    }
+}
+
+// ── Advancement ready banner ──────────────────────────────────────────────────
+@Composable
+private fun AdvancementBanner(onClick: () -> Unit) {
+    val glow by rememberInfiniteTransition(label = "adv_banner").animateFloat(
+        0.5f, 1f,
+        infiniteRepeatable(tween(900, easing = EaseInOutSine), RepeatMode.Reverse),
+        label = "g"
+    )
+    val GoldColor = Color(0xFFFFD700)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                Brush.horizontalGradient(
+                    listOf(Color(0xFF2A1A00), Color(0xFF1A1000), Color(0xFF2A1A00))
+                )
+            )
+            .border(BorderStroke(0.5.dp, GoldColor.copy(glow * 0.7f)))
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("⚠", color = GoldColor.copy(glow), fontSize = 16.sp)
+                Spacer(Modifier.width(10.dp))
+                Column {
+                    Text(
+                        "CHUYỂN NGHỀ SẴN SÀNG",
+                        color = GoldColor,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 0.1f.em
+                    )
+                    Text(
+                        "Tất cả chỉ số đã đạt giới hạn. Nhấn để thức tỉnh.",
+                        color = GoldColor.copy(0.6f),
+                        fontSize = 10.sp
+                    )
+                }
+            }
+            Text("›", color = GoldColor, fontSize = 22.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
