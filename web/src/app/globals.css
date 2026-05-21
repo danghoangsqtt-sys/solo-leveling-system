@@ -46,19 +46,19 @@ input, button, textarea, select {
   --system-cyan: #18DCFF;
   --system-pink: #FF6B81;
 
-  /* ── Background ── */
-  --bg-primary: #0A0A1A;
-  --bg-secondary: #111128;
-  --bg-card: rgba(20, 20, 50, 0.85);
-  --bg-card-solid: #141432;
-  --bg-elevated: #1E1E48;
-  --bg-hover: rgba(74, 158, 255, 0.08);
-  --bg-overlay: rgba(0, 0, 0, 0.6);
+  /* ── Background (Stitch) ── */
+  --bg-primary: #121222;
+  --bg-secondary: #1a1a2b;
+  --bg-card: rgba(30, 30, 47, 0.65);
+  --bg-card-solid: #1e1e2f;
+  --bg-elevated: #29283a;
+  --bg-hover: rgba(74, 158, 255, 0.15);
+  --bg-overlay: rgba(0, 0, 0, 0.7);
 
   /* ── Text ── */
-  --text-primary: #E8E8F0;
-  --text-secondary: #9494B8;
-  --text-muted: #5C5C7A;
+  --text-primary: #e3e0f8;
+  --text-secondary: #c0c7d4;
+  --text-muted: #8a919e;
   --text-accent: var(--system-blue);
   --text-on-accent: #FFFFFF;
 
@@ -191,10 +191,10 @@ body {
   font-size: var(--text-base);
   color: var(--text-primary);
   background-color: var(--bg-primary);
-  background-image:
-    radial-gradient(ellipse at 20% 50%, rgba(74, 158, 255, 0.04) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(178, 102, 255, 0.04) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 80%, rgba(46, 213, 115, 0.03) 0%, transparent 50%);
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(74, 158, 255, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 85% 30%, rgba(255, 219, 60, 0.05) 0%, transparent 50%);
+  background-attachment: fixed;
   overflow-x: hidden;
 }
 
@@ -248,9 +248,9 @@ a:hover {
 /* ═══ GAME CARD ═══ */
 .game-card {
   background: var(--bg-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-default);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-lg);
   padding: var(--space-5);
   transition: all var(--transition-base);

@@ -1,275 +1,343 @@
-/* ═══ Home Page Styles ═══ */
+/* ═══ Home Page Styles (Stitch Glassmorphism) ═══ */
 
 .home {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  padding-bottom: var(--space-8);
-}
-
-/* ── Header ── */
-.home__header {
-  text-align: center;
-  padding: var(--space-4) 0;
-}
-
-.home__title {
-  font-size: var(--text-2xl);
-  color: var(--system-blue);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-3);
-  text-shadow: 0 0 20px rgba(74, 158, 255, 0.3);
-}
-
-.home__title-icon {
-  font-size: var(--text-xl);
-}
-
-/* ── Character Card ── */
-.home__character {
-  display: flex;
-  align-items: center;
+  padding-bottom: var(--space-12);
   gap: var(--space-6);
-  padding: var(--space-6);
 }
 
-.home__avatar {
-  position: relative;
-  width: 100px;
-  height: 100px;
-  border-radius: var(--radius-full);
+@media (min-width: 1024px) {
+  .home {
+    display: grid;
+    grid-template-columns: 5fr 7fr;
+    gap: var(--space-6);
+  }
+}
+
+/* ── LEFT PANE ── */
+.home__left-pane {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  flex-direction: column;
+  gap: var(--space-6);
 }
 
-.home__avatar-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: var(--radius-full);
-  border: 3px solid var(--system-blue);
-  animation: pulse-glow 3s ease-in-out infinite;
-}
-
-.home__avatar-glow {
-  position: absolute;
-  inset: -8px;
-  border-radius: var(--radius-full);
-  background: radial-gradient(circle, rgba(74, 158, 255, 0.25) 0%, transparent 70%);
-  animation: breathe 4s ease-in-out infinite;
-}
-
-.home__avatar-emoji {
-  font-size: 3rem;
+.home__character-card {
   position: relative;
-  z-index: 1;
-  filter: drop-shadow(0 0 10px rgba(74, 158, 255, 0.5));
+  border: 1px solid rgba(255, 219, 60, 0.4);
+  box-shadow: inset 0 0 20px rgba(255, 219, 60, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  overflow: hidden;
 }
 
-.home__character-right {
-  flex: 1;
-  min-width: 0;
+.home__character-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, var(--system-gold), transparent);
+  opacity: 0.5;
+}
+
+.home__title-badge {
+  font-family: var(--font-heading);
+  font-size: var(--text-xs);
+  color: var(--system-gold);
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 219, 60, 0.1);
+  border: 1px solid rgba(255, 219, 60, 0.3);
+  margin-bottom: var(--space-2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .home__name {
-  font-size: var(--text-2xl);
+  font-family: var(--font-heading);
+  font-size: var(--text-4xl);
+  font-weight: 700;
   color: var(--text-primary);
+  line-height: 1.1;
   margin-bottom: var(--space-1);
 }
 
 .home__class {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  margin-bottom: var(--space-1);
+  color: var(--system-blue);
+  font-size: var(--text-base);
 }
 
-.home__level-badge {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: var(--text-lg);
-  color: var(--system-gold);
+/* ── NPC Display ── */
+.home__npc-display {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: var(--space-4) 0;
 }
 
-.home__title-equipped {
-  font-size: var(--text-sm);
-  color: var(--system-purple);
-  margin-top: var(--space-2);
-  font-style: italic;
+.home__npc-orbit-1 {
+  position: absolute;
+  width: 120%;
+  height: 120%;
+  border: 1px dashed rgba(74, 158, 255, 0.2);
+  border-radius: 50%;
+  animation: spin 20s linear infinite;
 }
 
-/* ── Stats Section ── */
-.home__section-title {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  text-align: center;
-  margin-bottom: var(--space-4);
-  letter-spacing: 0.1em;
+.home__npc-orbit-2 {
+  position: absolute;
+  width: 90%;
+  height: 90%;
+  border: 1px solid rgba(255, 219, 60, 0.1);
+  border-radius: 50%;
+  animation: spin 15s linear infinite reverse;
 }
 
-.home__stats-list {
+.home__npc-glow {
+  position: absolute;
+  bottom: 10%;
+  width: 180px;
+  height: 40px;
+  background: rgba(74, 158, 255, 0.2);
+  filter: blur(20px);
+  border-radius: 50%;
+}
+
+.home__npc-image {
+  width: 80%;
+  height: auto;
+  object-fit: contain;
+  z-index: 10;
+  animation: float 6s ease-in-out infinite;
+  filter: drop-shadow(0 20px 30px rgba(0,0,0,0.8));
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ── EXP & Currency ── */
+.home__status-block {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--space-4);
 }
 
-/* ── EXP Bar ── */
 .home__exp-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
   margin-bottom: var(--space-2);
 }
 
 .home__exp-label {
-  font-size: var(--text-sm);
+  font-family: var(--font-heading);
+  font-size: var(--text-xs);
   color: var(--text-secondary);
   letter-spacing: 0.1em;
 }
 
 .home__exp-value {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-}
-
-/* ── Quick Stats ── */
-.home__quick-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-3);
-}
-
-.home__quick-stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-4) var(--space-2);
-  text-align: center;
-}
-
-.home__quick-stat-icon {
-  font-size: 1.5rem;
-}
-
-.home__quick-stat-value {
-  font-size: var(--text-xl);
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.home__quick-stat-label {
-  font-size: var(--text-xs);
-  color: var(--text-muted);
   font-family: var(--font-heading);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-size: var(--text-xs);
+  color: var(--system-gold);
 }
 
-/* ── Today's Quests ── */
-.home__quests-header {
+.exp-bar-fill {
+  background: linear-gradient(90deg, #ffdb3c, #ffe16d);
+}
+
+.home__currency-row {
+  display: flex;
+  gap: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.currency-card {
+  flex: 1;
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-bottom: var(--space-3);
+  background: rgba(26, 26, 43, 0.8); /* surface-container-low */
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.home__quests-icon {
-  font-size: 1.25rem;
+.currency-card__icon {
+  font-size: 1.5rem;
 }
+.currency-card__icon--gold { color: var(--system-gold); }
+.currency-card__icon--gem { color: var(--system-green); }
 
-.home__quests-title {
-  font-size: var(--text-sm);
-  color: var(--text-primary);
-}
-
-.home__quests-percent {
-  text-align: right;
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-  margin-top: var(--space-2);
-}
-
-/* ── Aura NPC Section ── */
-.home__aura {
+.currency-card__info {
   display: flex;
-  align-items: flex-start;
-  gap: var(--space-4);
-  background: linear-gradient(135deg, rgba(74, 158, 255, 0.06), rgba(178, 102, 255, 0.06));
-  border-color: rgba(74, 158, 255, 0.2);
+  flex-direction: column;
 }
 
-.home__aura-character {
-  position: relative;
-  width: 56px;
-  height: 56px;
-  border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--system-blue), var(--system-purple));
+.currency-card__label {
+  font-family: var(--font-heading);
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.currency-card__value {
+  font-weight: 700;
+  font-size: var(--text-base);
+  line-height: 1;
+}
+
+/* ── RIGHT PANE ── */
+.home__right-pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* ── Attributes Panel ── */
+.home__attributes-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.home__aura-glow {
-  position: absolute;
-  inset: -4px;
-  border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--system-blue), var(--system-purple));
-  opacity: 0.3;
-  filter: blur(8px);
-  animation: breathe 4s ease-in-out infinite;
+.home__attributes-title {
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
-.home__aura-emoji {
-  font-size: 1.5rem;
-  position: relative;
-  z-index: 1;
-  animation: float 3s ease-in-out infinite;
+.home__attributes-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-5);
+}
+@media (min-width: 640px) {
+  .home__attributes-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-5) var(--space-6);
+  }
 }
 
-.home__aura-bubble {
-  flex: 1;
-  min-width: 0;
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
 }
 
-.home__aura-name {
-  font-size: var(--text-sm);
-  color: var(--system-blue);
-  margin-bottom: var(--space-1);
-  letter-spacing: 0.04em;
+.stat-item__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.home__aura-text {
-  font-size: var(--text-sm);
+.stat-item__label {
+  font-family: var(--font-heading);
+  font-size: var(--text-xs);
   color: var(--text-secondary);
-  line-height: 1.6;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color var(--transition-fast);
+}
+.stat-item:hover .stat-item__label {
+  color: var(--system-blue);
 }
 
-/* ── Responsive ── */
-@media (max-width: 768px) {
-  .home__character {
-    flex-direction: column;
-    text-align: center;
-    gap: var(--space-4);
-  }
+.stat-item__values {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.stat-item__value {
+  font-weight: 700;
+}
+.stat-item__bonus {
+  font-family: var(--font-heading);
+  font-size: var(--text-xs);
+  color: var(--system-green);
+}
 
-  .home__avatar {
-    width: 80px;
-    height: 80px;
-  }
+.stat-bar-track {
+  width: 100%;
+  height: 6px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+.stat-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4a9eff, #a4c9ff);
+  border-radius: var(--radius-full);
+}
 
-  .home__avatar-emoji {
-    font-size: 2.5rem;
-  }
-
-  .home__quick-stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .home__title {
-    font-size: var(--text-xl);
-  }
+/* ── Mini Quest Card ── */
+.home__quest-mini {
+  border-left: 4px solid var(--system-gold);
+  position: relative;
+  overflow: hidden;
+}
+.home__quest-mini::before {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 120px;
+  height: 120px;
+  background: rgba(255, 219, 60, 0.05);
+  filter: blur(20px);
+  border-radius: 50%;
+}
+.home__quest-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-4);
+  position: relative;
+  z-index: 10;
+}
+.home__quest-label {
+  font-family: var(--font-heading);
+  font-size: var(--text-xs);
+  color: var(--system-gold);
+  display: block;
+}
+.home__quest-title {
+  font-weight: 700;
+  font-size: var(--text-base);
+}
+.home__quest-icon {
+  background: rgba(255, 219, 60, 0.1);
+  color: var(--system-gold);
+  padding: 8px;
+  border-radius: var(--radius-md);
+  font-size: 1.25rem;
+}
+.home__quest-progress {
+  position: relative;
+  z-index: 10;
+}
+.home__quest-progress-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: var(--text-sm);
+}
+.home__quest-progress-fill {
+  height: 8px;
+  background: var(--system-gold);
+  border-radius: var(--radius-full);
 }
