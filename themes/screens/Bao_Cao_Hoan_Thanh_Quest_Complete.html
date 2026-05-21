@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Quest Complete</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Rajdhani:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-low": "#1a1a2b",
+                    "tertiary-fixed-dim": "#40e17e",
+                    "secondary-fixed-dim": "#e9c400",
+                    "primary-fixed-dim": "#a4c9ff",
+                    "primary-container": "#4a9eff",
+                    "on-tertiary": "#003919",
+                    "surface-tint": "#a4c9ff",
+                    "surface-container": "#1e1e2f",
+                    "on-tertiary-fixed-variant": "#005226",
+                    "primary": "#a4c9ff",
+                    "on-surface": "#e3e0f8",
+                    "on-primary": "#00315d",
+                    "surface-variant": "#333345",
+                    "on-error": "#690005",
+                    "surface-container-lowest": "#0c0c1d",
+                    "tertiary-container": "#00b35b",
+                    "surface-bright": "#38374a",
+                    "on-background": "#e3e0f8",
+                    "secondary-container": "#ffdb3c",
+                    "on-surface-variant": "#c0c7d4",
+                    "error-container": "#93000a",
+                    "on-tertiary-fixed": "#00210c",
+                    "outline-variant": "#414752",
+                    "surface-dim": "#121222",
+                    "surface": "#121222",
+                    "secondary-fixed": "#ffe16d",
+                    "on-secondary-container": "#725f00",
+                    "on-primary-fixed": "#001c39",
+                    "on-primary-container": "#003463",
+                    "background": "#121222",
+                    "surface-container-high": "#29283a",
+                    "primary-fixed": "#d4e3ff",
+                    "outline": "#8a919e",
+                    "on-error-container": "#ffdad6",
+                    "surface-container-highest": "#333345",
+                    "on-secondary-fixed": "#221b00",
+                    "tertiary": "#40e17e",
+                    "on-secondary": "#3a3000",
+                    "inverse-primary": "#005fad",
+                    "tertiary-fixed": "#63ff97",
+                    "secondary": "#fff9ef",
+                    "error": "#ffb4ab",
+                    "on-tertiary-container": "#003c1a",
+                    "on-secondary-fixed-variant": "#544600",
+                    "on-primary-fixed-variant": "#004884",
+                    "inverse-surface": "#e3e0f8",
+                    "inverse-on-surface": "#2f2f40"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-desktop": "32px",
+                    "unit": "4px",
+                    "container-gap": "24px",
+                    "margin-mobile": "16px",
+                    "gutter": "16px"
+            },
+            "fontFamily": {
+                    "headline-md": [
+                            "Rajdhani"
+                    ],
+                    "body-base": [
+                            "Inter"
+                    ],
+                    "headline-md-mobile": [
+                            "Rajdhani"
+                    ],
+                    "display-lg": [
+                            "Rajdhani"
+                    ],
+                    "label-caps": [
+                            "Rajdhani"
+                    ],
+                    "body-bold": [
+                            "Inter"
+                    ]
+            },
+            "fontSize": {
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "letterSpacing": "0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-base": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-md-mobile": [
+                            "20px",
+                            {
+                                    "lineHeight": "28px",
+                                    "letterSpacing": "0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "display-lg": [
+                            "48px",
+                            {
+                                    "lineHeight": "56px",
+                                    "letterSpacing": "0.05em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "label-caps": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.1em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-bold": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "600"
+                            }
+                    ]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .glow-text {
+            text-shadow: 0 0 10px rgba(164,201,255,0.8), 0 0 20px rgba(164,201,255,0.4);
+        }
+        .glow-gold {
+            text-shadow: 0 0 10px rgba(233,196,0,0.8), 0 0 20px rgba(233,196,0,0.4);
+        }
+        .shimmer {
+            position: relative;
+            overflow: hidden;
+        }
+        .shimmer::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                to right,
+                rgba(255,255,255,0) 0%,
+                rgba(255,255,255,0.1) 50%,
+                rgba(255,255,255,0) 100%
+            );
+            transform: rotate(30deg);
+            animation: shimmer 3s infinite linear;
+        }
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) rotate(30deg); }
+            100% { transform: translateX(100%) rotate(30deg); }
+        }
+        .pulse-bar {
+            animation: pulse-fill 2s ease-in-out forwards;
+        }
+        @keyframes pulse-fill {
+            0% { width: 0%; }
+            100% { width: 75%; }
+        }
+        
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(164, 201, 255, 0.6);
+            box-shadow: 0 0 10px rgba(164, 201, 255, 0.8);
+            pointer-events: none;
+            animation: float-up 5s infinite ease-in-out;
+        }
+        
+        @keyframes float-up {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+        }
+
+        .card-flip {
+            perspective: 1000px;
+        }
+        .card-inner {
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        .card-flip:hover .card-inner {
+            transform: rotateY(180deg);
+        }
+        .card-front, .card-back {
+            backface-visibility: hidden;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .card-back {
+            transform: rotateY(180deg);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface h-screen w-screen overflow-hidden flex items-center justify-center relative">
+<!-- Ambient Particles Background -->
+<div class="absolute inset-0 z-0 pointer-events-none" id="particles">
+<!-- Particles added via JS -->
+</div>
+<!-- Main Overlay Container -->
+<div class="relative z-10 w-full max-w-lg mx-auto flex flex-col items-center p-6 gap-8">
+<!-- Header -->
+<div class="text-center w-full relative">
+<h1 class="font-display-lg text-display-lg text-primary glow-text tracking-widest mb-4">QUEST COMPLETE!</h1>
+<div class="h-px w-full bg-gradient-to-r from-transparent via-primary to-transparent opacity-50"></div>
+</div>
+<!-- Rewards Section -->
+<div class="w-full bg-surface-container-low/60 backdrop-blur-[40px] rounded-xl border border-white/12 p-6 flex flex-col gap-4 shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
+<h2 class="font-label-caps text-label-caps text-on-surface-variant mb-2">REWARDS GAINED</h2>
+<!-- EXP -->
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-center">
+<span class="font-body-bold text-body-base text-primary">EXP</span>
+<span class="font-body-bold text-body-base text-primary">+250</span>
+</div>
+<div class="h-2 w-full bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-primary pulse-bar shadow-[0_0_10px_#a4c9ff]"></div>
+</div>
+</div>
+<!-- Gold -->
+<div class="flex justify-between items-center mt-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary-fixed-dim" style="font-variation-settings: 'FILL' 1;">monetization_on</span>
+<span class="font-body-bold text-body-base text-secondary-fixed-dim">Gold</span>
+</div>
+<span class="font-body-bold text-body-base text-secondary-fixed-dim glow-gold">+100</span>
+</div>
+<!-- SP -->
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary-fixed-dim" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<span class="font-body-bold text-body-base text-tertiary-fixed-dim">Skill Points (Reading Fluency)</span>
+</div>
+<span class="font-body-bold text-body-base text-tertiary-fixed-dim">+15</span>
+</div>
+</div>
+<!-- Mystery Card -->
+<div class="relative w-48 h-64 card-flip cursor-pointer group">
+<div class="absolute inset-0 bg-secondary-fixed-dim/20 blur-xl rounded-xl group-hover:bg-secondary-fixed-dim/40 transition-all duration-500"></div>
+<div class="card-inner rounded-xl border border-secondary-fixed-dim shadow-[0_0_20px_rgba(233,196,0,0.3)] shimmer">
+<!-- Front -->
+<div class="card-front bg-surface-container-high/90 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/12">
+<span class="font-display-lg text-display-lg text-secondary-fixed-dim glow-gold">?</span>
+</div>
+<!-- Back -->
+<div class="card-back bg-surface-container-high/90 backdrop-blur-md rounded-xl flex flex-col items-center justify-center p-4 border border-secondary-fixed-dim">
+<span class="material-symbols-outlined text-secondary-fixed-dim text-4xl mb-2" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<span class="font-label-caps text-label-caps text-secondary-fixed-dim text-center">LEGENDARY TOME</span>
+</div>
+</div>
+<p class="absolute -bottom-8 w-full text-center font-label-caps text-label-caps text-on-surface-variant animate-pulse">TAP TO REVEAL YOUR REWARD</p>
+</div>
+<!-- Claim Button -->
+<button class="mt-8 px-12 py-4 bg-primary-container/20 border border-primary text-primary font-headline-md text-headline-md rounded-xl backdrop-blur-md hover:bg-primary-container/40 hover:scale-105 active:scale-95 transition-all duration-300 shadow-[0_0_20px_rgba(164,201,255,0.4)] shimmer w-full">
+            CLAIM ALL
+        </button>
+</div>
+<script>
+        // Particle system
+        const particleContainer = document.getElementById('particles');
+        const colors = ['#a4c9ff', '#e9c400', '#40e17e'];
+        
+        for (let i = 0; i < 30; i++) {
+            const particle = document.createElement('div');
+            particle.classList.add('particle');
+            
+            // Randomize properties
+            const size = Math.random() * 4 + 2;
+            const left = Math.random() * 100;
+            const delay = Math.random() * 5;
+            const duration = Math.random() * 3 + 4;
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            particle.style.left = `${left}vw`;
+            particle.style.animationDelay = `${delay}s`;
+            particle.style.animationDuration = `${duration}s`;
+            particle.style.backgroundColor = color;
+            particle.style.boxShadow = `0 0 10px ${color}`;
+            
+            particleContainer.appendChild(particle);
+        }
+    </script>
+</body></html>

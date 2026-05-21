@@ -53,12 +53,16 @@ fun HomeScreen(
     onNavigateToJournal: () -> Unit = {},
     onNavigateToCalendar: () -> Unit = {},
     onNavigateToNpc: () -> Unit = {},
-    onNavigateToAdvancement: () -> Unit = {}
+    onNavigateToAdvancement: () -> Unit = {},
+    onNavigateToDailySummary: () -> Unit = {}
 ) {
     val user by viewModel.user.collectAsState()
     val stats by viewModel.stats.collectAsState()
     val questSummary by viewModel.questSummary.collectAsState()
     val isAdvancementReady by viewModel.isAdvancementReady.collectAsState()
+    val geminiApiKey by viewModel.geminiApiKey.collectAsState()
+
+    var showSettingsDialog by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -71,7 +75,10 @@ fun HomeScreen(
             )
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            TopSystemBar(user = user)
+            TopSystemBar(
+                user = user,
+                onSettingsClick = { showSettingsDialog = true }
+            )
 
             if (isAdvancementReady) {
                 AdvancementBanner(onClick = onNavigateToAdvancement)
@@ -95,7 +102,8 @@ fun HomeScreen(
                 QuickActionsRow(
                     onCalendar = onNavigateToCalendar,
                     onJournal = onNavigateToJournal,
-                    onLibrary = onNavigateToLibrary
+                    onInventory = onNavigateToInventory,
+                    onDailySummary = onNavigateToDailySummary
                 )
                 Spacer(Modifier.height(8.dp))
             }
@@ -109,12 +117,23 @@ fun HomeScreen(
                 onNavigateToAura = onNavigateToNpc
             )
         }
+        
+        if (showSettingsDialog) {
+            SettingsDialog(
+                currentApiKey = geminiApiKey,
+                onDismiss = { showSettingsDialog = false },
+                onSave = { 
+                    viewModel.saveApiKey(it)
+                    showSettingsDialog = false 
+                }
+            )
+        }
     }
 }
 
 // ── Top app bar ───────────────────────────────────────────────────────────────
 @Composable
-private fun TopSystemBar(user: UserEntity?) {
+private fun TopSystemBar(user: UserEntity?, onSettingsClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -146,23 +165,89 @@ private fun TopSystemBar(user: UserEntity?) {
                     letterSpacing = 0.06f.em
                 )
             }
-            // Level badge
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(GOLD.copy(alpha = 0.12f))
-                    .border(1.dp, GOLD.copy(alpha = 0.4f), RoundedCornerShape(20.dp))
-                    .padding(horizontal = 12.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    "Lvl. ${user?.level ?: 1}",
-                    color = GOLD,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                )
+            // Level badge & Settings
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(GOLD.copy(alpha = 0.12f))
+                        .border(1.dp, GOLD.copy(alpha = 0.4f), RoundedCornerShape(20.dp))
+                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        "Lvl. ${user?.level ?: 1}",
+                        color = GOLD,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(Color(0x33FFFFFF))
+                        .clickable { onSettingsClick() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("⚙️", fontSize = 16.sp)
+                }
             }
         }
     }
+}
+
+@Composable
+private fun SettingsDialog(
+    currentApiKey: String,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit
+) {
+    var apiKey by remember { mutableStateOf(currentApiKey) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = BG_DEEP,
+        title = {
+            Text("⚙️ System Settings", color = PRIMARY_DIM, fontWeight = FontWeight.Bold)
+        },
+        text = {
+            Column {
+                Text("Gemini API Key:", color = Color.White, fontSize = 14.sp)
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = apiKey,
+                    onValueChange = { apiKey = it },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = TEXT_MUTED,
+                        focusedBorderColor = PRIMARY,
+                        unfocusedBorderColor = GLASS_BORDER,
+                        cursorColor = PRIMARY
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    placeholder = { Text("Enter your Gemini API Key", color = TEXT_MUTED) }
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "API Key is stored locally and used for AI Quest Generation, Skill Roadmaps, and Daily Summaries.",
+                    color = TEXT_MUTED,
+                    fontSize = 11.sp
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(apiKey) }) {
+                Text("Save", color = PRIMARY, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = TEXT_MUTED)
+            }
+        }
+    )
 }
 
 // ── Character status panel ────────────────────────────────────────────────────
@@ -438,7 +523,8 @@ private fun QuestProgressCard(
 private fun QuickActionsRow(
     onCalendar: () -> Unit,
     onJournal: () -> Unit,
-    onLibrary: () -> Unit
+    onInventory: () -> Unit,
+    onDailySummary: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -447,7 +533,8 @@ private fun QuickActionsRow(
         listOf(
             Triple("📅", "LỊCH TRÌNH", onCalendar),
             Triple("📖", "NHẬT KÝ", onJournal),
-            Triple("📚", "THƯ VIỆN", onLibrary)
+            Triple("📊", "BÁO CÁO", onDailySummary),
+            Triple("🎒", "KHO ĐỒ", onInventory)
         ).forEach { (icon, label, action) ->
             Box(
                 modifier = Modifier

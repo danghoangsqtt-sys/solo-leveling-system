@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Aura System - Lịch Trình</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-lowest": "#0c0c1d",
+                        "on-tertiary-container": "#003c1a",
+                        "background": "#121222",
+                        "surface-bright": "#38374a",
+                        "on-primary-fixed-variant": "#004884",
+                        "inverse-primary": "#005fad",
+                        "tertiary-fixed": "#63ff97",
+                        "on-tertiary-fixed-variant": "#005226",
+                        "tertiary-fixed-dim": "#40e17e",
+                        "primary-container": "#4a9eff",
+                        "on-secondary-fixed": "#221b00",
+                        "tertiary": "#40e17e",
+                        "on-surface": "#e3e0f8",
+                        "on-primary": "#00315d",
+                        "surface-dim": "#121222",
+                        "error": "#ffb4ab",
+                        "on-tertiary": "#003919",
+                        "surface-variant": "#333345",
+                        "on-tertiary-fixed": "#00210c",
+                        "on-error": "#690005",
+                        "secondary-container": "#ffdb3c",
+                        "surface-tint": "#a4c9ff",
+                        "on-secondary": "#3a3000",
+                        "on-primary-container": "#003463",
+                        "surface-container-low": "#1a1a2b",
+                        "primary-fixed": "#d4e3ff",
+                        "surface-container-highest": "#333345",
+                        "surface-container": "#1e1e2f",
+                        "on-secondary-container": "#725f00",
+                        "secondary": "#fff9ef",
+                        "surface-container-high": "#29283a",
+                        "primary-fixed-dim": "#a4c9ff",
+                        "primary": "#a4c9ff",
+                        "on-surface-variant": "#c0c7d4",
+                        "inverse-on-surface": "#2f2f40",
+                        "error-container": "#93000a",
+                        "on-secondary-fixed-variant": "#544600",
+                        "secondary-fixed": "#ffe16d",
+                        "secondary-fixed-dim": "#e9c400",
+                        "outline": "#8a919e",
+                        "inverse-surface": "#e3e0f8",
+                        "on-primary-fixed": "#001c39",
+                        "surface": "#121222",
+                        "on-error-container": "#ffdad6",
+                        "tertiary-container": "#00b35b",
+                        "on-background": "#e3e0f8",
+                        "outline-variant": "#414752"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "margin-desktop": "32px",
+                        "gutter": "16px",
+                        "container-gap": "24px",
+                        "unit": "4px",
+                        "margin-mobile": "16px"
+                    },
+                    fontFamily: {
+                        "label-caps": ["Rajdhani"],
+                        "headline-md-mobile": ["Rajdhani"],
+                        "body-base": ["Inter"],
+                        "headline-md": ["Rajdhani"],
+                        "display-lg": ["Rajdhani"],
+                        "body-bold": ["Inter"]
+                    },
+                    fontSize: {
+                        "label-caps": ["12px", { lineHeight: "16px", letterSpacing: "0.1em", fontWeight: "600" }],
+                        "headline-md-mobile": ["20px", { lineHeight: "28px", letterSpacing: "0.02em", fontWeight: "700" }],
+                        "body-base": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "headline-md": ["24px", { lineHeight: "32px", letterSpacing: "0.02em", fontWeight: "700" }],
+                        "display-lg": ["48px", { lineHeight: "56px", letterSpacing: "0.05em", fontWeight: "700" }],
+                        "body-bold": ["16px", { lineHeight: "24px", fontWeight: "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-image: radial-gradient(circle at 50% -20%, #1a1a2b, #121222 70%);
+            background-attachment: fixed;
+        }
+        .glass-panel {
+            background-color: rgba(26, 26, 43, 0.65);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .glass-panel-legendary {
+            background-color: rgba(26, 26, 43, 0.65);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid #ffe16d; /* secondary-fixed */
+        }
+        .glass-panel-system {
+            background-color: rgba(26, 26, 43, 0.65);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid #a4c9ff; /* primary */
+        }
+        .orbital-glow {
+            box-shadow: 0 0 15px rgba(164, 201, 255, 0.5);
+        }
+        .orbital-glow-legendary {
+            box-shadow: 0 0 15px rgba(255, 225, 109, 0.5);
+        }
+        .status-dot-green { background-color: #63ff97; box-shadow: 0 0 5px #63ff97; }
+        .status-dot-yellow { background-color: #ffdb3c; box-shadow: 0 0 5px #ffdb3c; }
+        .status-dot-red { background-color: #ffb4ab; box-shadow: 0 0 5px #ffb4ab; }
+        
+        .shimmer {
+            position: relative;
+            overflow: hidden;
+        }
+        .shimmer::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: skewX(-20deg);
+            animation: shimmer-anim 3s infinite;
+        }
+        @keyframes shimmer-anim {
+            0% { left: -100%; }
+            100% { left: 200%; }
+        }
+        .pulse-slow {
+            animation: pulse 3s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface min-h-screen pb-24 font-body-base overflow-x-hidden selection:bg-primary-container selection:text-on-primary-container">
+<!-- Ambient Background Effects -->
+<div class="fixed inset-0 pointer-events-none z-[-1]">
+<div class="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-container/10 rounded-full blur-[100px]"></div>
+<div class="absolute bottom-1/4 right-1/4 w-80 h-80 bg-secondary-container/10 rounded-full blur-[120px]"></div>
+</div>
+<!-- TopAppBar (Shared Component Execution) -->
+<header class="bg-surface-dim/80 backdrop-blur-3xl fixed top-0 w-full border-b border-white/12 shadow-[0_4px_30px_rgba(0,0,0,0.5)] flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 z-50 transition-transform active:scale-95 duration-200">
+<div class="flex items-center gap-4 hover:scale-105 transition-transform">
+<img alt="Hunter Profile" class="w-10 h-10 rounded-full border border-primary/50 object-cover" data-alt="A highly detailed close-up portrait of a futuristic hunter protagonist. The character has dark glowing eyes and a subtle ethereal aura surrounding them. The art style blends Genshin Impact volumetric depth with intense cyberpunk neon accents. The background is a dark, out-of-focus cosmic void, highlighting the character's mysterious and powerful presence." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzoEfF-u6gk0OeudyKZZwq7S8HouF6RRXK-iZRwvuObtkQVz9PSYNaO8TjMexD56G1NEEU1HZWqo5GLVCrS2TXbAaFE99xristmXcFKeHQeoB-D81t-jW2IMqzhBo0y7Ie6Aeb8T4U44bs2AIBFtIpLF-ls7yLgko9e2AbFRv77S5zYoY06jdQi_XudAgPuFTRGZ3NKlkc9W7ZUVSI_eLQqXMrv_t3XPhJl_1dxxfAEKBfkLe5lKN9z6DF-KVLThYktnS2xo2rLA"/>
+<h1 class="font-headline-md-mobile text-headline-md-mobile md:font-headline-md md:text-headline-md tracking-widest text-primary-fixed-dim drop-shadow-[0_0_8px_rgba(164,201,255,0.6)] uppercase">
+                LỊCH TRÌNH HỆ THỐNG
+            </h1>
+</div>
+<button class="text-on-surface-variant hover:text-primary-fixed hover:scale-105 transition-all">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</header>
+<!-- Navigation Drawer (Desktop) - Hidden on Mobile -->
+<nav class="hidden md:flex bg-surface-container-low/95 backdrop-blur-[50px] h-full w-80 rounded-r-2xl border-r border-white/12 shadow-[20px_0_60px_rgba(0,0,0,0.9)] fixed inset-y-0 left-0 z-[60] flex-col pt-16">
+<!-- Drawer Header -->
+<div class="p-6 border-b border-white/12 flex items-center gap-4">
+<img alt="S-Rank Hunter" class="w-16 h-16 rounded-full border-2 border-secondary-fixed object-cover" data-alt="A highly detailed close-up portrait of a futuristic hunter protagonist. The character has dark glowing eyes and a subtle ethereal aura surrounding them. The art style blends Genshin Impact volumetric depth with intense cyberpunk neon accents. The background is a dark, out-of-focus cosmic void, highlighting the character's mysterious and powerful presence." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCW3q13Jb41EmTsPv4yjMgLeoIDCTO-XyF4_g6N3BgVpFcOOYgm8OhWc3HPc_uP_HvmhvKUEAOHbay4l_-G-CIrtauGa0UtBS4IE5tCPzF9CMaxmShWAoy1T9l9GmDhWEpEm0AamjRY25tobMadiwdJcBI8hiTy7SwZ-h971MYAQrBlm_ceRinenEhFAMiVYAl0mWebD6PGAGa6Gd487nCoyoZWINZ8guuOz6g22-5uGHheV4r57Iot8Kyw_vT2Ah7_VAW3kXuePg"/>
+<div>
+<div class="font-body-bold text-body-base text-primary">Sung Jin-Woo</div>
+<div class="font-label-caps text-label-caps text-on-surface-variant/80">Level 99 Shadow Monarch</div>
+<div class="text-xs text-secondary-fixed-dim mt-1">S-Rank</div>
+</div>
+</div>
+<!-- Drawer Links -->
+<div class="flex-1 overflow-y-auto py-4 flex flex-col gap-2">
+<a class="text-on-surface-variant px-6 py-4 hover:bg-surface-variant/30 hover:text-white transition-all duration-300 ease-in-out flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-body-bold text-body-base">Hunter Stats</span>
+</a>
+<a class="text-on-surface-variant px-6 py-4 hover:bg-surface-variant/30 hover:text-white transition-all duration-300 ease-in-out flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-body-bold text-body-base">Inventory</span>
+</a>
+<a class="bg-primary-container/20 text-primary border-l-4 border-primary px-6 py-4 transition-all duration-300 ease-in-out flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="event">event</span>
+<span class="font-body-bold text-body-base">Lịch Trình</span>
+</a>
+<a class="text-on-surface-variant px-6 py-4 hover:bg-surface-variant/30 hover:text-white transition-all duration-300 ease-in-out flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="map">map</span>
+<span class="font-body-bold text-body-base">World Map</span>
+</a>
+<a class="text-on-surface-variant px-6 py-4 hover:bg-surface-variant/30 hover:text-white transition-all duration-300 ease-in-out flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-body-bold text-body-base">Guild Hall</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="pt-24 px-margin-mobile md:px-margin-desktop md:ml-80 max-w-7xl mx-auto flex flex-col md:flex-row gap-container-gap">
+<!-- Left Pane: Calendar View -->
+<div class="w-full md:w-2/3 flex flex-col gap-container-gap">
+<!-- Calendar Card -->
+<section class="glass-panel-system rounded-xl p-4 md:p-6 flex flex-col">
+<!-- Month/Year Header -->
+<div class="flex justify-between items-center mb-6">
+<button class="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="chevron_left">chevron_left</span>
+</button>
+<h2 class="font-headline-md text-headline-md text-primary-fixed drop-shadow-[0_0_5px_rgba(164,201,255,0.4)]">THÁNG 5, 2026</h2>
+<button class="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+<!-- Days of Week -->
+<div class="grid grid-cols-7 gap-1 text-center mb-2">
+<div class="font-label-caps text-label-caps text-on-surface-variant/70">T2</div>
+<div class="font-label-caps text-label-caps text-on-surface-variant/70">T3</div>
+<div class="font-label-caps text-label-caps text-on-surface-variant/70">T4</div>
+<div class="font-label-caps text-label-caps text-on-surface-variant/70">T5</div>
+<div class="font-label-caps text-label-caps text-on-surface-variant/70">T6</div>
+<div class="font-label-caps text-label-caps text-primary/70">T7</div>
+<div class="font-label-caps text-label-caps text-error/70">CN</div>
+</div>
+<!-- Calendar Grid -->
+<div class="grid grid-cols-7 gap-2 md:gap-3 flex-1">
+<!-- Week 1 (Padding) -->
+<div class="aspect-square rounded-lg flex flex-col items-center justify-center opacity-30">
+<span class="text-sm">27</span>
+</div>
+<div class="aspect-square rounded-lg flex flex-col items-center justify-center opacity-30">
+<span class="text-sm">28</span>
+</div>
+<div class="aspect-square rounded-lg flex flex-col items-center justify-center opacity-30">
+<span class="text-sm">29</span>
+</div>
+<div class="aspect-square rounded-lg flex flex-col items-center justify-center opacity-30">
+<span class="text-sm">30</span>
+</div>
+<!-- Days of May -->
+<!-- Day 1 -->
+<div class="aspect-square rounded-lg bg-surface-container/50 hover:bg-surface-variant border border-transparent hover:border-primary/50 transition-all cursor-pointer flex flex-col items-center justify-between py-1 relative">
+<span class="text-sm mt-1">1</span>
+<div class="w-1.5 h-1.5 rounded-full status-dot-green mb-1"></div>
+</div>
+<div class="aspect-square rounded-lg bg-surface-container/50 hover:bg-surface-variant border border-transparent hover:border-primary/50 transition-all cursor-pointer flex flex-col items-center justify-between py-1 relative">
+<span class="text-sm mt-1">2</span>
+<div class="w-1.5 h-1.5 rounded-full status-dot-yellow mb-1"></div>
+</div>
+<div class="aspect-square rounded-lg bg-surface-container/50 hover:bg-surface-variant border border-transparent hover:border-primary/50 transition-all cursor-pointer flex flex-col items-center justify-between py-1 relative">
+<span class="text-sm mt-1">3</span>
+<div class="w-1.5 h-1.5 rounded-full status-dot-green mb-1"></div>
+</div>
+<!-- Week 2 -->
+<div class="aspect-square rounded-lg bg-surface-container/50 hover:bg-surface-variant border border-transparent hover:border-primary/50 transition-all cursor-pointer flex flex-col items-center justify-between py-1 relative">
+<span class="text-sm mt-1">4</span>
+<div class="flex gap-0.5 mb-1">
+<div class="w-1.5 h-1.5 rounded-full status-dot-green"></div>
+<div class="w-1.5 h-1.5 rounded-full status-dot-red"></div>
+</div>
+</div>
+<div class="aspect-square rounded-lg bg-surface-container/50 hover:bg-surface-variant border border-transparent hover:border-primary/50 transition-all cursor-pointer flex flex-col items-center justify-between py-1 relative">
+<span class="text-sm mt-1">5</span>
+</div>
+<div class="aspect-square rounded-lg bg-surface-container/50 hover:bg-surface-variant border border-transparent hover:border-primary/50 transition-all cursor-pointer flex flex-col items-center justify-between py-1 relative">
+<span class="text-sm mt-1">6</span>
+<div class="w-1.5 h-1.5 rounded-full status-dot-green mb-1"></div>
+</div>
+<div class="aspect-square rounded-lg bg-surface-container/50 hover:bg-surface-variant border border-transparent hover:border-primary/50 transition-all cursor-pointer flex flex-col items-center justify-between py-1 relative">
+<span class="text-sm mt-1">7</span>
+</div>
+<!-- Current Day (Active) -->
+<div class="aspect-square rounded-lg bg-primary/20 border-2 border-primary orbital-glow relative flex flex-col items-center justify-between py-1 cursor-pointer">
+<div class="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent rounded-lg"></div>
+<span class="text-sm font-bold text-primary-fixed mt-1 z-10">8</span>
+<div class="flex gap-0.5 mb-1 z-10">
+<div class="w-1.5 h-1.5 rounded-full status-dot-yellow pulse-slow"></div>
+</div>
+</div>
+<div class="aspect-square rounded-lg bg-surface-container/50 hover:bg-surface-variant border border-transparent hover:border-primary/50 transition-all cursor-pointer flex flex-col items-center justify-between py-1 relative">
+<span class="text-sm mt-1">9</span>
+</div>
+<div class="aspect-square rounded-lg bg-surface-container/50 hover:bg-surface-variant border border-transparent hover:border-primary/50 transition-all cursor-pointer flex flex-col items-center justify-between py-1 relative">
+<span class="text-sm mt-1">10</span>
+</div>
+<!-- ... Remaining days simplified for space, filling grid ... -->
+<div class="aspect-square rounded-lg bg-surface-container/50 opacity-50 flex items-center justify-center">11</div>
+<div class="aspect-square rounded-lg bg-surface-container/50 opacity-50 flex items-center justify-center">12</div>
+<div class="aspect-square rounded-lg bg-surface-container/50 opacity-50 flex items-center justify-center">13</div>
+<div class="aspect-square rounded-lg bg-surface-container/50 opacity-50 flex items-center justify-center">14</div>
+<div class="aspect-square rounded-lg bg-surface-container/50 opacity-50 flex items-center justify-center">15</div>
+<div class="aspect-square rounded-lg bg-surface-container/50 opacity-50 flex items-center justify-center">16</div>
+<div class="aspect-square rounded-lg bg-surface-container/50 opacity-50 flex items-center justify-center">17</div>
+</div>
+<!-- Legend -->
+<div class="flex justify-center gap-4 mt-6">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full status-dot-green"></div>
+<span class="text-xs text-on-surface-variant">Hoàn thành</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full status-dot-yellow"></div>
+<span class="text-xs text-on-surface-variant">Đang xử lý</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full status-dot-red"></div>
+<span class="text-xs text-on-surface-variant">Thất bại</span>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Pane: Details & Trackers -->
+<div class="w-full md:w-1/3 flex flex-col gap-container-gap">
+<!-- Daily Agenda -->
+<section class="glass-panel rounded-xl p-5 flex flex-col h-fit">
+<div class="flex justify-between items-center border-b border-white/12 pb-3 mb-4">
+<h3 class="font-headline-md-mobile text-headline-md-mobile text-on-surface">NHIỆM VỤ NGÀY (8/5)</h3>
+<span class="material-symbols-outlined text-primary" data-icon="view_timeline">view_timeline</span>
+</div>
+<div class="flex flex-col gap-4 relative">
+<!-- Timeline Line -->
+<div class="absolute left-3.5 top-2 bottom-2 w-0.5 bg-white/10 z-0"></div>
+<!-- Agenda Item 1: Completed -->
+<div class="flex gap-4 relative z-10">
+<div class="w-7 h-7 rounded-full bg-surface-container border-2 border-tertiary-fixed flex items-center justify-center flex-shrink-0 mt-1">
+<span class="material-symbols-outlined text-[14px] text-tertiary-fixed" data-icon="check">check</span>
+</div>
+<div class="flex-1 bg-surface-container/40 p-3 rounded-lg border border-white/5 opacity-70">
+<div class="flex justify-between items-start mb-1">
+<h4 class="font-body-bold text-sm text-on-surface line-through decoration-on-surface-variant">Rèn luyện thể lực 10km</h4>
+<span class="text-xs text-on-surface-variant">06:00</span>
+</div>
+<p class="text-xs text-on-surface-variant">[Nhiệm vụ hàng ngày] +1 STR</p>
+</div>
+</div>
+<!-- Agenda Item 2: Active / Shimmer -->
+<div class="flex gap-4 relative z-10">
+<div class="w-7 h-7 rounded-full bg-primary/20 border-2 border-primary orbital-glow flex items-center justify-center flex-shrink-0 mt-1">
+<span class="material-symbols-outlined text-[14px] text-primary pulse-slow" data-icon="bolt">bolt</span>
+</div>
+<div class="flex-1 glass-panel-system shimmer p-3 rounded-lg relative overflow-hidden">
+<div class="flex justify-between items-start mb-1 relative z-10">
+<h4 class="font-body-bold text-sm text-primary-fixed">Thanh trừng Cổng Hạng C</h4>
+<span class="text-xs text-primary-fixed-dim">14:00</span>
+</div>
+<p class="text-xs text-on-surface-variant relative z-10">[Nhiệm vụ khẩn cấp] Cần hoàn thành trong 2h</p>
+<!-- Progress Bar -->
+<div class="w-full h-1 bg-surface-container mt-2 rounded-full overflow-hidden relative z-10">
+<div class="h-full bg-primary w-2/3 shadow-[0_0_8px_#a4c9ff]"></div>
+</div>
+</div>
+</div>
+<!-- Agenda Item 3: Upcoming -->
+<div class="flex gap-4 relative z-10">
+<div class="w-7 h-7 rounded-full bg-surface-container border-2 border-outline flex items-center justify-center flex-shrink-0 mt-1">
+<span class="material-symbols-outlined text-[14px] text-outline" data-icon="schedule">schedule</span>
+</div>
+<div class="flex-1 bg-surface-container/40 p-3 rounded-lg border border-white/5">
+<div class="flex justify-between items-start mb-1">
+<h4 class="font-body-bold text-sm text-on-surface">Đọc ma đạo thư</h4>
+<span class="text-xs text-on-surface-variant">21:00</span>
+</div>
+<p class="text-xs text-on-surface-variant">[Nhiệm vụ hàng ngày] +2 INT</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Habit Tracker Widget -->
+<section class="glass-panel rounded-xl p-5 flex flex-col h-fit">
+<div class="flex justify-between items-center border-b border-white/12 pb-3 mb-4">
+<h3 class="font-headline-md-mobile text-headline-md-mobile text-secondary-fixed">THEO DÕI THÓI QUEN</h3>
+<span class="material-symbols-outlined text-secondary-fixed" data-icon="show_chart">show_chart</span>
+</div>
+<div class="flex flex-col gap-3">
+<!-- Habit 1 -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2 w-1/3">
+<span class="material-symbols-outlined text-sm text-on-surface-variant" data-icon="fitness_center">fitness_center</span>
+<span class="text-sm">Thể lực</span>
+</div>
+<div class="flex gap-1 w-2/3 justify-end">
+<!-- 7 days boxes -->
+<div class="w-4 h-6 rounded-sm bg-tertiary-fixed opacity-100"></div>
+<div class="w-4 h-6 rounded-sm bg-tertiary-fixed opacity-100"></div>
+<div class="w-4 h-6 rounded-sm bg-tertiary-fixed opacity-100"></div>
+<div class="w-4 h-6 rounded-sm bg-white/10"></div>
+<div class="w-4 h-6 rounded-sm bg-tertiary-fixed opacity-100"></div>
+<div class="w-4 h-6 rounded-sm bg-tertiary-fixed opacity-100"></div>
+<div class="w-4 h-6 rounded-sm bg-tertiary-fixed opacity-100 ring-1 ring-white/30"></div>
+</div>
+</div>
+<!-- Habit 2 -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2 w-1/3">
+<span class="material-symbols-outlined text-sm text-on-surface-variant" data-icon="menu_book">menu_book</span>
+<span class="text-sm">Trí lực</span>
+</div>
+<div class="flex gap-1 w-2/3 justify-end">
+<div class="w-4 h-6 rounded-sm bg-secondary-fixed opacity-100"></div>
+<div class="w-4 h-6 rounded-sm bg-secondary-fixed opacity-100"></div>
+<div class="w-4 h-6 rounded-sm bg-white/10"></div>
+<div class="w-4 h-6 rounded-sm bg-white/10"></div>
+<div class="w-4 h-6 rounded-sm bg-secondary-fixed opacity-100"></div>
+<div class="w-4 h-6 rounded-sm bg-secondary-fixed opacity-100"></div>
+<div class="w-4 h-6 rounded-sm bg-white/10 ring-1 ring-white/30"></div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Floating Action Button (FAB) -->
+<button class="fixed bottom-24 right-6 md:bottom-8 md:right-8 w-14 h-14 rounded-full bg-surface-container border border-primary text-primary orbital-glow flex items-center justify-center hover:scale-110 transition-all z-50 group">
+<div class="absolute inset-0 rounded-full bg-primary/20 group-hover:bg-primary/40 transition-colors"></div>
+<span class="material-symbols-outlined relative z-10" data-icon="add">add</span>
+</button>
+<!-- BottomNavBar (Shared Component Execution) - Mobile Only -->
+<nav class="md:hidden bg-surface-container-lowest/70 backdrop-blur-[40px] fixed bottom-0 w-full rounded-t-xl border-t border-white/12 shadow-[0_-8px_32px_rgba(0,0,0,0.8)] z-50 flex justify-around items-center px-4 pb-4 pt-2">
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-tertiary-fixed-dim transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" data-icon="assignment">assignment</span>
+<span class="font-label-caps text-[10px] mt-1">QUESTS</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-tertiary-fixed-dim transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" data-icon="bolt">bolt</span>
+<span class="font-label-caps text-[10px] mt-1">SKILLS</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary drop-shadow-[0_0_10px_rgba(164,201,255,0.8)] animate-pulse-slow" href="#">
+<span class="material-symbols-outlined" data-icon="grid_view" style="font-variation-settings: 'FILL' 1;">grid_view</span>
+<span class="font-label-caps text-[10px] mt-1 font-bold">SYSTEM</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-tertiary-fixed-dim transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" data-icon="shopping_bag">shopping_bag</span>
+<span class="font-label-caps text-[10px] mt-1">SHOP</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-tertiary-fixed-dim transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" data-icon="leaderboard">leaderboard</span>
+<span class="font-label-caps text-[10px] mt-1">RANK</span>
+</a>
+</nav>
+</body></html>

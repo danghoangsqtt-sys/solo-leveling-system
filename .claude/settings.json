@@ -1,5 +1,14 @@
 {
-  "enabledPlugins": {
-    "expo@claude-plugins-official": true
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew :feature:home:compileDebugKotlin)",
+      "Bash(./gradlew :feature:home:compileDebugKotlin --info)",
+      "Bash(./gradlew :feature:home:compileDebugKotlin --rerun-tasks)",
+      "Bash(./gradlew :app:compileDebugKotlin --rerun-tasks)",
+      "Bash(git add *)",
+      "Bash(git reset *)",
+      "Bash(git commit -m ' *)",
+      "Bash(./gradlew :feature:onboarding:compileDebugKotlin --rerun-tasks)"
+    ]
   }
 }

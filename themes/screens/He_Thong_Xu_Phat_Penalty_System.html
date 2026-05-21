@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Penalty System - System Interface</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Rajdhani:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline": "#8a919e",
+                        "on-tertiary-fixed": "#00210c",
+                        "error-container": "#93000a",
+                        "tertiary": "#40e17e",
+                        "outline-variant": "#414752",
+                        "surface-tint": "#a4c9ff",
+                        "on-tertiary-fixed-variant": "#005226",
+                        "primary-container": "#4a9eff",
+                        "on-surface": "#e3e0f8",
+                        "tertiary-container": "#00b35b",
+                        "surface-container-low": "#1a1a2b",
+                        "surface-container-high": "#29283a",
+                        "surface-bright": "#38374a",
+                        "tertiary-fixed-dim": "#40e17e",
+                        "secondary-container": "#ffdb3c",
+                        "on-primary-fixed": "#001c39",
+                        "primary-fixed-dim": "#a4c9ff",
+                        "on-secondary-container": "#725f00",
+                        "on-error-container": "#ffdad6",
+                        "on-error": "#690005",
+                        "on-background": "#e3e0f8",
+                        "on-primary-container": "#003463",
+                        "inverse-surface": "#e3e0f8",
+                        "surface-variant": "#333345",
+                        "on-tertiary-container": "#003c1a",
+                        "surface-dim": "#121222",
+                        "on-secondary": "#3a3000",
+                        "secondary-fixed-dim": "#e9c400",
+                        "background": "#121222",
+                        "on-secondary-fixed": "#221b00",
+                        "inverse-primary": "#005fad",
+                        "on-primary": "#00315d",
+                        "tertiary-fixed": "#63ff97",
+                        "surface-container-lowest": "#0c0c1d",
+                        "secondary": "#fff9ef",
+                        "on-secondary-fixed-variant": "#544600",
+                        "on-surface-variant": "#c0c7d4",
+                        "inverse-on-surface": "#2f2f40",
+                        "error": "#ffb4ab",
+                        "on-primary-fixed-variant": "#004884",
+                        "surface-container": "#1e1e2f",
+                        "surface": "#121222",
+                        "secondary-fixed": "#ffe16d",
+                        "primary-fixed": "#d4e3ff",
+                        "primary": "#a4c9ff",
+                        "on-tertiary": "#003919",
+                        "surface-container-highest": "#333345"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "container-gap": "24px",
+                        "unit": "4px",
+                        "gutter": "16px",
+                        "margin-desktop": "32px"
+                    },
+                    "fontFamily": {
+                        "body-bold": ["Inter"],
+                        "label-caps": ["Rajdhani"],
+                        "display-lg": ["Rajdhani"],
+                        "headline-md-mobile": ["Rajdhani"],
+                        "headline-md": ["Rajdhani"],
+                        "body-base": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-bold": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "headline-md-mobile": ["20px", { "lineHeight": "28px", "letterSpacing": "0.02em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "0.02em", "fontWeight": "700" }],
+                        "body-base": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    },
+                    "animation": {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'breathe-red': 'breathe-red 2s ease-in-out infinite',
+                        'glitch': 'glitch 1s linear infinite',
+                    },
+                    "keyframes": {
+                        'breathe-red': {
+                            '0%, 100%': { boxShadow: '0 0 10px rgba(255, 180, 171, 0.5), inset 0 0 10px rgba(255, 180, 171, 0.2)' },
+                            '50%': { boxShadow: '0 0 25px rgba(255, 180, 171, 0.8), inset 0 0 15px rgba(255, 180, 171, 0.4)' },
+                        },
+                        'glitch': {
+                            '2%, 64%': { transform: 'translate(2px,0) skew(0deg)' },
+                            '4%, 60%': { transform: 'translate(-2px,0) skew(0deg)' },
+                            '62%': { transform: 'translate(0,0) skew(5deg)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #121222;
+            background-image: radial-gradient(circle at 50% 50%, rgba(147, 0, 10, 0.15) 0%, rgba(18, 18, 34, 1) 70%);
+            background-attachment: fixed;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(41, 40, 58, 0.65);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .penalty-glass {
+            background: rgba(105, 0, 5, 0.4);
+            backdrop-filter: blur(50px);
+            -webkit-backdrop-filter: blur(50px);
+            border: 1px solid rgba(255, 180, 171, 0.3);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(147, 0, 10, 0.2);
+        }
+        .system-warning-text {
+            color: #ffb4ab;
+            text-shadow: 0 0 8px rgba(255, 180, 171, 0.6);
+        }
+        .glitch-effect {
+            position: relative;
+        }
+        .glitch-effect::before, .glitch-effect::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+        }
+        .glitch-effect::before {
+            left: 2px;
+            text-shadow: -1px 0 #ffb4ab;
+            clip: rect(24px, 550px, 90px, 0);
+            animation: glitch-anim-2 3s infinite linear alternate-reverse;
+        }
+        .glitch-effect::after {
+            left: -2px;
+            text-shadow: -1px 0 #a4c9ff;
+            clip: rect(85px, 550px, 140px, 0);
+            animation: glitch-anim 2.5s infinite linear alternate-reverse;
+        }
+        @keyframes glitch-anim {
+            0% { clip: rect(48px, 9999px, 86px, 0); }
+            20% { clip: rect(98px, 9999px, 51px, 0); }
+            40% { clip: rect(28px, 9999px, 57px, 0); }
+            60% { clip: rect(8px, 9999px, 84px, 0); }
+            80% { clip: rect(31px, 9999px, 5px, 0); }
+            100% { clip: rect(69px, 9999px, 36px, 0); }
+        }
+        @keyframes glitch-anim-2 {
+            0% { clip: rect(65px, 9999px, 100px, 0); }
+            20% { clip: rect(10px, 9999px, 32px, 0); }
+            40% { clip: rect(91px, 9999px, 60px, 0); }
+            60% { clip: rect(50px, 9999px, 20px, 0); }
+            80% { clip: rect(74px, 9999px, 9px, 0); }
+            100% { clip: rect(19px, 9999px, 82px, 0); }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-surface antialiased min-h-screen flex flex-col pb-24 md:pb-0 md:pt-20">
+<!-- Desktop TopAppBar (Hidden on Mobile) -->
+<header class="hidden md:flex justify-between items-center px-margin-desktop h-16 w-full z-50 fixed top-0 bg-surface-dim/80 backdrop-blur-3xl border-b border-white/12 shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
+<div class="flex items-center gap-4">
+<div class="h-10 w-10 rounded-full bg-surface-variant flex items-center justify-center border border-outline/30 overflow-hidden">
+<img alt="Avatar" class="w-full h-full object-cover" data-alt="A futuristic avatar portrait of a young man with glowing neon blue eyes, set against a dark void background. The lighting is cinematic, casting dramatic shadows. The style is 3D anime, reminiscent of a high-end RPG character select screen." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXaS0iU3raHcVmtIj5bu65g8fhV07OiJpRRqD5mx0o6yIHuOMTLRmnMT8le0ZPKl4PSqPwLJV4N2eiD7aq2aeo4S9-T-xOpx9vTCofboti_jJm2vT6OcccLEyCdRPqp_QEPzl2hcsNx7Qf3oOfGQchZhewY3Jte9m5L0vbYs_BVtCR1Wz83aj9W4mKgDtM8MbNO7_P0zlIt0oz1rB0SQMc65QA0u2yBIkP5ATlCyTMkaolQvkrRUXhDKz69CkFMs5lFQgBpdjtoA"/>
+</div>
+<span class="font-headline-md text-primary-fixed-dim drop-shadow-[0_0_8px_rgba(164,201,255,0.6)]">SYSTEM INTERFACE</span>
+</div>
+<nav class="flex gap-8">
+<a class="text-on-surface-variant hover:text-primary-fixed hover:scale-105 transition-transform font-body-bold text-body-base" href="#">QUESTS</a>
+<a class="text-on-surface-variant hover:text-primary-fixed hover:scale-105 transition-transform font-body-bold text-body-base" href="#">SKILLS</a>
+<a class="text-error font-bold drop-shadow-[0_0_8px_rgba(255,180,171,0.8)] font-body-bold text-body-base flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-sm">warning</span> SYSTEM
+            </a>
+<a class="text-on-surface-variant hover:text-primary-fixed hover:scale-105 transition-transform font-body-bold text-body-base" href="#">SHOP</a>
+<a class="text-on-surface-variant hover:text-primary-fixed hover:scale-105 transition-transform font-body-bold text-body-base" href="#">RANK</a>
+</nav>
+<button class="text-on-surface-variant hover:text-primary-fixed transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</header>
+<!-- Mobile TopAppBar (Hidden on Desktop) -->
+<header class="md:hidden flex justify-between items-center px-margin-mobile h-16 w-full z-50 fixed top-0 bg-surface-dim/80 backdrop-blur-3xl border-b border-white/12 shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
+<div class="h-8 w-8 rounded-full bg-surface-variant overflow-hidden border border-outline/30">
+<img alt="Avatar" class="w-full h-full object-cover" data-alt="A futuristic avatar portrait of a young man with glowing neon blue eyes, set against a dark void background. The lighting is cinematic, casting dramatic shadows. The style is 3D anime, reminiscent of a high-end RPG character select screen." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBYcHB3Mb-PsqcoeCVIJesKxx_QKLRjTScbyAIz5XuHUe9cpzWKblAshyejWGJcG6ysde73tVhWSJGrDH-rXJJHlAD04EQ07dhMWrUkNOHgwgMtg6yByhiyJbWFGVkLXpUwP5OHRdQhhp5KV8oM8e_H-XG6KkdwtXyFDyQNSZdkOTalEbasO2opK7m5Ctp7WYYxXEdhvpwIeTrqh5gikDiNhTE3uM8h3plONnrUpaMs_eRZn0H6ZvyY4uBtOuZr6yp9pVv9quPOtA"/>
+</div>
+<span class="font-headline-md-mobile text-headline-md-mobile tracking-widest text-error drop-shadow-[0_0_8px_rgba(255,180,171,0.6)] glitch-effect" data-text="SYSTEM WARNING">SYSTEM WARNING</span>
+<button class="text-primary">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</header>
+<main class="flex-1 w-full max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop pt-20 md:pt-8 pb-8 flex flex-col gap-container-gap">
+<!-- Top Section: Penalty Info -->
+<section class="penalty-glass rounded-xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+<div class="absolute -inset-1 bg-gradient-to-r from-error/0 via-error/10 to-error/0 animate-pulse-slow"></div>
+<div class="flex flex-col gap-2 z-10 w-full md:w-auto text-center md:text-left">
+<h1 class="font-display-lg text-display-lg system-warning-text uppercase glitch-effect" data-text="PENALTY ZONE">PENALTY ZONE</h1>
+<p class="font-body-base text-body-base text-on-error-container/80 flex items-center justify-center md:justify-start gap-2">
+<span class="material-symbols-outlined text-error">dangerous</span>
+                    Critical Debt Level Reached
+                </p>
+</div>
+<div class="flex flex-col md:flex-row gap-6 z-10 w-full md:w-auto">
+<div class="bg-surface-container-highest/50 border border-error/30 rounded-lg p-4 flex flex-col items-center justify-center min-w-[140px]">
+<span class="font-label-caps text-label-caps text-on-surface-variant">DEBT POINTS</span>
+<span class="font-display-lg text-[32px] font-bold text-error mt-1">15/10</span>
+</div>
+<div class="bg-surface-container-highest/50 border border-error/30 rounded-lg p-4 flex flex-col items-center justify-center min-w-[200px]">
+<span class="font-label-caps text-label-caps text-on-surface-variant">REMAINING TIME TO ARISE</span>
+<span class="font-headline-md text-headline-md text-error mt-1 font-mono tracking-wider">04:32:15</span>
+</div>
+</div>
+</section>
+<!-- Middle Section: Penalty Quests -->
+<section class="flex flex-col gap-4 z-10">
+<h2 class="font-headline-md text-headline-md text-error flex items-center gap-2 drop-shadow-[0_0_5px_rgba(255,180,171,0.5)]">
+<span class="material-symbols-outlined">assignment_late</span>
+                PENALTY QUESTS
+            </h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<!-- Quest 1 -->
+<div class="glass-panel border-error/40 rounded-lg p-5 flex flex-col gap-4 relative overflow-hidden group hover:border-error/80 transition-colors">
+<div class="absolute top-0 right-0 w-16 h-16 bg-error/10 rounded-bl-full -z-10 group-hover:bg-error/20 transition-colors"></div>
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-error">fitness_center</span>
+<h3 class="font-body-bold text-body-bold text-on-surface">Physical Exhaustion</h3>
+</div>
+<span class="font-label-caps text-label-caps bg-error/20 text-error px-2 py-1 rounded">URGENT</span>
+</div>
+<p class="font-body-base text-body-base text-on-surface-variant">Complete 100 Push-ups without rest.</p>
+<div class="w-full bg-surface-container h-2 rounded-full mt-auto overflow-hidden">
+<div class="bg-error h-full w-[25%] shadow-[0_0_10px_rgba(255,180,171,0.8)]"></div>
+</div>
+<div class="flex justify-between font-label-caps text-label-caps text-outline">
+<span>25 / 100</span>
+<span>-3 DEBT PTS</span>
+</div>
+</div>
+<!-- Quest 2 -->
+<div class="glass-panel border-error/40 rounded-lg p-5 flex flex-col gap-4 relative overflow-hidden group hover:border-error/80 transition-colors">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-error">psychology</span>
+<h3 class="font-body-bold text-body-bold text-on-surface">Deep Focus</h3>
+</div>
+</div>
+<p class="font-body-base text-body-base text-on-surface-variant">Maintain uninterrupted focus for 4 hours. No phone access.</p>
+<div class="w-full bg-surface-container h-2 rounded-full mt-auto overflow-hidden">
+<div class="bg-error h-full w-[0%]"></div>
+</div>
+<div class="flex justify-between font-label-caps text-label-caps text-outline">
+<span>0 / 4 hrs</span>
+<span>-5 DEBT PTS</span>
+</div>
+</div>
+<!-- Quest 3 -->
+<div class="glass-panel border-error/40 rounded-lg p-5 flex flex-col gap-4 relative overflow-hidden group hover:border-error/80 transition-colors">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-error">account_balance_wallet</span>
+<h3 class="font-body-bold text-body-bold text-on-surface">Financial Repayment</h3>
+</div>
+</div>
+<p class="font-body-base text-body-base text-on-surface-variant">Log all outstanding debts and create a repayment plan.</p>
+<div class="w-full bg-surface-container h-2 rounded-full mt-auto overflow-hidden">
+<div class="bg-error h-full w-[100%] shadow-[0_0_10px_rgba(255,180,171,0.8)]"></div>
+</div>
+<div class="flex justify-between font-label-caps text-label-caps text-outline">
+<span class="text-tertiary">COMPLETED</span>
+<span>-2 DEBT PTS</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Bottom Section: Action Button -->
+<section class="mt-8 flex justify-center z-10 pb-8 md:pb-0">
+<button class="bg-error/20 border border-error text-error font-headline-md text-headline-md px-12 py-4 rounded-xl animate-breathe-red hover:bg-error/30 transition-colors flex items-center gap-3 active:scale-95 duration-200">
+<span class="material-symbols-outlined">payments</span>
+                PAY DEBT
+            </button>
+</section>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 pt-2 bg-surface-container-lowest/70 backdrop-blur-[40px] rounded-t-xl border-t border-white/12 shadow-[0_-8px_32px_rgba(0,0,0,0.8)]">
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-tertiary-fixed-dim transition-colors relative" href="#">
+<span class="material-symbols-outlined mb-1">assignment</span>
+<span class="font-label-caps text-label-caps">QUESTS</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-tertiary-fixed-dim transition-colors" href="#">
+<span class="material-symbols-outlined mb-1">bolt</span>
+<span class="font-label-caps text-label-caps">SKILLS</span>
+</a>
+<a class="flex flex-col items-center justify-center text-error drop-shadow-[0_0_10px_rgba(255,180,171,0.8)] relative" href="#">
+<span class="absolute -top-1 -right-1 flex h-3 w-3">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-error"></span>
+</span>
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">grid_view</span>
+<span class="font-label-caps text-label-caps font-bold">SYSTEM</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-tertiary-fixed-dim transition-colors" href="#">
+<span class="material-symbols-outlined mb-1">shopping_bag</span>
+<span class="font-label-caps text-label-caps">SHOP</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-tertiary-fixed-dim transition-colors" href="#">
+<span class="material-symbols-outlined mb-1">leaderboard</span>
+<span class="font-label-caps text-label-caps">RANK</span>
+</a>
+</nav>
+<script>
+        // Simple timer logic for visual effect
+        function startTimer() {
+            let timeParts = "04:32:15".split(':');
+            let hours = parseInt(timeParts[0]);
+            let minutes = parseInt(timeParts[1]);
+            let seconds = parseInt(timeParts[2]);
+            let totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
+            
+            const timerDisplay = document.querySelector('.font-mono');
+
+            setInterval(() => {
+                if(totalSeconds <= 0) return;
+                totalSeconds--;
+                
+                let h = Math.floor(totalSeconds / 3600);
+                let m = Math.floor((totalSeconds % 3600) / 60);
+                let s = totalSeconds % 60;
+
+                h = h < 10 ? '0' + h : h;
+                m = m < 10 ? '0' + m : m;
+                s = s < 10 ? '0' + s : s;
+
+                if(timerDisplay) {
+                    timerDisplay.textContent = `${h}:${m}:${s}`;
+                }
+            }, 1000);
+        }
+        
+        document.addEventListener('DOMContentLoaded', startTimer);
+    </script>
+</body></html>

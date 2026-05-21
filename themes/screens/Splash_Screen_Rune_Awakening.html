@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>System Leveling - Splash Screen</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style data-purpose="custom-animations">
+    @keyframes pulse-glow {
+      0%, 100% { filter: drop-shadow(0 0 15px rgba(56, 189, 248, 0.5)); transform: scale(1); }
+      50% { filter: drop-shadow(0 0 35px rgba(56, 189, 248, 0.8)); transform: scale(1.02); }
+    }
+    
+    @keyframes scanline {
+      0% { top: -100%; opacity: 0; }
+      10% { opacity: 0.5; }
+      90% { opacity: 0.5; }
+      100% { top: 200%; opacity: 0; }
+    }
+
+    @keyframes particle-float {
+      0% { transform: translateY(0) scale(1); opacity: 0; }
+      50% { opacity: 0.6; }
+      100% { transform: translateY(-100px) scale(0); opacity: 0; }
+    }
+
+    @keyframes loading-progress {
+      0% { width: 0%; }
+      50% { width: 70%; }
+      100% { width: 100%; }
+    }
+
+    @keyframes glitch {
+      0% { text-shadow: 2px 0 blue, -2px 0 cyan; }
+      20% { text-shadow: -2px 0 red, 2px 0 blue; }
+      40% { text-shadow: 2px 0 red, -2px 0 cyan; }
+      60% { text-shadow: -2px 0 blue, 2px 0 cyan; }
+      80% { text-shadow: 2px 0 blue, -2px 0 red; }
+      100% { text-shadow: -2px 0 cyan, 2px 0 red; }
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .bg-navy { background-color: #0f0f23; }
+    
+    .logo-container {
+      animation: pulse-glow 4s ease-in-out infinite;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .scan-line {
+      position: absolute;
+      width: 150%;
+      height: 20px;
+      background: linear-gradient(to bottom, transparent, rgba(56, 189, 248, 0.5), transparent);
+      transform: rotate(30deg);
+      left: -25%;
+      animation: scanline 3s linear infinite;
+      pointer-events: none;
+    }
+
+    .particle {
+      position: absolute;
+      background: #38bdf8;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .hud-corner {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      border: 2px solid rgba(56, 189, 248, 0.3);
+    }
+    .hud-tl { top: 20px; left: 20px; border-right: none; border-bottom: none; }
+    .hud-tr { top: 20px; right: 20px; border-left: none; border-bottom: none; }
+    .hud-bl { bottom: 20px; left: 20px; border-right: none; border-top: none; }
+    .hud-br { bottom: 20px; right: 20px; border-left: none; border-top: none; }
+
+    .progress-bar {
+      position: relative;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, rgba(15,15,35,1) 0%, rgba(56,189,248,1) 100%);
+      box-shadow: 0 0 10px #38bdf8;
+      animation: loading-progress 4s ease-in-out forwards;
+      position: relative;
+    }
+    
+    .progress-head {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: #fff;
+      box-shadow: 0 0 15px 5px #38bdf8;
+    }
+
+    .glitch-text {
+      animation: glitch 3s infinite step-end;
+      font-family: monospace;
+    }
+
+    .cursor {
+      animation: blink 1s step-end infinite;
+    }
+  </style>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head>
+<body class="bg-navy h-screen w-screen overflow-hidden text-sky-400 font-sans relative flex flex-col justify-center items-center">
+<!-- BEGIN: Background Effects -->
+<div class="absolute inset-0 z-0 pointer-events-none opacity-20" style="background-color: #0f0f23;"></div>
+<!-- Particles -->
+<div class="absolute inset-0 z-0 overflow-hidden pointer-events-none" id="particles-container">
+<!-- Particles injected via JS -->
+</div>
+<!-- END: Background Effects -->
+<!-- BEGIN: HUD Elements -->
+<div class="hud-corner hud-tl"><span class="material-symbols-outlined text-sky-500/30 text-2xl">grid_view</span></div>
+<div class="hud-corner hud-tr"><span class="material-symbols-outlined text-sky-500/30 text-2xl">widgets</span></div>
+<div class="hud-corner hud-bl"><span class="material-symbols-outlined text-sky-500/30 text-2xl">token</span></div>
+<div class="hud-corner hud-br"><span class="material-symbols-outlined text-sky-500/30 text-2xl">view_quilt</span></div>
+<div class="absolute top-4 left-1/2 -translate-x-1/2 text-[10px] font-mono tracking-widest text-sky-500/50">SYS.VER.4.0.1_BETA</div>
+<div class="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col space-y-2 opacity-30">
+<div class="h-8 w-1 bg-sky-500"></div>
+<div class="h-12 w-1 bg-sky-500"></div>
+<div class="h-4 w-1 bg-sky-500"></div>
+<div class="h-16 w-1 bg-sky-500"></div>
+</div>
+<!-- END: HUD Elements -->
+<!-- BEGIN: Main Content -->
+<main class="z-10 flex flex-col items-center w-full px-8 max-w-md">
+<!-- Logo Section -->
+<div class="relative w-64 h-64 mb-16 rounded-xl">
+<img alt="System Leveling Logo" class="w-full h-full object-contain relative z-10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDMHJauZtmMpMw5bjIkDHZyIqlqsLiUDRbpm_E0XydiVJeQmiVZTmChq_hDElI3opnmsxHuSL0ibB2lr8ZbmF02Grinf76NtBH2MNzzdNCYJnn_BuPDi1AcWehQWnmqq6NgS8mPMlnJZeftz8PLBasyATsjUMhD7QlOOiYm0tZhqy2L7pDVnZkyYbyoQNXNAfyKGo7J1MjG-c2Lx7UAnVmHgfNXsvmOOYrBO-8d3y_ucG348aBEHAiDqRn9tlGgbwtNFqH3LZ6Z9g"/>
+</div>
+<!-- Loading Section -->
+<div class="w-full mt-12">
+<!-- Progress Bar -->
+<div class="progress-bar h-2 w-full rounded-full mb-4">
+<div class="progress-fill rounded-full">
+<div class="progress-head rounded-r-full"></div>
+</div>
+</div>
+<!-- Terminal Text -->
+<div class="text-center w-full flex justify-center">
+<span class="glitch-text text-sm font-bold tracking-widest">[ SYSTEM INITIALIZING... ]</span>
+<span class="cursor text-sm font-bold ml-1">_</span>
+</div>
+</div>
+</main>
+<!-- END: Main Content -->
+<!-- BEGIN: Scripts -->
+<script data-purpose="particle-generator">
+    document.addEventListener('DOMContentLoaded', () => {
+      const container = document.getElementById('particles-container');
+      const particleCount = 20;
+
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.classList.add('particle');
+        
+        // Randomize properties
+        const size = Math.random() * 4 + 1;
+        const left = Math.random() * 100;
+        const top = Math.random() * 100 + 50; // Start mostly lower half
+        const duration = Math.random() * 3 + 2;
+        const delay = Math.random() * 5;
+
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        particle.style.left = `${left}%`;
+        particle.style.top = `${top}%`;
+        particle.style.animation = `particle-float ${duration}s ease-in infinite ${delay}s`;
+
+        container.appendChild(particle);
+      }
+    });
+  </script>
+<!-- END: Scripts -->
+</body></html>

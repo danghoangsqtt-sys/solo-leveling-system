@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Transaction Entry - System Terminal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Rajdhani:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed-dim": "#a4c9ff",
+                        "tertiary-container": "#00b35b",
+                        "on-tertiary": "#003919",
+                        "on-surface": "#e3e0f8",
+                        "secondary": "#fff9ef",
+                        "surface-container-high": "#29283a",
+                        "tertiary-fixed": "#63ff97",
+                        "surface-container-low": "#1a1a2b",
+                        "error-container": "#93000a",
+                        "on-surface-variant": "#c0c7d4",
+                        "on-error-container": "#ffdad6",
+                        "inverse-on-surface": "#2f2f40",
+                        "primary-fixed": "#d4e3ff",
+                        "surface-container": "#1e1e2f",
+                        "surface-tint": "#a4c9ff",
+                        "primary-container": "#4a9eff",
+                        "on-primary-fixed": "#001c39",
+                        "error": "#ffb4ab",
+                        "surface-dim": "#121222",
+                        "surface-bright": "#38374a",
+                        "on-secondary-fixed-variant": "#544600",
+                        "background": "#121222",
+                        "on-primary": "#00315d",
+                        "on-secondary-fixed": "#221b00",
+                        "outline": "#8a919e",
+                        "on-secondary": "#3a3000",
+                        "outline-variant": "#414752",
+                        "on-tertiary-container": "#003c1a",
+                        "on-secondary-container": "#725f00",
+                        "secondary-container": "#ffdb3c",
+                        "on-background": "#e3e0f8",
+                        "surface-container-lowest": "#0c0c1d",
+                        "on-tertiary-fixed-variant": "#005226",
+                        "surface-container-highest": "#333345",
+                        "tertiary": "#40e17e",
+                        "on-tertiary-fixed": "#00210c",
+                        "primary": "#a4c9ff",
+                        "on-error": "#690005",
+                        "inverse-surface": "#e3e0f8",
+                        "on-primary-fixed-variant": "#004884",
+                        "on-primary-container": "#003463",
+                        "secondary-fixed-dim": "#e9c400",
+                        "inverse-primary": "#005fad",
+                        "surface-variant": "#333345",
+                        "surface": "#121222",
+                        "secondary-fixed": "#ffe16d",
+                        "tertiary-fixed-dim": "#40e17e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "gutter": "16px",
+                        "container-gap": "24px",
+                        "unit": "4px",
+                        "margin-desktop": "32px"
+                    },
+                    "fontFamily": {
+                        "body-base": ["Inter"],
+                        "label-caps": ["Rajdhani"],
+                        "display-lg": ["Rajdhani"],
+                        "body-bold": ["Inter"],
+                        "headline-md-mobile": ["Rajdhani"],
+                        "headline-md": ["Rajdhani"]
+                    },
+                    "fontSize": {
+                        "body-base": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "body-bold": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "headline-md-mobile": ["20px", { "lineHeight": "28px", "letterSpacing": "0.02em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #121222;
+            background-image: radial-gradient(circle at 50% 0%, rgba(74, 158, 255, 0.15), transparent 70%);
+            color: #e3e0f8;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism utilities */
+        .glass-panel {
+            background: rgba(18, 18, 34, 0.65);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .glass-panel-rare {
+            background: rgba(18, 18, 34, 0.65);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid #ffdb3c;
+            box-shadow: inset 0 0 20px rgba(255, 219, 60, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Holographic Shimmer */
+        .shimmer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: skewX(-20deg);
+            animation: shimmer 4s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            20% { left: 200%; }
+            100% { left: 200%; }
+        }
+
+        /* Glowing effects */
+        .glow-text-primary {
+            text-shadow: 0 0 10px rgba(164, 201, 255, 0.8);
+        }
+
+        .glow-text-secondary {
+            text-shadow: 0 0 10px rgba(255, 219, 60, 0.8);
+        }
+
+        .system-input:focus {
+            outline: none;
+            border-color: #4a9eff;
+            box-shadow: 0 0 15px rgba(74, 158, 255, 0.4);
+        }
+
+        /* Scanline effect */
+        .scanline {
+            width: 100%;
+            height: 2px;
+            background: rgba(74, 158, 255, 0.5);
+            position: absolute;
+            top: 0;
+            left: 0;
+            animation: scan 2s linear infinite;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .processing .scanline {
+            opacity: 1;
+        }
+
+        @keyframes scan {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+
+        /* Grid Item Hover */
+        .category-item {
+            transition: all 0.2s ease-out;
+        }
+        .category-item:hover {
+            transform: scale(1.05) translateY(-2px);
+            border-color: #4a9eff;
+            background: rgba(74, 158, 255, 0.1);
+        }
+        .category-item.active {
+            border-color: #4a9eff;
+            background: rgba(74, 158, 255, 0.2);
+            box-shadow: 0 0 15px rgba(74, 158, 255, 0.3);
+        }
+
+        /* Loading Dots */
+        .loading-dots::after {
+            content: '';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80%, 100% { content: '...'; }
+        }
+    </style>
+</head>
+<body class="antialiased">
+<!-- TopAppBar -->
+<header class="w-full sticky top-0 z-50 bg-surface-dim/80 dark:bg-surface-dim/80 backdrop-blur-[40px] border-b border-white/12 shadow-none flex items-center justify-between px-margin-mobile py-4 transition-all duration-300">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-variant overflow-hidden border border-white/12 relative">
+<!-- DataStore Placeholder for Avatar -->
+<img alt="Player Avatar" class="w-full h-full object-cover" src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg"/>
+</div>
+<h1 class="font-headline-md-mobile text-headline-md-mobile text-primary font-bold tracking-tight glow-text-primary">SYSTEM STATUS</h1>
+</div>
+<button class="text-on-surface-variant hover:opacity-80 transition-opacity active:scale-95">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">notifications</span>
+</button>
+</header>
+<main class="px-margin-mobile md:px-margin-desktop py-6 max-w-4xl mx-auto space-y-container-gap pb-32">
+<!-- Smart Input Section -->
+<section class="glass-panel rounded-xl p-4 relative overflow-hidden group">
+<div class="scanline" id="scanline"></div>
+<label class="block font-label-caps text-label-caps text-primary mb-2 flex justify-between items-center" for="smart-input">
+<span>[ TERMINAL INPUT ]</span>
+<span class="text-tertiary-fixed hidden" id="processing-status">PARSING DATA<span class="loading-dots"></span></span>
+</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50">
+<span class="material-symbols-outlined">terminal</span>
+</span>
+<input class="system-input w-full bg-white/5 border border-white/12 rounded-lg py-4 pl-10 pr-4 font-body-base text-body-base text-on-surface placeholder:text-on-surface-variant/50 transition-all duration-300" id="smart-input" placeholder="Enter command (e.g., 'ăn phở 50k')" type="text"/>
+</div>
+</section>
+<!-- NLP Results Readout -->
+<section class="glass-panel rounded-xl p-4 border-l-4 border-l-primary-container opacity-50 transition-opacity duration-500" id="nlp-results">
+<h2 class="font-label-caps text-label-caps text-on-surface-variant mb-4 border-b border-white/12 pb-2">DATA EXTRACTION PROTOCOL</h2>
+<div class="grid grid-cols-3 gap-4">
+<div>
+<p class="font-label-caps text-label-caps text-on-surface-variant/70">CATEGORY</p>
+<p class="font-body-bold text-body-bold text-primary truncate" id="result-cat">--</p>
+</div>
+<div>
+<p class="font-label-caps text-label-caps text-on-surface-variant/70">AMOUNT</p>
+<p class="font-body-bold text-body-bold text-secondary-container truncate" id="result-amt">--</p>
+</div>
+<div>
+<p class="font-label-caps text-label-caps text-on-surface-variant/70">DATE</p>
+<p class="font-body-bold text-body-bold text-on-surface truncate" id="result-date">--</p>
+</div>
+</div>
+</section>
+<!-- Main Display & Controls -->
+<div class="grid md:grid-cols-12 gap-container-gap">
+<!-- Left Pane: Visual & Amount -->
+<div class="md:col-span-5 space-y-container-gap">
+<!-- Holographic Amount Display -->
+<div class="glass-panel-rare shimmer rounded-xl p-6 text-center h-48 flex flex-col justify-center items-center relative z-10">
+<p class="font-label-caps text-label-caps text-secondary-container mb-2 tracking-widest">[ CURRENT COST ]</p>
+<div class="font-display-lg text-display-lg text-secondary-container glow-text-secondary flex items-baseline gap-2">
+<span id="main-amount">0</span>
+<span class="text-headline-md font-headline-md text-on-surface-variant">G</span>
+</div>
+</div>
+<!-- Action Button -->
+<button class="w-full bg-primary-container hover:bg-primary transition-all duration-300 rounded-xl py-4 font-label-caps text-label-caps text-on-primary-container flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(74,158,255,0.4)] hover:shadow-[0_0_30px_rgba(74,158,255,0.6)] active:scale-95 group">
+<span class="material-symbols-outlined group-hover:rotate-12 transition-transform">check_circle</span>
+                    CONFIRM QUEST COST
+                </button>
+</div>
+<!-- Right Pane: Manual Category Grid -->
+<div class="md:col-span-7 glass-panel rounded-xl p-4">
+<h3 class="font-label-caps text-label-caps text-primary mb-4 border-b border-white/12 pb-2">SYSTEM CLASSIFICATION NODE</h3>
+<div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
+<button class="category-item active flex flex-col items-center justify-center p-3 rounded-lg border border-white/12 bg-white/5 gap-2">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+<span class="font-label-caps text-[10px] text-on-surface">FOOD</span>
+</button>
+<button class="category-item flex flex-col items-center justify-center p-3 rounded-lg border border-white/12 bg-white/5 gap-2">
+<span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings: 'FILL' 0;">commute</span>
+<span class="font-label-caps text-[10px] text-on-surface-variant">TRANSPORT</span>
+</button>
+<button class="category-item flex flex-col items-center justify-center p-3 rounded-lg border border-white/12 bg-white/5 gap-2">
+<span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings: 'FILL' 0;">health_and_safety</span>
+<span class="font-label-caps text-[10px] text-on-surface-variant">HEALTH</span>
+</button>
+<button class="category-item flex flex-col items-center justify-center p-3 rounded-lg border border-white/12 bg-white/5 gap-2">
+<span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings: 'FILL' 0;">shopping_bag</span>
+<span class="font-label-caps text-[10px] text-on-surface-variant">EQUIPMENT</span>
+</button>
+<button class="category-item flex flex-col items-center justify-center p-3 rounded-lg border border-white/12 bg-white/5 gap-2">
+<span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings: 'FILL' 0;">fitness_center</span>
+<span class="font-label-caps text-[10px] text-on-surface-variant">TRAINING</span>
+</button>
+<button class="category-item flex flex-col items-center justify-center p-3 rounded-lg border border-white/12 bg-white/5 gap-2">
+<span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings: 'FILL' 0;">receipt_long</span>
+<span class="font-label-caps text-[10px] text-on-surface-variant">BILLS</span>
+</button>
+<button class="category-item flex flex-col items-center justify-center p-3 rounded-lg border border-white/12 bg-white/5 gap-2">
+<span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings: 'FILL' 0;">more_horiz</span>
+<span class="font-label-caps text-[10px] text-on-surface-variant">OTHER</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container-lowest/90 dark:bg-surface-container-lowest/90 backdrop-blur-[50px] shadow-[0_-4px_20px_rgba(0,0,0,0.6)] flex justify-around items-center h-20 px-margin-mobile pb-safe transition-all duration-200 ease-out md:hidden">
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary/80" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-caps text-label-caps mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary/80" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-label-caps text-label-caps mt-1">Quests</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary/80" href="#">
+<span class="material-symbols-outlined">bolt</span>
+<span class="font-label-caps text-label-caps mt-1">Skills</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary/80" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-label-caps text-label-caps mt-1">Inventory</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary drop-shadow-[0_0_10px_rgba(164,201,255,0.8)] scale-110" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
+<span class="font-label-caps text-label-caps mt-1">Finance</span>
+</a>
+</nav>
+<script>
+        // Simple Interaction Logic
+        const input = document.getElementById('smart-input');
+        const status = document.getElementById('processing-status');
+        const nlpPanel = document.getElementById('nlp-results');
+        const scanline = document.getElementById('scanline');
+        
+        let timeout = null;
+
+        input.addEventListener('input', (e) => {
+            const val = e.target.value;
+            
+            clearTimeout(timeout);
+            
+            if (val.length > 0) {
+                // Show processing state
+                status.classList.remove('hidden');
+                scanline.parentElement.classList.add('processing');
+                nlpPanel.classList.remove('opacity-100');
+                nlpPanel.classList.add('opacity-50');
+                
+                // Simulate NLP processing delay
+                timeout = setTimeout(() => {
+                    status.classList.add('hidden');
+                    scanline.parentElement.classList.remove('processing');
+                    
+                    // Mock extracted data based on input
+                    if (val.toLowerCase().includes('phở') || val.toLowerCase().includes('ăn')) {
+                        document.getElementById('result-cat').textContent = 'FOOD';
+                        document.getElementById('result-amt').textContent = '50,000 G';
+                        document.getElementById('main-amount').textContent = '50,000';
+                        document.getElementById('result-date').textContent = 'TODAY';
+                        
+                        // Update grid visually
+                        document.querySelectorAll('.category-item').forEach(item => {
+                            item.classList.remove('active');
+                            item.querySelector('span').style.fontVariationSettings = "'FILL' 0";
+                            item.querySelector('span').classList.remove('text-primary');
+                            item.querySelector('span').classList.add('text-on-surface-variant');
+                        });
+                        const foodNode = document.querySelectorAll('.category-item')[0];
+                        foodNode.classList.add('active');
+                        foodNode.querySelector('span').style.fontVariationSettings = "'FILL' 1";
+                        foodNode.querySelector('span').classList.add('text-primary');
+                        foodNode.querySelector('span').classList.remove('text-on-surface-variant');
+
+                    } else if (val.toLowerCase().includes('sách')) {
+                         document.getElementById('result-cat').textContent = 'EQUIPMENT';
+                         document.getElementById('result-amt').textContent = '200 G';
+                         document.getElementById('main-amount').textContent = '200';
+                    } else {
+                        // Generic parse
+                         const numMatch = val.match(/\d+/);
+                         if(numMatch) {
+                             document.getElementById('result-amt').textContent = numMatch[0] + ' G';
+                             document.getElementById('main-amount').textContent = numMatch[0];
+                         }
+                    }
+                    
+                    nlpPanel.classList.remove('opacity-50');
+                    nlpPanel.classList.add('opacity-100');
+
+                }, 800);
+            } else {
+                status.classList.add('hidden');
+                scanline.parentElement.classList.remove('processing');
+                nlpPanel.classList.remove('opacity-100');
+                nlpPanel.classList.add('opacity-50');
+            }
+        });
+
+        // Manual Category Selection
+        document.querySelectorAll('.category-item').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active from all
+                document.querySelectorAll('.category-item').forEach(item => {
+                    item.classList.remove('active');
+                    const icon = item.querySelector('.material-symbols-outlined');
+                    icon.style.fontVariationSettings = "'FILL' 0";
+                    icon.classList.remove('text-primary');
+                    icon.classList.add('text-on-surface-variant');
+                });
+                
+                // Add active to clicked
+                this.classList.add('active');
+                const icon = this.querySelector('.material-symbols-outlined');
+                icon.style.fontVariationSettings = "'FILL' 1";
+                icon.classList.add('text-primary');
+                icon.classList.remove('text-on-surface-variant');
+
+                // Update text
+                const catText = this.querySelector('span:nth-child(2)').textContent;
+                document.getElementById('result-cat').textContent = catText;
+            });
+        });
+    </script>
+</body></html>

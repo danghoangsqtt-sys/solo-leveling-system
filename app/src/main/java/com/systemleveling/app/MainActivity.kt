@@ -53,7 +53,7 @@ class MainActivity : ComponentActivity() {
 
                     Box(modifier = Modifier.fillMaxSize()) {
                         postSplashDestination?.let { dest ->
-                            AppNavGraph(startDestination = "splash", postSplashDestination = dest)
+                            AppNavGraph(startDestination = dest, postSplashDestination = dest)
                         }
                         DebugOverlay(modifier = Modifier.align(Alignment.TopEnd))
                     }

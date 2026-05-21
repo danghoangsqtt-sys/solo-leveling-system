@@ -16,8 +16,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import com.systemleveling.feature.home.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -89,18 +92,8 @@ fun NpcChatScreen(
                 Brush.verticalGradient(listOf(Color(0xFF12102A), BgDeep, BgMid))
             )
     ) {
-        // Background ambient glow
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(300.dp)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(Purple.copy(0.06f), Color.Transparent),
-                        radius = 600f
-                    )
-                )
-        )
+        // Character layer
+        AuraCharacterView()
 
         Column(modifier = Modifier.fillMaxSize()) {
 
@@ -118,10 +111,9 @@ fun NpcChatScreen(
                     .weight(1f)
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(vertical = 16.dp)
+                contentPadding = PaddingValues(top = 180.dp, bottom = 16.dp) // Leave space for character
             ) {
                 if (messages.isEmpty()) {
-                    item { AuraWelcome() }
                     item {
                         QuickPromptsRow { prompt ->
                             viewModel.sendMessage(prompt)
@@ -289,72 +281,59 @@ private fun AuraHeader(
 }
 
 @Composable
-private fun AuraWelcome() {
-    val starPulse by rememberInfiniteTransition(label = "star").animateFloat(
-        0.4f, 1f,
-        infiniteRepeatable(tween(2000, easing = EaseInOutSine), RepeatMode.Reverse),
-        label = "sp"
+private fun AuraCharacterView() {
+    val breath by rememberInfiniteTransition(label = "breath").animateFloat(
+        0.98f, 1.02f,
+        infiniteRepeatable(tween(2500, easing = EaseInOutSine), RepeatMode.Reverse),
+        label = "br"
     )
-    Column(
+    val glow by rememberInfiniteTransition(label = "glow_char").animateFloat(
+        0.2f, 0.6f,
+        infiniteRepeatable(tween(2000, easing = EaseInOutSine), RepeatMode.Reverse),
+        label = "gc"
+    )
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .height(320.dp),
+        contentAlignment = Alignment.TopCenter
     ) {
-        // Glowing orb
+        // Back glow
         Box(
             modifier = Modifier
-                .size(90.dp)
+                .size(240.dp)
+                .offset(y = 40.dp)
                 .clip(CircleShape)
                 .background(
                     Brush.radialGradient(
-                        listOf(Purple.copy(starPulse * 0.4f), PurpleDim.copy(0.1f), Color.Transparent)
+                        listOf(Purple.copy(glow), Color.Transparent)
                     )
                 )
-                .border(1.5.dp, Purple.copy(starPulse * 0.8f), CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("✦", fontSize = 40.sp, color = Purple.copy(starPulse))
-        }
-        Spacer(Modifier.height(20.dp))
-        Text(
-            "Ta là Aura",
-            color = Color.White,
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Black,
-            letterSpacing = 0.05f.em
         )
-        Spacer(Modifier.height(6.dp))
-        Text(
-            "Thực thể AI từ Hệ Thống Tiến Hóa",
-            color = Purple.copy(0.8f),
-            fontSize = 12.sp,
-            letterSpacing = 0.08f.em
+        
+        // Character Image
+        Image(
+            painter = painterResource(id = R.drawable.aura_npc),
+            contentDescription = "Aura NPC",
+            modifier = Modifier
+                .padding(top = 60.dp)
+                .height(280.dp)
+                .scale(1f, breath) // Breathing effect
         )
-        Spacer(Modifier.height(12.dp))
+        
+        // Front fade to blend with chat
         Box(
             modifier = Modifier
-                .clip(RoundedCornerShape(20.dp))
-                .background(Purple.copy(0.08f))
-                .border(0.5.dp, Purple.copy(0.25f), RoundedCornerShape(20.dp))
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-            Text(
-                "Thợ Săn có điều gì muốn hỏi Ta không?",
-                color = TextMuted,
-                fontSize = 12.sp,
-                textAlign = TextAlign.Center
-            )
-        }
-        Spacer(Modifier.height(24.dp))
-        Text(
-            "GỢI Ý CÂU HỎI",
-            color = TextMuted.copy(0.5f),
-            fontSize = 9.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 0.15f.em
+                .fillMaxWidth()
+                .height(80.dp)
+                .align(Alignment.BottomCenter)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color.Transparent, Color(0xFF12102A))
+                    )
+                )
         )
-        Spacer(Modifier.height(8.dp))
     }
 }
 

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>System Initializing - Character Setup</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Rajdhani:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Atmospheric Scanlines */
+        .scanlines::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.1) 50%,
+                rgba(0,0,0,0.1)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0.6;
+        }
+
+        /* Subtle ambient pulse for the void background */
+        @keyframes pulse-void {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.05); }
+        }
+        .bg-void-glow {
+            animation: pulse-void 8s ease-in-out infinite;
+        }
+
+        /* Custom Scrollbar for glass panels if needed */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(164, 201, 255, 0.2);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(164, 201, 255, 0.4);
+        }
+
+        /* Input field focus glow */
+        .system-input:focus {
+            box-shadow: 0 0 15px rgba(164, 201, 255, 0.3);
+            border-color: #a4c9ff;
+        }
+    </style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#40e17e",
+                        "on-primary-container": "#003463",
+                        "surface-container-lowest": "#0c0c1d",
+                        "outline": "#8a919e",
+                        "inverse-primary": "#005fad",
+                        "on-tertiary-container": "#003c1a",
+                        "tertiary-container": "#00b35b",
+                        "surface-container-highest": "#333345",
+                        "primary-container": "#4a9eff",
+                        "on-primary-fixed": "#001c39",
+                        "primary": "#a4c9ff",
+                        "on-primary-fixed-variant": "#004884",
+                        "outline-variant": "#414752",
+                        "inverse-surface": "#e3e0f8",
+                        "tertiary": "#40e17e",
+                        "surface-tint": "#a4c9ff",
+                        "on-primary": "#00315d",
+                        "inverse-on-surface": "#2f2f40",
+                        "surface-bright": "#38374a",
+                        "surface-container-low": "#1a1a2b",
+                        "secondary-container": "#ffdb3c",
+                        "on-surface": "#e3e0f8",
+                        "surface-variant": "#333345",
+                        "tertiary-fixed": "#63ff97",
+                        "on-error-container": "#ffdad6",
+                        "surface-container-high": "#29283a",
+                        "on-secondary-fixed": "#221b00",
+                        "secondary": "#fff9ef",
+                        "on-secondary-fixed-variant": "#544600",
+                        "surface-dim": "#121222",
+                        "secondary-fixed": "#ffe16d",
+                        "on-tertiary-fixed-variant": "#005226",
+                        "on-surface-variant": "#c0c7d4",
+                        "surface": "#121222",
+                        "on-secondary": "#3a3000",
+                        "on-background": "#e3e0f8",
+                        "error": "#ffb4ab",
+                        "on-tertiary": "#003919",
+                        "primary-fixed-dim": "#a4c9ff",
+                        "on-tertiary-fixed": "#00210c",
+                        "on-error": "#690005",
+                        "secondary-fixed-dim": "#e9c400",
+                        "on-secondary-container": "#725f00",
+                        "primary-fixed": "#d4e3ff",
+                        "surface-container": "#1e1e2f",
+                        "error-container": "#93000a",
+                        "background": "#121222"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "gutter": "16px",
+                        "margin-desktop": "32px",
+                        "unit": "4px",
+                        "container-gap": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Rajdhani"],
+                        "label-caps": ["Rajdhani"],
+                        "body-bold": ["Inter"],
+                        "display-lg": ["Rajdhani"],
+                        "body-base": ["Inter"],
+                        "headline-md-mobile": ["Rajdhani"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "0.02em", "fontWeight": "700" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "600" }],
+                        "body-bold": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "body-base": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-md-mobile": ["20px", { "lineHeight": "28px", "letterSpacing": "0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background scanlines min-h-screen relative overflow-x-hidden selection:bg-primary/30 selection:text-primary">
+<!-- Cinematic Background Glows -->
+<div class="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+<div class="absolute top-[-20%] left-[-10%] w-[70vw] h-[70vw] rounded-full bg-primary/10 blur-[120px] bg-void-glow mix-blend-screen"></div>
+<div class="absolute bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-secondary/5 blur-[100px] bg-void-glow mix-blend-screen" style="animation-delay: -4s;"></div>
+</div>
+<!-- Main Content Canvas -->
+<main class="relative z-10 w-full max-w-7xl mx-auto min-h-screen flex flex-col p-margin-mobile md:p-margin-desktop">
+<!-- Header -->
+<header class="mb-container-gap pt-8 flex flex-col items-center md:items-start">
+<div class="flex items-center gap-2 mb-2 opacity-80">
+<span class="material-symbols-outlined text-primary text-[18px]">terminal</span>
+<span class="font-label-caps text-label-caps text-primary uppercase tracking-widest">System Sequence Initiated</span>
+</div>
+<h1 class="font-display-lg text-display-lg text-on-surface drop-shadow-[0_0_12px_rgba(227,224,248,0.3)]">Hunter Registration</h1>
+<p class="font-body-base text-body-base text-on-surface-variant mt-2 max-w-xl text-center md:text-left">Establish your physical parameters and system identifier before awakening.</p>
+</header>
+<!-- Asymmetrical Bento Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-container-gap flex-1">
+<!-- Left Pane: Avatar Visuals (Col span 5) -->
+<div class="md:col-span-5 flex flex-col gap-container-gap">
+<!-- Avatar Display Card -->
+<div class="bg-surface-container/65 backdrop-blur-[40px] border border-white/12 rounded-xl p-4 shadow-[0_8px_32px_0_rgba(0,0,0,0.8)] relative group overflow-hidden flex-1 min-h-[400px] flex flex-col items-center justify-center">
+<!-- Decorative corner accents -->
+<div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-primary/50 m-4"></div>
+<div class="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-primary/50 m-4"></div>
+<div class="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-primary/50 m-4"></div>
+<div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-primary/50 m-4"></div>
+<!-- Holographic Projection Base -->
+<div class="absolute bottom-10 w-3/4 h-8 bg-primary/20 blur-[20px] rounded-[100%]"></div>
+<!-- Main Avatar Placeholder -->
+<div class="relative w-64 h-64 md:w-80 md:h-80 z-10 transition-transform duration-500 hover:scale-105">
+<img alt="Selected Avatar" class="w-full h-full object-cover rounded-full border-4 border-primary/30 shadow-[0_0_40px_rgba(164,201,255,0.2)]" data-alt="A cinematic, full-body digital painting of a solitary human figure standing in a vast, dark, high-tech void. The character is wearing sleek, modern urban athletic wear with subtle sci-fi, glowing tactical accents in neon blue. The lighting is dramatic, casting deep shadows against the deep indigo background, reminiscent of a high-end RPG character selection screen. The mood is mysterious and highly atmospheric." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6u7grbUTHLSX1uTKLKM9WADTihrPVGshBq_SbKRSLzu-7HmIGpRnoxN1blphh8tAbSn2pjM52_7Krxeuf3PZ1KnXtPezxx0KnZZY4Kel8_sz4ulnOxxL8HOjeM7vJ9cHX2-ybvfhpD3ufPPEDgoE5zGWRJjRGdSlXaR9tLhHtb_GwIdn_wRUpp0dptWMGJsTv9mogTfBCw5IIcLxrdZODqTQS7VYiqs6xwkpVINYefqCBqfaczqVQEUoFi4jFPA7B6rlkZ096tQ" style="mask-image: radial-gradient(circle, black 70%, transparent 100%); -webkit-mask-image: radial-gradient(circle, black 70%, transparent 100%);"/>
+</div>
+<!-- Avatar Selection Controls -->
+<div class="absolute bottom-6 flex gap-4 bg-surface-container-highest/80 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 z-20">
+<button class="w-10 h-10 rounded-full bg-white/5 border border-white/20 hover:border-primary hover:bg-primary/10 flex items-center justify-center transition-all group-active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant">arrow_back_ios_new</span>
+</button>
+<div class="flex flex-col items-center justify-center px-4">
+<span class="font-label-caps text-label-caps text-primary">Model 04</span>
+<span class="font-body-bold text-body-bold text-on-surface text-xs">Aether Form</span>
+</div>
+<button class="w-10 h-10 rounded-full bg-white/5 border border-white/20 hover:border-primary hover:bg-primary/10 flex items-center justify-center transition-all group-active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant">arrow_forward_ios</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Right Pane: Configuration Inputs (Col span 7) -->
+<div class="md:col-span-7 flex flex-col gap-container-gap">
+<!-- Registration Form Card -->
+<div class="bg-surface-container/65 backdrop-blur-[40px] border border-white/12 rounded-xl p-6 shadow-[0_8px_32px_0_rgba(0,0,0,0.8)] relative flex-1 flex flex-col">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-6 flex items-center gap-2 border-b border-white/10 pb-4">
+<span class="material-symbols-outlined text-primary">fingerprint</span>
+                        Identity Matrix
+                    </h2>
+<div class="space-y-6 flex-1">
+<!-- Nickname Input -->
+<div class="space-y-2 relative">
+<label class="font-label-caps text-label-caps text-primary tracking-wider block">Codename / Nickname</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant z-10 pointer-events-none">badge</span>
+<input class="system-input w-full bg-white/5 border border-white/12 text-on-surface font-body-base text-body-base p-3 pl-10 rounded-DEFAULT focus:outline-none focus:ring-0 transition-all placeholder:text-on-surface-variant/50 relative z-0" placeholder="Enter identifier..." type="text"/>
+</div>
+</div>
+<!-- Physical Parameters Row -->
+<div class="grid grid-cols-2 gap-4">
+<!-- Height -->
+<div class="space-y-2">
+<label class="font-label-caps text-label-caps text-primary tracking-wider block">Height (cm)</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant z-10 pointer-events-none">height</span>
+<input class="system-input w-full bg-white/5 border border-white/12 text-on-surface font-body-base text-body-base p-3 pl-10 rounded-DEFAULT focus:outline-none focus:ring-0 transition-all placeholder:text-on-surface-variant/50" placeholder="175" type="number"/>
+</div>
+</div>
+<!-- Weight -->
+<div class="space-y-2">
+<label class="font-label-caps text-label-caps text-primary tracking-wider block">Weight (kg)</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant z-10 pointer-events-none">weight</span>
+<input class="system-input w-full bg-white/5 border border-white/12 text-on-surface font-body-base text-body-base p-3 pl-10 rounded-DEFAULT focus:outline-none focus:ring-0 transition-all placeholder:text-on-surface-variant/50" placeholder="70" type="number"/>
+</div>
+</div>
+</div>
+<!-- Gender/Form Type Selection -->
+<div class="space-y-3 pt-2">
+<label class="font-label-caps text-label-caps text-primary tracking-wider block">Base Form</label>
+<div class="grid grid-cols-3 gap-3">
+<!-- Option 1 (Active state example) -->
+<button class="bg-primary/20 border border-primary text-primary font-body-bold text-body-bold py-3 rounded-lg flex flex-col items-center justify-center gap-1 shadow-[0_0_15px_rgba(164,201,255,0.3)] transition-all">
+<span class="material-symbols-outlined text-[20px]">male</span>
+<span class="text-sm">Type A</span>
+</button>
+<!-- Option 2 -->
+<button class="bg-white/5 border border-white/12 text-on-surface-variant font-body-base text-body-base py-3 rounded-lg flex flex-col items-center justify-center gap-1 hover:bg-white/10 hover:border-white/20 transition-all">
+<span class="material-symbols-outlined text-[20px]">female</span>
+<span class="text-sm">Type B</span>
+</button>
+<!-- Option 3 -->
+<button class="bg-white/5 border border-white/12 text-on-surface-variant font-body-base text-body-base py-3 rounded-lg flex flex-col items-center justify-center gap-1 hover:bg-white/10 hover:border-white/20 transition-all">
+<span class="material-symbols-outlined text-[20px]">transgender</span>
+<span class="text-sm">Custom</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Area -->
+<div class="flex justify-end mt-auto pt-4 pb-8 md:pb-0">
+<button class="w-full md:w-auto relative group overflow-hidden bg-primary text-on-primary-fixed font-headline-md text-headline-md px-12 py-4 rounded-lg flex items-center justify-center gap-3 transition-transform active:scale-95 shadow-[0_0_20px_rgba(164,201,255,0.4)] hover:shadow-[0_0_30px_rgba(164,201,255,0.6)]">
+<!-- Button Shimmer Effect -->
+<div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent group-hover:animate-[shimmer_1.5s_infinite] skew-x-12"></div>
+<span>Initialize System</span>
+<span class="material-symbols-outlined text-[24px]">power_settings_new</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+<!-- Shimmer Animation Keyframes embedded via inline style for tailwind arbitrary values -->
+<style>
+        @keyframes shimmer {
+            100% { transform: translateX(100%); }
+        }
+    </style>
+</body></html>

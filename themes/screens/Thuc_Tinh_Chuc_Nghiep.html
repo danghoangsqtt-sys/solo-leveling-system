@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Class Awakening - System Leveling</title>
+<!-- Fonts & Icons -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Rajdhani:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary-fixed-dim": "#40e17e",
+                        "on-primary-container": "#003463",
+                        "surface-container-lowest": "#0c0c1d",
+                        "outline": "#8a919e",
+                        "inverse-primary": "#005fad",
+                        "on-tertiary-container": "#003c1a",
+                        "tertiary-container": "#00b35b",
+                        "surface-container-highest": "#333345",
+                        "primary-container": "#4a9eff",
+                        "on-primary-fixed": "#001c39",
+                        "primary": "#a4c9ff",
+                        "on-primary-fixed-variant": "#004884",
+                        "outline-variant": "#414752",
+                        "inverse-surface": "#e3e0f8",
+                        "tertiary": "#40e17e",
+                        "surface-tint": "#a4c9ff",
+                        "on-primary": "#00315d",
+                        "inverse-on-surface": "#2f2f40",
+                        "surface-bright": "#38374a",
+                        "surface-container-low": "#1a1a2b",
+                        "secondary-container": "#ffdb3c",
+                        "on-surface": "#e3e0f8",
+                        "surface-variant": "#333345",
+                        "tertiary-fixed": "#63ff97",
+                        "on-error-container": "#ffdad6",
+                        "surface-container-high": "#29283a",
+                        "on-secondary-fixed": "#221b00",
+                        "secondary": "#fff9ef",
+                        "on-secondary-fixed-variant": "#544600",
+                        "surface-dim": "#121222",
+                        "secondary-fixed": "#ffe16d",
+                        "on-tertiary-fixed-variant": "#005226",
+                        "on-surface-variant": "#c0c7d4",
+                        "surface": "#121222",
+                        "on-secondary": "#3a3000",
+                        "on-background": "#e3e0f8",
+                        "error": "#ffb4ab",
+                        "on-tertiary": "#003919",
+                        "primary-fixed-dim": "#a4c9ff",
+                        "on-tertiary-fixed": "#00210c",
+                        "on-error": "#690005",
+                        "secondary-fixed-dim": "#e9c400",
+                        "on-secondary-container": "#725f00",
+                        "primary-fixed": "#d4e3ff",
+                        "surface-container": "#1e1e2f",
+                        "error-container": "#93000a",
+                        "background": "#121222"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "margin-mobile": "16px",
+                        "gutter": "16px",
+                        "margin-desktop": "32px",
+                        "unit": "4px",
+                        "container-gap": "24px"
+                    },
+                    fontFamily: {
+                        "headline-md": ["Rajdhani"],
+                        "label-caps": ["Rajdhani"],
+                        "body-bold": ["Inter"],
+                        "display-lg": ["Rajdhani"],
+                        "body-base": ["Inter"],
+                        "headline-md-mobile": ["Rajdhani"]
+                    },
+                    fontSize: {
+                        "headline-md": ["24px", { lineHeight: "32px", letterSpacing: "0.02em", fontWeight: "700" }],
+                        "label-caps": ["12px", { lineHeight: "16px", letterSpacing: "0.1em", fontWeight: "600" }],
+                        "body-bold": ["16px", { lineHeight: "24px", fontWeight: "600" }],
+                        "display-lg": ["48px", { lineHeight: "56px", letterSpacing: "0.05em", fontWeight: "700" }],
+                        "body-base": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "headline-md-mobile": ["20px", { lineHeight: "28px", letterSpacing: "0.02em", fontWeight: "700" }]
+                    },
+                    animation: {
+                        'shimmer': 'shimmer 3s infinite linear',
+                        'pulse-glow': 'pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'radar-sweep': 'radar-sweep 4s infinite linear'
+                    },
+                    keyframes: {
+                        shimmer: {
+                            '0%': { transform: 'translateX(-100%) skewX(-15deg)' },
+                            '100%': { transform: 'translateX(200%) skewX(-15deg)' }
+                        },
+                        'pulse-glow': {
+                            '0%, 100%': { opacity: '1', filter: 'drop-shadow(0 0 15px rgba(164,201,255,0.8))' },
+                            '50%': { opacity: '.7', filter: 'drop-shadow(0 0 5px rgba(164,201,255,0.4))' }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' }
+                        },
+                        'radar-sweep': {
+                            '0%': { transform: 'rotate(0deg)' },
+                            '100%': { transform: 'rotate(360deg)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
+        
+        /* Cosmic Void Background with Hex Grid Pattern */
+        .system-bg {
+            background-color: theme('colors.background');
+            background-image: 
+                radial-gradient(circle at 50% 20%, rgba(74, 158, 255, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 50% 80%, rgba(255, 219, 60, 0.1) 0%, transparent 40%);
+        }
+        
+        .hex-grid {
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='103.92' viewBox='0 0 60 103.92' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 103.92L0 86.6V51.96L30 34.64L60 51.96V86.6L30 103.92zM30 101.92L58 85.6V53.1L30 36.8L2 53.1V85.6L30 101.92z M30 51.96L0 34.64V0L30 -17.32L60 0V34.64L30 51.96zM30 49.96L58 33.64V1.1L30 -15.2L2 1.1V33.64L30 49.96z' fill='%23a4c9ff' fill-opacity='0.03'/%3E%3C/svg%3E");
+        }
+
+        /* Glassmorphism Panel */
+        .glass-panel {
+            background-color: rgba(18, 18, 34, 0.65);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+        }
+
+        /* Holographic Shimmer Container */
+        .shimmer-container {
+            position: relative;
+            overflow: hidden;
+        }
+        .shimmer-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent);
+            transform: skewX(-15deg);
+            animation: shimmer 3s infinite linear;
+            pointer-events: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface antialiased overflow-x-hidden min-h-screen flex flex-col relative system-bg hex-grid">
+<!-- Background NPC Aura Element -->
+<div class="absolute inset-0 z-0 opacity-40 mix-blend-screen pointer-events-none" data-alt="A massive, ethereal humanoid silhouette glowing with intense celestial blue and gold energy, hovering in a vast, dark cosmic void. The figure radiates power, with streams of light and digital code spiraling around it like a magical aura. The lighting is dramatic, high-contrast, and luminescent, fitting a high-stakes gamified 'System' UI aesthetic with holographic glassmorphism." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBZhvFF2evoy2R7i1_C6sVUjdQjtarBfV4vpEtRbN7oXVjg487YoS8WGV0T-H5Gduply9QCUUe6okwNCPzqM0gHePfzTRVYookDQetzj2cEXUTruPtW-CinKe79ZWn_MI0-L1Yvn5bMoW9P07-zDNkOg6QGGV5Pg9Qu4RSgMFpTEgZYc3NdscgYKNUMbJlhAH4s90jwOYwTxDaeoscCQzV-yFMgPmEsg0V-LBKUU1AsbIz_qeRk2KocY41i5xGwhBe_FRWFs6MSBQ'); background-size: cover; background-position: center;">
+<div class="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent"></div>
+</div>
+<!-- Onboarding Canvas (No Nav Shell) -->
+<main class="relative z-10 flex-1 flex flex-col items-center justify-between p-margin-mobile md:p-margin-desktop max-w-4xl mx-auto w-full">
+<!-- Header: System Notification -->
+<header class="w-full text-center mt-8 md:mt-12 animate-fade-in">
+<div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 backdrop-blur-md mb-4">
+<span class="material-symbols-outlined text-primary text-sm">notifications_active</span>
+<span class="font-label-caps text-label-caps text-primary uppercase tracking-widest">System Alert</span>
+</div>
+<h1 class="font-display-lg text-display-lg text-on-surface drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+                AWAKENING COMPLETE
+            </h1>
+<p class="font-body-base text-body-base text-on-surface-variant mt-2">
+                Your latent potential has been measured.
+            </p>
+</header>
+<!-- Centerpiece: Class Reveal & Radar Chart -->
+<section class="w-full flex flex-col md:flex-row items-center justify-center gap-container-gap my-12 relative animate-float">
+<!-- Left/Top: The Radar Chart Data -->
+<div class="relative w-72 h-72 md:w-96 md:h-96 flex items-center justify-center">
+<!-- SVG Radar Chart Simulation -->
+<svg class="w-full h-full drop-shadow-[0_0_20px_rgba(164,201,255,0.4)]" viewbox="0 0 200 200">
+<!-- Base Hexagons -->
+<polygon fill="none" points="100,20 169,60 169,140 100,180 31,140 31,60" stroke="rgba(255,255,255,0.1)" stroke-width="1"></polygon>
+<polygon fill="none" points="100,40 152,70 152,130 100,160 48,130 48,70" stroke="rgba(255,255,255,0.1)" stroke-width="1"></polygon>
+<polygon fill="none" points="100,60 135,80 135,120 100,140 65,120 65,80" stroke="rgba(255,255,255,0.1)" stroke-width="1"></polygon>
+<!-- Axes -->
+<line stroke="rgba(255,255,255,0.2)" stroke-width="1" x1="100" x2="100" y1="100" y2="20"></line>
+<line stroke="rgba(255,255,255,0.2)" stroke-width="1" x1="100" x2="169" y1="100" y2="60"></line>
+<line stroke="rgba(255,255,255,0.2)" stroke-width="1" x1="100" x2="169" y1="100" y2="140"></line>
+<line stroke="rgba(255,255,255,0.2)" stroke-width="1" x1="100" x2="100" y1="100" y2="180"></line>
+<line stroke="rgba(255,255,255,0.2)" stroke-width="1" x1="100" x2="31" y1="100" y2="140"></line>
+<line stroke="rgba(255,255,255,0.2)" stroke-width="1" x1="100" x2="31" y1="100" y2="60"></line>
+<!-- Data Polygon (The Stats) -->
+<!-- STR, AGI, INT, VIT, SENSE, MANA -->
+<!-- High INT & MANA, low STR -> Spellcaster shape -->
+<polygon class="animate-pulse-glow" fill="rgba(164, 201, 255, 0.3)" points="100,80 140,70 160,140 100,150 50,130 40,50" stroke="theme('colors.primary')" stroke-width="2"></polygon>
+<!-- Data Points -->
+<circle cx="100" cy="80" fill="theme('colors.secondary-fixed')" r="3"></circle>
+<circle cx="140" cy="70" fill="theme('colors.secondary-fixed')" r="3"></circle>
+<circle cx="160" cy="140" fill="theme('colors.secondary-fixed')" r="3"></circle>
+<circle cx="100" cy="150" fill="theme('colors.secondary-fixed')" r="3"></circle>
+<circle cx="50" cy="130" fill="theme('colors.secondary-fixed')" r="3"></circle>
+<circle cx="40" cy="50" fill="theme('colors.secondary-fixed')" r="3"></circle>
+</svg>
+<!-- Stat Labels Floating Around -->
+<div class="absolute top-0 w-full text-center -mt-2">
+<span class="font-label-caps text-label-caps text-on-surface">STR (32)</span>
+</div>
+<div class="absolute right-0 top-1/4 translate-x-4">
+<span class="font-label-caps text-label-caps text-on-surface">AGI (55)</span>
+</div>
+<div class="absolute right-0 bottom-1/4 translate-x-4">
+<span class="font-label-caps text-label-caps text-secondary-fixed drop-shadow-[0_0_5px_rgba(255,225,109,0.8)]">INT (120)</span>
+</div>
+<div class="absolute bottom-0 w-full text-center -mb-2">
+<span class="font-label-caps text-label-caps text-on-surface">VIT (45)</span>
+</div>
+<div class="absolute left-0 bottom-1/4 -translate-x-6">
+<span class="font-label-caps text-label-caps text-on-surface">SNS (80)</span>
+</div>
+<div class="absolute left-0 top-1/4 -translate-x-6">
+<span class="font-label-caps text-label-caps text-primary drop-shadow-[0_0_5px_rgba(164,201,255,0.8)]">MNA (150)</span>
+</div>
+</div>
+<!-- Right/Bottom: Class Detail Card -->
+<div class="glass-panel shimmer-container rounded-xl p-6 w-full max-w-sm flex flex-col items-center border-secondary-fixed/30 z-10">
+<div class="w-16 h-16 rounded-full bg-surface-container-highest flex items-center justify-center mb-4 border border-outline-variant shadow-inner">
+<span class="material-symbols-outlined text-secondary-fixed text-3xl">auto_awesome</span>
+</div>
+<h2 class="font-headline-md text-headline-md text-secondary-fixed text-center drop-shadow-[0_0_10px_rgba(255,225,109,0.5)] uppercase tracking-wider">
+                    Arcane Alchemist
+                </h2>
+<div class="font-label-caps text-label-caps text-on-surface-variant bg-surface-container-low px-3 py-1 rounded-full mt-2 border border-white/5">
+                    Legendary Class
+                </div>
+<div class="mt-6 space-y-3 w-full">
+<div class="flex items-center justify-between text-sm">
+<span class="font-body-bold text-on-surface">Primary Trait:</span>
+<span class="font-body-base text-primary">Matter Manipulation</span>
+</div>
+<div class="h-px w-full bg-white/10"></div>
+<div class="flex items-center justify-between text-sm">
+<span class="font-body-bold text-on-surface">Starting Skill:</span>
+<span class="font-body-base text-tertiary-fixed">Equivalent Exchange</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Action Area: Arise Button -->
+<div class="w-full max-w-md mt-auto mb-8 relative z-20">
+<button class="w-full group relative flex items-center justify-center py-4 rounded-xl overflow-hidden bg-primary-container text-on-primary-container font-headline-md text-headline-md uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(74,158,255,0.4)] hover:shadow-[0_0_50px_rgba(74,158,255,0.6)]">
+<!-- Background Glow Effect on hover -->
+<div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] skew-x-12"></div>
+<span class="relative z-10 flex items-center gap-3">
+<span class="material-symbols-outlined text-3xl">flare</span>
+                    ARISE
+                </span>
+</button>
+<p class="font-label-caps text-label-caps text-on-surface-variant text-center mt-4 opacity-70">
+                Acknowledge the System to begin your journey.
+            </p>
+</div>
+</main>
+</body></html>

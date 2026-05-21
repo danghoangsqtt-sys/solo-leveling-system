@@ -15,12 +15,16 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
+import com.systemleveling.core.settings.SettingsManager
+import kotlinx.coroutines.launch
+
 data class QuestSummary(val total: Int, val completed: Int)
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     userDao: UserDao,
-    questDao: QuestDao
+    questDao: QuestDao,
+    private val settingsManager: SettingsManager
 ) : ViewModel() {
 
     val user: StateFlow<UserEntity?> = userDao.getUser()
@@ -60,4 +64,17 @@ class HomeViewModel @Inject constructor(
         stats.str >= cap && stats.intStat >= cap && stats.agi >= cap &&
             stats.vit >= cap && stats.wis >= cap && stats.cha >= cap
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val geminiApiKey: StateFlow<String> = settingsManager.geminiApiKey
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ""
+        )
+
+    fun saveApiKey(key: String) {
+        viewModelScope.launch {
+            settingsManager.setGeminiApiKey(key)
+        }
+    }
 }

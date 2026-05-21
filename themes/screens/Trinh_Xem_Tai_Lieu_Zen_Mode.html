@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Document Viewer - Aura System</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary-fixed-dim": "#40e17e",
+                        "on-surface": "#e3e0f8",
+                        "surface": "#121222",
+                        "on-background": "#e3e0f8",
+                        "secondary": "#fff9ef",
+                        "on-secondary-fixed": "#221b00",
+                        "on-primary-fixed": "#001c39",
+                        "on-primary": "#00315d",
+                        "surface-container-lowest": "#0c0c1d",
+                        "on-primary-container": "#003463",
+                        "surface-container-highest": "#333345",
+                        "primary-fixed-dim": "#a4c9ff",
+                        "inverse-surface": "#e3e0f8",
+                        "inverse-primary": "#005fad",
+                        "surface-dim": "#121222",
+                        "tertiary-fixed": "#63ff97",
+                        "on-secondary-fixed-variant": "#544600",
+                        "surface-tint": "#a4c9ff",
+                        "background": "#121222",
+                        "tertiary": "#40e17e",
+                        "error-container": "#93000a",
+                        "primary-fixed": "#d4e3ff",
+                        "on-tertiary-container": "#003c1a",
+                        "surface-container-high": "#29283a",
+                        "error": "#ffb4ab",
+                        "inverse-on-surface": "#2f2f40",
+                        "on-error-container": "#ffdad6",
+                        "surface-variant": "#333345",
+                        "on-secondary": "#3a3000",
+                        "on-tertiary": "#003919",
+                        "outline-variant": "#414752",
+                        "secondary-fixed": "#ffe16d",
+                        "outline": "#8a919e",
+                        "tertiary-container": "#00b35b",
+                        "secondary-container": "#ffdb3c",
+                        "on-error": "#690005",
+                        "on-tertiary-fixed": "#00210c",
+                        "primary": "#a4c9ff",
+                        "surface-container-low": "#1a1a2b",
+                        "surface-container": "#1e1e2f",
+                        "on-primary-fixed-variant": "#004884",
+                        "surface-bright": "#38374a",
+                        "primary-container": "#4a9eff",
+                        "on-secondary-container": "#725f00",
+                        "secondary-fixed-dim": "#e9c400",
+                        "on-surface-variant": "#c0c7d4",
+                        "on-tertiary-fixed-variant": "#005226"
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.25rem",
+                        lg: "0.5rem",
+                        xl: "0.75rem",
+                        full: "9999px"
+                    },
+                    spacing: {
+                        "container-gap": "24px",
+                        "margin-desktop": "32px",
+                        "unit": "4px",
+                        "margin-mobile": "16px",
+                        "gutter": "16px"
+                    },
+                    fontFamily: {
+                        "headline-md": ["Rajdhani", "sans-serif"],
+                        "body-base": ["Inter", "sans-serif"],
+                        "label-caps": ["Rajdhani", "sans-serif"],
+                        "display-lg": ["Rajdhani", "sans-serif"],
+                        "body-bold": ["Inter", "sans-serif"],
+                        "headline-md-mobile": ["Rajdhani", "sans-serif"]
+                    },
+                    fontSize: {
+                        "headline-md": ["24px", { lineHeight: "32px", letterSpacing: "0.02em", fontWeight: "700" }],
+                        "body-base": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "label-caps": ["12px", { lineHeight: "16px", letterSpacing: "0.1em", fontWeight: "600" }],
+                        "display-lg": ["48px", { lineHeight: "56px", letterSpacing: "0.05em", fontWeight: "700" }],
+                        "body-bold": ["16px", { lineHeight: "24px", fontWeight: "600" }],
+                        "headline-md-mobile": ["20px", { lineHeight: "28px", letterSpacing: "0.02em", fontWeight: "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Aura System Specific Styles */
+        body {
+            background-color: theme('colors.background');
+            background-image: radial-gradient(circle at 50% -20%, theme('colors.primary-container/0.1') 0%, transparent 60%);
+        }
+        
+        .glass-panel {
+            background: theme('colors.surface-container/0.65');
+            backdrop-filter: blur(40px);
+            border: 1px solid theme('colors.white/0.12');
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .holographic-text {
+            text-shadow: 0 0 8px theme('colors.primary/0.8');
+        }
+
+        /* Reading Progress Glow */
+        .progress-glow {
+            box-shadow: 0 0 15px theme('colors.primary-container/0.6');
+        }
+
+        /* Document Canvas (Lighter Glass for contrast) */
+        .document-canvas {
+            background: theme('colors.surface-container-lowest/0.8');
+            border: 1px solid theme('colors.primary/0.2');
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: theme('colors.surface');
+        }
+        ::-webkit-scrollbar-thumb {
+            background: theme('colors.surface-variant');
+            border-radius: theme('borderRadius.full');
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: theme('colors.primary-container');
+        }
+
+        /* Zen Mode Transitions */
+        .zen-transition {
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+        }
+        body.zen-mode .zen-hide {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-10px);
+        }
+        body.zen-mode .zen-hide-bottom {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(10px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-surface font-body-base min-h-screen flex flex-col overflow-hidden relative">
+<!-- Ambient Background Effects -->
+<div class="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
+<div class="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/10 blur-[120px]"></div>
+<div class="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] rounded-full bg-tertiary-fixed-dim/5 blur-[150px]"></div>
+</div>
+<!-- TopAppBar (Zen Hideable) -->
+<header class="glass-panel w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 zen-transition zen-hide">
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-white/5 transition-colors text-on-surface-variant hover:text-primary" onclick="window.history.back()">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+</button>
+<div class="flex flex-col">
+<h1 class="font-headline-md-mobile md:font-headline-md text-headline-md-mobile md:text-headline-md text-primary holographic-text uppercase tracking-widest">
+                    IELTS Cambridge 18 - Reading
+                </h1>
+<span class="font-label-caps text-label-caps text-on-surface-variant">System Analysis • Module 3</span>
+</div>
+</div>
+<div class="flex items-center gap-container-gap">
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/12 bg-surface-container/50 hover:bg-tertiary-container/20 hover:border-tertiary-fixed-dim/50 hover:text-tertiary-fixed transition-all duration-300 text-on-surface group" id="zenModeToggle">
+<span class="material-symbols-outlined group-hover:animate-pulse" style="font-variation-settings: 'FILL' 0;">psychiatry</span>
+<span class="font-body-bold text-body-bold hidden md:inline">Zen Mode</span>
+</button>
+</div>
+</header>
+<!-- Reading Progress Bar -->
+<div class="w-full h-1 bg-surface-variant relative z-40">
+<div class="h-full bg-primary-container progress-glow w-[28%] transition-all duration-500 ease-out rounded-r-full"></div>
+</div>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col relative overflow-hidden p-margin-mobile md:p-margin-desktop z-10 items-center justify-start h-full">
+<!-- Document Canvas -->
+<div class="document-canvas w-full max-w-4xl h-full rounded-xl overflow-y-auto shadow-2xl relative">
+<!-- Mock Content -->
+<div class="p-8 md:p-16 space-y-8 max-w-3xl mx-auto">
+<div class="border-b border-white/10 pb-6 mb-8">
+<h2 class="font-display-lg text-display-lg text-on-surface mb-2">Urban Farming Initiatives</h2>
+<p class="font-body-bold text-body-bold text-primary-fixed-dim">Reading Passage 1</p>
+</div>
+<div class="space-y-6 text-on-surface/90 leading-relaxed text-lg font-body-base">
+<p>You should spend about 20 minutes on Questions 1-13, which are based on Reading Passage 1 below.</p>
+<p class="first-letter:text-5xl first-letter:font-headline-md first-letter:text-primary first-letter:float-left first-letter:mr-3 first-letter:mt-1">
+                        In recent years, the concept of urban farming has evolved from a niche environmental movement into a crucial component of future city planning. As global populations continue to urbanize at an unprecedented rate, traditional agricultural supply chains are increasingly strained. Urban agriculture—ranging from rooftop hydroponic greenhouses to vertical indoor farms—offers a potential solution to food security challenges while simultaneously reducing the carbon footprint associated with transporting produce over long distances.
+                    </p>
+<div class="my-10 p-6 border-l-4 border-secondary-fixed bg-secondary-container/5 rounded-r-lg">
+<p class="font-body-bold text-body-bold text-secondary-fixed-dim italic">
+                            "The integration of agricultural systems into urban architecture is not merely about food production; it's about redefining the metabolic processes of our cities."
+                        </p>
+</div>
+<p>
+                        Proponents argue that vertical farming, in particular, maximizes yield per square meter by utilizing controlled-environment agriculture (CEA) technology. These systems control temperature, light, and humidity to optimize plant growth, often resulting in crop yields that are significantly higher than those of traditional field farming. Furthermore, hydroponic and aeroponic systems use up to 90% less water than conventional soil-based agriculture, making them particularly attractive in regions facing water scarcity.
+                    </p>
+<!-- Mock Diagram Image -->
+<div class="my-8 rounded-lg overflow-hidden border border-white/10 relative h-64 md:h-96 w-full bg-surface-container-high group">
+<img alt="Vertical farming layout" class="object-cover w-full h-full opacity-70 group-hover:opacity-100 transition-opacity duration-500" data-alt="A detailed, futuristic schematic overlaying a real photo of an indoor vertical farming facility. High-tech LED grow lights cast a vibrant magenta and deep blue glow over lush green plants stacked in modular hydroponic towers. The scene looks like a modern agricultural lab, with holographic data readouts subtly superimposed, matching the 'Aura System' dark glassmorphism UI. The atmosphere is sterile yet vibrant with life, emphasizing a technologically advanced, gamified learning experience." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCh_P45Tj21YNCFAlESzEpYEoDBYcDY_QmQ88ZIr4mYQ5ldOhA7jMwndt0y-hYglinK1AbrmCGrHc8-gL65DwzOBqDkyYKLEBUvkcjo_f5LTYD8F3cACO2kSjt8-0wCKMnoOqeazTklIAFpXdAwD97xg5pNIEQUy1cCfeak3jHu497m0oDnMqzPFCq1e0q7pRMnBRBTW_q54AadZhaNNznqn7qZ0aLnD0qp2ev-WIRw80yHmhwFUXzjWRqGGmeQkBIFDUGR2BUjAw"/>
+<div class="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-background to-transparent">
+<p class="font-label-caps text-label-caps text-primary-fixed">Fig 1. Controlled-Environment Agriculture (CEA) vertical setup.</p>
+</div>
+</div>
+<p>
+                        However, critics point out the substantial initial capital required to establish these high-tech facilities, as well as the intensive energy consumption necessary to power the artificial lighting and climate control systems. While renewable energy sources can mitigate the environmental impact, the economic viability of urban farming on a scale large enough to feed a city remains a subject of intense debate among agronomists and urban planners.
+                    </p>
+</div>
+<div class="h-24"></div> <!-- Bottom padding for FAB and Footer -->
+</div>
+</div>
+<!-- Floating Action Button (Quick Notes) -->
+<button class="absolute bottom-24 right-margin-mobile md:right-margin-desktop w-14 h-14 rounded-full bg-surface-container/80 backdrop-blur-md border border-primary/30 flex items-center justify-center text-primary hover:bg-primary-container hover:text-on-primary-container transition-all duration-300 shadow-[0_0_20px_rgba(74,158,255,0.4)] hover:scale-110 z-30 zen-transition zen-hide-bottom group">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" style="font-variation-settings: 'FILL' 1;">edit_document</span>
+</button>
+</main>
+<!-- Footer / Control Bar (Zen Hideable) -->
+<footer class="glass-panel w-full border-t-0 fixed bottom-0 z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-3 zen-transition zen-hide-bottom">
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-lg hover:bg-white/5 text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">zoom_out</span>
+</button>
+<span class="font-label-caps text-label-caps text-on-surface">100%</span>
+<button class="p-2 rounded-lg hover:bg-white/5 text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">zoom_in</span>
+</button>
+</div>
+<div class="flex items-center gap-6 bg-surface-container-high/50 px-4 py-1.5 rounded-full border border-white/5">
+<button class="p-1 rounded text-on-surface-variant hover:text-primary transition-colors disabled:opacity-50">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<span class="font-body-bold text-body-bold text-on-surface">12 <span class="text-on-surface-variant/50 font-body-base">/ 45</span></span>
+<button class="p-1 rounded text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-fixed-dim/70 text-sm">auto_awesome</span>
+<span class="font-label-caps text-label-caps text-primary-fixed-dim/70 hidden md:inline">Auto-Save Active</span>
+</div>
+</footer>
+<!-- Exit Zen Mode Floating Button (Hidden by default, shown in Zen Mode) -->
+<button class="fixed top-6 right-6 z-[60] px-4 py-2 rounded-full bg-surface-container-high/80 backdrop-blur-lg border border-primary/30 text-primary shadow-[0_0_15px_rgba(74,158,255,0.3)] opacity-0 pointer-events-none transition-opacity duration-500 flex items-center gap-2 hover:bg-surface-bright" id="exitZenModeBtn">
+<span class="material-symbols-outlined text-sm">close</span>
+<span class="font-label-caps text-label-caps">Exit Zen</span>
+</button>
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const zenModeToggle = document.getElementById('zenModeToggle');
+            const exitZenModeBtn = document.getElementById('exitZenModeBtn');
+            const body = document.body;
+
+            function toggleZenMode() {
+                body.classList.toggle('zen-mode');
+                
+                if (body.classList.contains('zen-mode')) {
+                    exitZenModeBtn.classList.remove('opacity-0', 'pointer-events-none');
+                    exitZenModeBtn.classList.add('opacity-100', 'pointer-events-auto');
+                } else {
+                    exitZenModeBtn.classList.add('opacity-0', 'pointer-events-none');
+                    exitZenModeBtn.classList.remove('opacity-100', 'pointer-events-auto');
+                }
+            }
+
+            zenModeToggle.addEventListener('click', toggleZenMode);
+            exitZenModeBtn.addEventListener('click', toggleZenMode);
+        });
+    </script>
+</body></html>

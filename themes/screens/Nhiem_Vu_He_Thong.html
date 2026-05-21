@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Quest System - System Leveling</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Rajdhani:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-container": "#ffdb3c",
+                    "on-tertiary-fixed": "#00210c",
+                    "on-primary-fixed": "#001c39",
+                    "background": "#121222",
+                    "tertiary-container": "#00b35b",
+                    "tertiary": "#40e17e",
+                    "outline-variant": "#414752",
+                    "on-surface-variant": "#c0c7d4",
+                    "error": "#ffb4ab",
+                    "primary-fixed-dim": "#a4c9ff",
+                    "on-secondary-fixed-variant": "#544600",
+                    "primary-fixed": "#d4e3ff",
+                    "surface-container-highest": "#333345",
+                    "secondary-fixed-dim": "#e9c400",
+                    "surface-bright": "#38374a",
+                    "on-error": "#690005",
+                    "surface-container-high": "#29283a",
+                    "on-surface": "#e3e0f8",
+                    "on-primary-container": "#003463",
+                    "secondary": "#fff9ef",
+                    "on-secondary-fixed": "#221b00",
+                    "surface-dim": "#121222",
+                    "on-secondary": "#3a3000",
+                    "on-secondary-container": "#725f00",
+                    "surface-container-low": "#1a1a2b",
+                    "on-tertiary-container": "#003c1a",
+                    "outline": "#8a919e",
+                    "on-tertiary": "#003919",
+                    "inverse-primary": "#005fad",
+                    "on-tertiary-fixed-variant": "#005226",
+                    "primary-container": "#4a9eff",
+                    "primary": "#a4c9ff",
+                    "surface-variant": "#333345",
+                    "error-container": "#93000a",
+                    "on-primary-fixed-variant": "#004884",
+                    "on-primary": "#00315d",
+                    "surface-container-lowest": "#0c0c1d",
+                    "on-error-container": "#ffdad6",
+                    "tertiary-fixed-dim": "#40e17e",
+                    "surface": "#121222",
+                    "surface-container": "#1e1e2f",
+                    "inverse-surface": "#e3e0f8",
+                    "tertiary-fixed": "#63ff97",
+                    "on-background": "#e3e0f8",
+                    "surface-tint": "#a4c9ff",
+                    "inverse-on-surface": "#2f2f40",
+                    "secondary-fixed": "#ffe16d"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "16px",
+                    "unit": "4px",
+                    "container-gap": "24px",
+                    "gutter": "16px",
+                    "margin-desktop": "32px"
+            },
+            "fontFamily": {
+                    "body-bold": ["Inter"],
+                    "label-caps": ["Rajdhani"],
+                    "headline-md-mobile": ["Rajdhani"],
+                    "body-base": ["Inter"],
+                    "display-lg": ["Rajdhani"],
+                    "headline-md": ["Rajdhani"]
+            },
+            "fontSize": {
+                    "body-bold": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "600"}],
+                    "headline-md-mobile": ["20px", {"lineHeight": "28px", "letterSpacing": "0.02em", "fontWeight": "700"}],
+                    "body-base": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        /* Cosmic Void Background */
+        body {
+            background-color: theme('colors.background');
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(74, 158, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(255, 219, 60, 0.05) 0%, transparent 50%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Holographic Shimmer Effect for Rare Items */
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) skewX(-15deg); }
+            100% { transform: translateX(200%) skewX(-15deg); }
+        }
+        .holographic-shimmer {
+            position: relative;
+            overflow: hidden;
+        }
+        .holographic-shimmer::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%);
+            animation: shimmer 3s infinite;
+            pointer-events: none;
+        }
+
+        /* Pulse Animation for progress bars */
+        @keyframes pulse-energy {
+            0% { opacity: 0.8; }
+            50% { opacity: 1; box-shadow: 0 0 10px rgba(74, 158, 255, 0.6); }
+            100% { opacity: 0.8; }
+        }
+        .energy-pulse {
+            animation: pulse-energy 2s infinite ease-in-out;
+        }
+
+        /* Glassmorphism Panel Base */
+        .glass-panel {
+            background-color: rgba(30, 30, 47, 0.65); /* surface-container */
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        /* Rank Colors */
+        .rank-s { color: theme('colors.secondary-fixed-dim'); text-shadow: 0 0 8px rgba(233, 196, 0, 0.5); }
+        .rank-a { color: theme('colors.primary'); text-shadow: 0 0 8px rgba(164, 201, 255, 0.5); }
+        .rank-b { color: theme('colors.tertiary'); text-shadow: 0 0 8px rgba(64, 225, 126, 0.5); }
+        .rank-c { color: theme('colors.on-surface'); }
+        .rank-d { color: theme('colors.on-surface-variant'); }
+        .rank-e { color: theme('colors.outline'); }
+
+        .border-rank-s { border-color: rgba(233, 196, 0, 0.4); box-shadow: inset 0 0 20px rgba(233, 196, 0, 0.05); }
+        .border-rank-b { border-color: rgba(64, 225, 126, 0.3); }
+
+        /* Timeline specific */
+        .timeline-line {
+            position: absolute;
+            left: 28px; /* Center of the icon */
+            top: 40px;
+            bottom: -20px;
+            width: 2px;
+            background: linear-gradient(to bottom, rgba(164, 201, 255, 0.3) 0%, rgba(164, 201, 255, 0.05) 100%);
+            z-index: 0;
+        }
+        
+        .quest-item:last-child .timeline-line {
+            display: none;
+        }
+
+        /* Hide scrollbar for clean look but keep functionality */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-surface font-body-base antialiased pb-24 md:pb-0">
+<!-- TopAppBar (Web & Mobile) -->
+<header class="bg-surface/60 backdrop-blur-3xl fixed top-0 w-full z-50 border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.5)] flex justify-between items-center px-margin-mobile py-4 w-full">
+<div class="flex items-center gap-3">
+<div class="relative w-10 h-10 rounded-full overflow-hidden border border-primary/30 shadow-[0_0_10px_rgba(164,201,255,0.2)]">
+<img alt="Player Avatar" class="w-full h-full object-cover" data-alt="A stylized digital portrait of an RPG protagonist with glowing blue eyes, futuristic sci-fi armor with glowing accents, set against a dark cosmic void background with neon holographic elements. The lighting is high-contrast, moody, and cinematic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBPbEDo-k9Y5e5CQSjyV7tTKT97MwpuxHXpdwagWUwv-QH6UhhVcQhymA5RU2TgcTrRdNb4ZBlrpMPFAAjY2vkcBJq9mVZ_ML2RG6yDO1nKLQYGqr2EhfiT5pWW2PvYay9DXzRlcpDc8pnjusrzfTF4OPxHd74iEmDCSjUZvOgfYbatvpOB24E4Lf3_6_PQhf9BqbEGXrbNqBKQ83Od6T2gosONt3z7TIrIqdIAIZ5trx_pNZqYqQ8tjMUq2NoSxaYzqRCfy0h73A"/>
+</div>
+<h1 class="font-display-lg text-headline-md-mobile md:text-headline-md text-primary drop-shadow-[0_0_8px_rgba(164,121,255,0.8)] tracking-widest uppercase">
+                SYSTEM LEVELING
+            </h1>
+</div>
+<div class="bg-primary/10 border border-primary/20 px-3 py-1 rounded-full text-primary font-label-caps text-label-caps flex items-center gap-1 shadow-[0_0_10px_rgba(164,201,255,0.1)]">
+<span class="material-symbols-outlined text-[14px]">stars</span>
+            Lvl. 42
+        </div>
+</header>
+<!-- Main Layout Grid -->
+<main class="flex-1 mt-20 md:mt-24 w-full max-w-7xl mx-auto px-margin-mobile md:px-margin-desktop grid grid-cols-1 md:grid-cols-12 gap-container-gap">
+<!-- Left Pane: Character/Stats Summary (Visible mostly on desktop, stacked on mobile) -->
+<aside class="md:col-span-4 lg:col-span-3 hidden md:flex flex-col gap-4">
+<!-- Daily Progress Card -->
+<div class="glass-panel rounded-xl p-4 flex flex-col gap-4">
+<div class="flex justify-between items-center">
+<h2 class="font-headline-md text-headline-md text-primary-fixed-dim">Daily Quests</h2>
+<span class="font-label-caps text-label-caps text-secondary-fixed-dim bg-secondary/10 px-2 py-1 rounded-sm border border-secondary-fixed/20">IN PROGRESS</span>
+</div>
+<div class="flex flex-col gap-1">
+<div class="flex justify-between font-label-caps text-label-caps text-on-surface-variant">
+<span>Completion Rate</span>
+<span class="text-primary">37.5%</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary-container energy-pulse w-[37.5%]"></div>
+</div>
+<div class="text-right font-label-caps text-[10px] text-outline mt-1">3/8 DONE</div>
+</div>
+<div class="grid grid-cols-2 gap-2 mt-2">
+<div class="bg-surface-container-highest/50 p-2 rounded-lg border border-white/5 flex flex-col items-center justify-center">
+<span class="material-symbols-outlined text-secondary-fixed-dim text-lg mb-1">toll</span>
+<span class="font-body-bold text-sm">+450</span>
+<span class="font-label-caps text-[10px] text-on-surface-variant">Est. Gold</span>
+</div>
+<div class="bg-surface-container-highest/50 p-2 rounded-lg border border-white/5 flex flex-col items-center justify-center">
+<span class="material-symbols-outlined text-tertiary-fixed-dim text-lg mb-1">upgrade</span>
+<span class="font-body-bold text-sm">+1250</span>
+<span class="font-label-caps text-[10px] text-on-surface-variant">Est. EXP</span>
+</div>
+</div>
+</div>
+<!-- Active Buffs -->
+<div class="glass-panel rounded-xl p-4">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">auto_awesome</span>
+                    ACTIVE EFFECTS
+                </h3>
+<div class="flex flex-wrap gap-2">
+<div class="bg-tertiary/10 border border-tertiary/30 text-tertiary px-2 py-1 rounded-sm font-label-caps text-[10px] flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">trending_up</span> EXP +15%
+                    </div>
+<div class="bg-secondary-fixed/10 border border-secondary-fixed/30 text-secondary-fixed px-2 py-1 rounded-sm font-label-caps text-[10px] flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">coffee</span> Energy Regen
+                    </div>
+</div>
+</div>
+</aside>
+<!-- Right Pane: Quest Timeline -->
+<section class="md:col-span-8 lg:col-span-9 flex flex-col gap-4 relative">
+<!-- Timeline Header Mobile -->
+<div class="md:hidden flex justify-between items-end mb-2">
+<h2 class="font-headline-md-mobile text-headline-md-mobile text-primary-fixed-dim">Nhiệm Vụ Hàng Ngày</h2>
+<div class="text-right">
+<span class="font-label-caps text-label-caps text-primary block">Tiến độ</span>
+<span class="font-body-bold text-sm">3/8 Hoàn thành</span>
+</div>
+</div>
+<div class="md:hidden h-1 w-full bg-surface-container-highest rounded-full overflow-hidden mb-4">
+<div class="h-full bg-primary-container energy-pulse w-[37.5%]"></div>
+</div>
+<!-- Timeline Container -->
+<div class="flex flex-col relative py-2">
+<!-- Quest Item 1: Done -->
+<div class="quest-item relative flex gap-4 min-h-[100px]">
+<div class="timeline-line"></div>
+<div class="flex-shrink-0 flex flex-col items-center z-10 w-14">
+<div class="font-label-caps text-label-caps text-outline mb-1">06:00</div>
+<div class="w-10 h-10 rounded-full bg-surface-container-highest border border-outline flex items-center justify-center opacity-50">
+<span class="material-symbols-outlined text-outline">check</span>
+</div>
+</div>
+<div class="flex-1 pb-6">
+<div class="glass-panel rounded-lg p-3 opacity-60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center border border-white/5">
+<span class="font-body-bold text-outline rank-e">E</span>
+</div>
+<div>
+<h4 class="font-body-bold text-sm text-outline line-through">Uống nước</h4>
+<span class="font-label-caps text-[10px] text-outline">Thói quen cơ bản</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="bg-surface-container px-2 py-1 rounded text-[10px] font-label-caps text-outline border border-white/5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">upgrade</span> 10 EXP
+                                </span>
+</div>
+</div>
+</div>
+</div>
+<!-- Quest Item 2: Pending (C Rank) -->
+<div class="quest-item relative flex gap-4 min-h-[100px]">
+<div class="timeline-line"></div>
+<div class="flex-shrink-0 flex flex-col items-center z-10 w-14">
+<div class="font-label-caps text-label-caps text-primary mb-1">06:30</div>
+<div class="w-10 h-10 rounded-full bg-surface-container-high border-2 border-primary shadow-[0_0_10px_rgba(164,201,255,0.3)] flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-weight="fill">directions_run</span>
+</div>
+</div>
+<div class="flex-1 pb-6">
+<div class="glass-panel rounded-lg p-4 border-l-4 border-l-primary/50 hover:bg-white/5 transition-colors group cursor-pointer">
+<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-highest flex items-center justify-center border border-white/10 shadow-inner mt-1">
+<span class="font-body-bold rank-c">C</span>
+</div>
+<div>
+<h4 class="font-body-bold text-base text-on-surface group-hover:text-primary transition-colors">Chạy bộ 3km</h4>
+<p class="font-body-base text-sm text-on-surface-variant mt-1">Duy trì thể lực để khám phá Hầm ngục.</p>
+</div>
+</div>
+<div class="flex flex-wrap sm:flex-col items-end gap-2 shrink-0">
+<div class="flex gap-2">
+<span class="bg-tertiary-container/20 text-tertiary-fixed-dim px-2 py-1 rounded font-label-caps text-[10px] border border-tertiary/20 flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">upgrade</span> 150 EXP
+                                        </span>
+<span class="bg-secondary-container/20 text-secondary-fixed-dim px-2 py-1 rounded font-label-caps text-[10px] border border-secondary-fixed/20 flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">bolt</span> 2 SP
+                                        </span>
+</div>
+</div>
+</div>
+<div class="mt-4 flex justify-end">
+<button class="bg-primary-container text-on-primary-container font-label-caps text-label-caps px-4 py-1.5 rounded-full hover:brightness-125 active:scale-95 transition-all shadow-[0_0_10px_rgba(74,158,255,0.3)]">
+                                    BẮT ĐẦU
+                                </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Quest Item 3: Active (B Rank) -->
+<div class="quest-item relative flex gap-4 min-h-[100px]">
+<div class="timeline-line"></div>
+<div class="flex-shrink-0 flex flex-col items-center z-10 w-14">
+<div class="font-label-caps text-label-caps text-tertiary-fixed-dim mb-1 animate-pulse">08:00</div>
+<div class="w-10 h-10 rounded-full bg-surface-container-high border-2 border-tertiary shadow-[0_0_15px_rgba(64,225,126,0.5)] flex items-center justify-center relative">
+<span class="absolute inset-0 rounded-full border-2 border-tertiary animate-ping opacity-20"></span>
+<span class="material-symbols-outlined text-tertiary" data-weight="fill">menu_book</span>
+</div>
+</div>
+<div class="flex-1 pb-6">
+<div class="glass-panel border-rank-b rounded-lg p-4 bg-tertiary/5 relative overflow-hidden">
+<!-- Subtle animated background for active quest -->
+<div class="absolute inset-0 bg-gradient-to-r from-transparent via-tertiary/5 to-transparent -translate-x-full animate-[shimmer_2s_infinite]"></div>
+<div class="relative z-10 flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-highest flex items-center justify-center border border-tertiary/40 shadow-[0_0_8px_rgba(64,225,126,0.3)] mt-1">
+<span class="font-body-bold rank-b">B</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h4 class="font-body-bold text-base text-white">IELTS Reading</h4>
+<span class="bg-tertiary text-on-tertiary text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">Đang tiến hành</span>
+</div>
+<p class="font-body-base text-sm text-on-surface-variant mt-1">Hoàn thành 1 test trong Cambridge 18. Thời gian còn lại: 45:12</p>
+<!-- Progress Bar inside active quest -->
+<div class="mt-3">
+<div class="flex justify-between text-[10px] font-label-caps text-outline mb-1">
+<span>Tiến độ bài đọc</span>
+<span>2/3 Passages</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-tertiary w-[66%] shadow-[0_0_5px_#40e17e]"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex flex-wrap sm:flex-col items-end gap-2 shrink-0">
+<div class="flex gap-2">
+<span class="bg-tertiary-container/20 text-tertiary-fixed-dim px-2 py-1 rounded font-label-caps text-[10px] border border-tertiary/20 flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">upgrade</span> 300 EXP
+                                        </span>
+<span class="bg-secondary-container/20 text-secondary-fixed-dim px-2 py-1 rounded font-label-caps text-[10px] border border-secondary-fixed/20 flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">toll</span> 50 Gold
+                                        </span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Quest Item 4: Upcoming (C Rank) -->
+<div class="quest-item relative flex gap-4 min-h-[100px]">
+<div class="timeline-line"></div>
+<div class="flex-shrink-0 flex flex-col items-center z-10 w-14">
+<div class="font-label-caps text-label-caps text-on-surface-variant mb-1">10:00</div>
+<div class="w-10 h-10 rounded-full bg-surface-container border border-white/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant">terminal</span>
+</div>
+</div>
+<div class="flex-1 pb-6">
+<div class="glass-panel rounded-lg p-4 hover:bg-white/5 transition-colors group cursor-pointer opacity-80">
+<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-highest flex items-center justify-center border border-white/10 mt-1">
+<span class="font-body-bold rank-c">C</span>
+</div>
+<div>
+<h4 class="font-body-bold text-base text-on-surface group-hover:text-primary transition-colors">Code MQTT</h4>
+<p class="font-body-base text-sm text-on-surface-variant mt-1">Thiết lập kết nối broker cho dự án IoT.</p>
+</div>
+</div>
+<div class="flex flex-wrap sm:flex-col items-end gap-2 shrink-0">
+<div class="flex gap-2">
+<span class="bg-tertiary-container/20 text-tertiary-fixed-dim px-2 py-1 rounded font-label-caps text-[10px] border border-tertiary/20 flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">upgrade</span> 200 EXP
+                                        </span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Quest Item 5: Locked/Legendary Preview (S Rank) -->
+<div class="quest-item relative flex gap-4 min-h-[100px]">
+<div class="timeline-line"></div>
+<div class="flex-shrink-0 flex flex-col items-center z-10 w-14">
+<div class="font-label-caps text-label-caps text-outline mb-1">14:00</div>
+<div class="w-10 h-10 rounded-full bg-surface-container-low border border-secondary-fixed/30 flex items-center justify-center relative overflow-hidden">
+<div class="absolute inset-0 bg-secondary-fixed/10"></div>
+<span class="material-symbols-outlined text-secondary-fixed-dim opacity-50">lock</span>
+</div>
+</div>
+<div class="flex-1 pb-6">
+<div class="glass-panel border-rank-s holographic-shimmer rounded-lg p-4 bg-secondary-fixed/5 opacity-70 relative">
+<div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9InJnYmEoMjMzLCAxOTYsIDAsIDAuMSkiLz48L3N2Zz4=')] [background-size:10px_10px] opacity-30 mix-blend-overlay"></div>
+<div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-highest flex items-center justify-center border border-secondary-fixed/50 shadow-[0_0_10px_rgba(233,196,0,0.4)]">
+<span class="font-body-bold rank-s">S</span>
+</div>
+<div>
+<h4 class="font-body-bold text-base text-secondary-fixed-dim">Nhiệm vụ Ẩn</h4>
+<span class="font-label-caps text-[10px] text-outline">Yêu cầu hoàn thành các nhiệm vụ trước</span>
+</div>
+</div>
+<div class="text-right blur-[2px] opacity-50 select-none">
+<span class="font-label-caps text-[10px] text-secondary-fixed tracking-widest">??? REWARD ???</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Dialogue System UI element floating at bottom right -->
+<div class="fixed bottom-24 right-4 md:bottom-8 md:right-8 w-64 glass-panel rounded-xl p-3 border-l-2 border-l-primary hidden md:block animate-[bounce_4s_infinite]">
+<div class="flex gap-3 items-start">
+<div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 border border-primary/30">
+<span class="material-symbols-outlined text-primary text-sm">smart_toy</span>
+</div>
+<div>
+<p class="font-body-base text-[13px] text-on-surface leading-snug">"Người chơi cần hoàn thành nhiệm vụ Rank B trước buổi trưa để tối ưu hóa lượng EXP nhận được."</p>
+<div class="mt-2 flex gap-1">
+<div class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+<div class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" style="animation-delay: 0.2s"></div>
+<div class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" style="animation-delay: 0.4s"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden bg-surface-container/65 backdrop-blur-[40px] fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] rounded-full border border-white/12 shadow-[0_8px_32px_0_rgba(0,0,0,0.8)] z-50 px-4 py-2 flex justify-around items-center">
+<a class="flex items-center justify-center text-on-surface-variant w-12 h-12 hover:text-primary transition-transform active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">home</span>
+</a>
+<a class="flex items-center justify-center bg-primary-container text-on-primary-container rounded-full w-12 h-12 shadow-[0_0_15px_rgba(74,158,255,0.6)] scale-110 active:scale-90 duration-150 relative" href="#">
+<!-- Active indicator glow -->
+<span class="absolute -bottom-1 w-4 h-1 bg-primary rounded-full shadow-[0_0_8px_rgba(164,201,255,0.8)]"></span>
+<span class="material-symbols-outlined" data-weight="fill">swords</span>
+</a>
+<a class="flex items-center justify-center text-on-surface-variant w-12 h-12 hover:text-primary transition-transform active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">bolt</span>
+</a>
+<a class="flex items-center justify-center text-on-surface-variant w-12 h-12 hover:text-primary transition-transform active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">backpack</span>
+</a>
+<a class="flex items-center justify-center text-on-surface-variant w-12 h-12 hover:text-primary transition-transform active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">more_horiz</span>
+</a>
+</nav>
+<script>
+        // Simple script to handle basic interactions if needed
+        document.querySelectorAll('.quest-item button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                // Add click ripple or logic here
+                const originalText = e.target.innerText;
+                e.target.innerText = 'ĐANG XỬ LÝ...';
+                e.target.classList.add('opacity-80');
+                setTimeout(() => {
+                    e.target.innerText = originalText;
+                    e.target.classList.remove('opacity-80');
+                }, 1000);
+            });
+        });
+    </script>
+</body></html>

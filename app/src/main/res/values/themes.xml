@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Main app theme (used after splash screen dismisses) -->
+    <style name="Theme.SystemLeveling" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:statusBarColor">@color/bg_deep</item>
+        <item name="android:navigationBarColor">@color/bg_deep</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <!-- Splash screen theme (applied to MainActivity in AndroidManifest) -->
+    <style name="Theme.SystemLeveling.Splash" parent="Theme.SplashScreen">
+        <!-- Cosmic Void background -->
+        <item name="windowSplashScreenBackground">@color/bg_void</item>
+        <!-- Use the launcher icon -->
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <!-- Transition to main theme after splash -->
+        <item name="postSplashScreenTheme">@style/Theme.SystemLeveling</item>
+    </style>
+
+    <color name="bg_deep">#0A0A1A</color>
+    <color name="bg_void">#121222</color>
+
+</resources>

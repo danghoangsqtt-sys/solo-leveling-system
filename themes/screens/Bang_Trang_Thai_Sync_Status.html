@@ -1,0 +1,380 @@
+<!DOCTYPE html><html class="dark" lang="vi"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>System Leveling - Bảng Trạng Thái</title>
+<!-- Fonts: Inter, Rajdhani, Material Symbols -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Rajdhani:wght@600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-container": "#ffdb3c",
+                        "on-tertiary-fixed": "#00210c",
+                        "on-primary-fixed": "#001c39",
+                        "background": "#121222",
+                        "tertiary-container": "#00b35b",
+                        "tertiary": "#40e17e",
+                        "outline-variant": "#414752",
+                        "on-surface-variant": "#c0c7d4",
+                        "error": "#ffb4ab",
+                        "primary-fixed-dim": "#a4c9ff",
+                        "on-secondary-fixed-variant": "#544600",
+                        "primary-fixed": "#d4e3ff",
+                        "surface-container-highest": "#333345",
+                        "secondary-fixed-dim": "#e9c400",
+                        "surface-bright": "#38374a",
+                        "on-error": "#690005",
+                        "surface-container-high": "#29283a",
+                        "on-surface": "#e3e0f8",
+                        "on-primary-container": "#003463",
+                        "secondary": "#fff9ef",
+                        "on-secondary-fixed": "#221b00",
+                        "surface-dim": "#121222",
+                        "on-secondary": "#3a3000",
+                        "on-secondary-container": "#725f00",
+                        "surface-container-low": "#1a1a2b",
+                        "on-tertiary-container": "#003c1a",
+                        "outline": "#8a919e",
+                        "on-tertiary": "#003919",
+                        "inverse-primary": "#005fad",
+                        "on-tertiary-fixed-variant": "#005226",
+                        "primary-container": "#4a9eff",
+                        "primary": "#a4c9ff",
+                        "surface-variant": "#333345",
+                        "error-container": "#93000a",
+                        "on-primary-fixed-variant": "#004884",
+                        "on-primary": "#00315d",
+                        "surface-container-lowest": "#0c0c1d",
+                        "on-error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#40e17e",
+                        "surface": "#121222",
+                        "surface-container": "#1e1e2f",
+                        "inverse-surface": "#e3e0f8",
+                        "tertiary-fixed": "#63ff97",
+                        "on-background": "#e3e0f8",
+                        "surface-tint": "#a4c9ff",
+                        "inverse-on-surface": "#2f2f40",
+                        "secondary-fixed": "#ffe16d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "unit": "4px",
+                        "container-gap": "24px",
+                        "gutter": "16px",
+                        "margin-desktop": "32px"
+                    },
+                    "fontFamily": {
+                        "body-bold": ["Inter"],
+                        "label-caps": ["Rajdhani"],
+                        "headline-md-mobile": ["Rajdhani"],
+                        "body-base": ["Inter"],
+                        "display-lg": ["Rajdhani"],
+                        "headline-md": ["Rajdhani"]
+                    },
+                    "fontSize": {
+                        "body-bold": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "600" }],
+                        "headline-md-mobile": ["20px", { "lineHeight": "28px", "letterSpacing": "0.02em", "fontWeight": "700" }],
+                        "body-base": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Cosmic Void Background */
+        body {
+            background-color: #121222;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(74, 158, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(255, 219, 60, 0.05) 0%, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        /* Glassmorphism Utilities */
+        .glass-panel {
+            background-color: rgba(30, 30, 47, 0.65); /* surface-container */
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .glass-panel-rare {
+            background-color: rgba(30, 30, 47, 0.65);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 219, 60, 0.4); /* System Gold border */
+            box-shadow: inset 0 0 20px rgba(255, 219, 60, 0.05);
+        }
+
+        /* Animations */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 5px rgba(74, 158, 255, 0.2); }
+            50% { box-shadow: 0 0 15px rgba(74, 158, 255, 0.6); }
+            100% { box-shadow: 0 0 5px rgba(74, 158, 255, 0.2); }
+        }
+        .animate-pulse-glow {
+            animation: pulse-glow 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) skewX(-15deg); }
+            100% { transform: translateX(200%) skewX(-15deg); }
+        }
+        .shimmer-wrapper {
+            position: relative;
+            overflow: hidden;
+        }
+        .shimmer-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shimmer 2.5s infinite;
+        }
+
+        /* Progress Bar Fills */
+        .stat-bar-fill {
+            background: linear-gradient(90deg, #4a9eff, #a4c9ff);
+        }
+        .exp-bar-fill {
+            background: linear-gradient(90deg, #ffdb3c, #ffe16d);
+        }
+        
+        /* Hidden scrollbar for clean look */
+        ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="text-on-surface antialiased min-h-screen flex flex-col pb-24 md:pb-0 pt-20">
+<!-- JSON Component: TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/60 backdrop-blur-3xl border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.5)] flex justify-between items-center px-margin-mobile py-4 w-full">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-high border border-white/20 overflow-hidden flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant">person</span>
+</div>
+<h1 class="font-headline-md text-headline-md tracking-widest text-primary drop-shadow-[0_0_8px_rgba(164,121,255,0.8)] uppercase">SYSTEM LEVELING</h1>
+</div>
+<div class="flex items-center">
+<span class="font-body-bold text-body-bold text-secondary-fixed">Lvl. 42</span>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-grow px-margin-mobile md:px-margin-desktop w-full max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-container-gap">
+<!-- Left Pane: Character & Core Info (Spans 5 cols on desktop) -->
+<section class="md:col-span-5 flex flex-col gap-container-gap">
+<!-- Player Nameplate (Glass Card) -->
+<div class="glass-panel-rare rounded-xl p-6 relative overflow-hidden flex flex-col items-center text-center">
+<div class="absolute top-0 w-full h-1 bg-gradient-to-r from-transparent via-secondary-container to-transparent opacity-50"></div>
+<span class="font-label-caps text-label-caps text-secondary-fixed px-3 py-1 rounded-full bg-secondary-container/10 border border-secondary-container/30 mb-2 shimmer-wrapper">
+<span class="material-symbols-outlined text-[14px] align-middle mr-1" style="font-variation-settings: 'FILL' 1;">stars</span>Chiến Binh Nhàn Hạ
+                </span>
+<h2 class="font-display-lg text-display-lg text-on-surface tracking-tight leading-tight mb-1">Vua Bóng Tối</h2>
+<p class="font-body-base text-body-base text-primary">Class: Giả Kim Thuật Sư</p>
+</div>
+<!-- Central NPC Display -->
+<div class="relative w-full aspect-square flex items-center justify-center">
+<!-- Orbital decorations -->
+<div class="absolute w-[120%] h-[120%] border border-primary/20 rounded-full animate-[spin_20s_linear_infinite] border-dashed"></div>
+<div class="absolute w-[90%] h-[90%] border border-secondary-fixed/10 rounded-full animate-[spin_15s_linear_infinite_reverse]"></div>
+<!-- Glowing Base -->
+<div class="absolute bottom-10 w-48 h-12 bg-primary/20 blur-2xl rounded-full"></div>
+<!-- NPC Image -->
+<img alt="Aura NPC Guide floating in AR interface" class="w-[80%] h-auto object-contain z-10 animate-float drop-shadow-[0_20px_30px_rgba(0,0,0,0.8)]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuChmP0ou5ba51c6SQUPAKv2TAAnBTmFQjJdb2ttEQtcGrL34sufFHFYNCQWeBYfj5AQK0HN0QyVWpb_Yqe0sC45RVLjEWimBB-MAY3QOvzrzZbk6Ajp7_BSTBAkJPY8h6fMXTE8LVNKRDR_EgvJgFVIV_gvjqjcLz2EPTrIPWorxf41J9-o26hUomkUAOe1acEL9zBRXSaTagixM6Ytn_GmAiIwFzD3bVBKTl5LDP9r8wdL_WCGvZKZ_1htWhDFukzCc4QI6XVgPQ">
+</div>
+<!-- EXP & Currency Block -->
+<div class="glass-panel rounded-xl p-5 flex flex-col gap-4">
+<!-- EXP Bar -->
+<div>
+<div class="flex justify-between items-end mb-2">
+<span class="font-label-caps text-label-caps text-on-surface-variant">KINH NGHIỆM</span>
+<span class="font-label-caps text-label-caps text-secondary-fixed">8,450 / 10,000</span>
+</div>
+<div class="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden shimmer-wrapper">
+<div class="h-full exp-bar-fill rounded-full" style="width: 84.5%;"></div>
+</div>
+</div>
+<!-- Currency -->
+<div class="flex gap-4 pt-2 border-t border-white/5">
+<div class="flex-1 flex items-center gap-2 bg-surface-container-low p-2 rounded-lg border border-white/5">
+<span class="material-symbols-outlined text-secondary-fixed" style="font-variation-settings: 'FILL' 1;">monetization_on</span>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface-variant text-[10px]">VÀNG</span>
+<span class="font-body-bold text-body-bold text-on-surface leading-none">2,350</span>
+<span class="font-label-caps text-on-surface-variant text-[8px] opacity-70">Số dư thực</span></div>
+</div>
+<div class="flex-1 flex items-center gap-2 bg-surface-container-low p-2 rounded-lg border border-white/5">
+<span class="material-symbols-outlined text-tertiary-fixed" style="font-variation-settings: 'FILL' 1;">diamond</span>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface-variant text-[10px]">NGỌC</span>
+<span class="font-body-bold text-body-bold text-on-surface leading-none">15</span>
+<span class="font-label-caps text-on-surface-variant text-[8px] opacity-70">Số dư thực</span></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Pane: Attributes & Quests (Spans 7 cols on desktop) -->
+<section class="md:col-span-7 flex flex-col gap-container-gap">
+<!-- Attributes Panel -->
+<div class="glass-panel rounded-xl p-6 flex flex-col gap-6">
+<div class="flex items-center gap-2 mb-2 border-b border-white/10 pb-4">
+<span class="material-symbols-outlined text-primary">bar_chart</span>
+<h3 class="font-headline-md-mobile text-headline-md-mobile text-on-surface uppercase tracking-widest">Chỉ Số Cơ Bản</h3>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+<!-- STR -->
+<div class="flex flex-col gap-1.5 group cursor-pointer">
+<div class="flex justify-between items-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant flex items-center gap-1 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[14px]">fitness_center</span> SỨC MẠNH (STR)
+                            </span>
+<div class="flex items-baseline gap-1">
+<span class="font-body-bold text-body-bold text-on-surface">142</span>
+<span class="font-label-caps text-label-caps text-tertiary-fixed">+12</span><span class="material-symbols-outlined text-tertiary-fixed text-[14px] animate-pulse">trending_up</span>
+</div>
+</div>
+<div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full stat-bar-fill rounded-full" style="width: 70%;"></div>
+</div>
+</div>
+<!-- INT -->
+<div class="flex flex-col gap-1.5 group cursor-pointer">
+<div class="flex justify-between items-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant flex items-center gap-1 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[14px]">psychology</span> TRÍ LỰC (INT)
+                            </span>
+<div class="flex items-baseline gap-1">
+<span class="font-body-bold text-body-bold text-on-surface">205</span>
+<span class="font-label-caps text-label-caps text-tertiary-fixed">+45</span><span class="material-symbols-outlined text-tertiary-fixed text-[14px] animate-pulse">trending_up</span>
+</div>
+</div>
+<div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full stat-bar-fill rounded-full" style="width: 90%;"></div>
+</div>
+</div>
+<!-- AGI -->
+<div class="flex flex-col gap-1.5 group cursor-pointer">
+<div class="flex justify-between items-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant flex items-center gap-1 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[14px]">speed</span> NHANH NHẸN (AGI)
+                            </span>
+<div class="flex items-baseline gap-1">
+<span class="font-body-bold text-body-bold text-on-surface">98</span>
+<span class="font-label-caps text-label-caps text-tertiary-fixed">+5</span>
+</div>
+</div>
+<div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full stat-bar-fill rounded-full" style="width: 45%;"></div>
+</div>
+</div>
+<!-- VIT -->
+<div class="flex flex-col gap-1.5 group cursor-pointer">
+<div class="flex justify-between items-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant flex items-center gap-1 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[14px]">favorite</span> THỂ LỰC (VIT)
+                            </span>
+<div class="flex items-baseline gap-1">
+<span class="font-body-bold text-body-bold text-on-surface">160</span>
+<span class="font-label-caps text-label-caps text-tertiary-fixed">+20</span>
+</div>
+</div>
+<div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full stat-bar-fill rounded-full" style="width: 75%;"></div>
+</div>
+</div>
+<!-- WIS -->
+<div class="flex flex-col gap-1.5 group cursor-pointer">
+<div class="flex justify-between items-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant flex items-center gap-1 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[14px]">menu_book</span> THÔNG THÁI (WIS)
+                            </span>
+<div class="flex items-baseline gap-1">
+<span class="font-body-bold text-body-bold text-on-surface">185</span>
+<span class="font-label-caps text-label-caps text-tertiary-fixed">+30</span>
+</div>
+</div>
+<div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full stat-bar-fill rounded-full" style="width: 85%;"></div>
+</div>
+</div>
+<!-- CHA -->
+<div class="flex flex-col gap-1.5 group cursor-pointer">
+<div class="flex justify-between items-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant flex items-center gap-1 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[14px]">auto_awesome</span> MỊ LỰC (CHA)
+                            </span>
+<div class="flex items-baseline gap-1">
+<span class="font-body-bold text-body-bold text-on-surface">65</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">+0</span>
+</div>
+</div>
+<div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full stat-bar-fill rounded-full" style="width: 30%;"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Today's Quest Mini-Card -->
+<div class="glass-panel rounded-xl p-5 border-l-4 border-l-secondary-fixed relative overflow-hidden">
+<!-- Background ambient glow -->
+<div class="absolute right-0 top-0 w-32 h-32 bg-secondary-fixed/5 blur-2xl rounded-full"></div>
+<div class="flex justify-between items-start mb-4 relative z-10">
+<div>
+<span class="font-label-caps text-label-caps text-secondary-fixed">NHIỆM VỤ HÀNG NGÀY</span>
+<h4 class="font-body-bold text-body-bold text-on-surface">Thu thập tinh thể Mana</h4><p class="font-label-caps text-[10px] text-tertiary-fixed mt-1">Reward: +2 INT, +10 SP</p>
+</div>
+<span class="material-symbols-outlined text-secondary-fixed bg-secondary-fixed/10 p-2 rounded-lg">assignment_turned_in</span>
+</div>
+<div class="relative z-10">
+<div class="flex justify-between items-center mb-2">
+<span class="font-body-base text-body-base text-on-surface-variant text-sm">Tiến độ</span>
+<span class="font-body-bold text-body-bold text-on-surface text-sm">8 / 10</span>
+</div>
+<div class="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-secondary-fixed rounded-full" style="width: 80%;"></div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- JSON Component: BottomNavBar -->
+<nav class="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] rounded-full border border-white/12 shadow-[0_8px_32px_0_rgba(0,0,0,0.8)] bg-surface-container/65 backdrop-blur-[40px] flex justify-around items-center px-4 py-2 z-50"><a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full w-12 h-12 shadow-[0_0_15px_rgba(74,158,255,0.6)] scale-110 active:scale-95 duration-200" href="#"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span></a><a class="flex flex-col items-center justify-center text-on-surface-variant w-12 h-12 hover:text-primary transition-transform hover:brightness-125 transition-all active:scale-90 duration-150" href="#"><span class="material-symbols-outlined">explore</span></a><a class="flex flex-col items-center justify-center text-on-surface-variant w-12 h-12 hover:text-primary transition-transform hover:brightness-125 transition-all active:scale-90 duration-150" href="#"><span class="material-symbols-outlined">bolt</span></a><a class="flex flex-col items-center justify-center text-on-surface-variant w-12 h-12 hover:text-primary transition-transform hover:brightness-125 transition-all active:scale-90 duration-150" href="#"><span class="material-symbols-outlined">backpack</span></a><a class="flex flex-col items-center justify-center text-on-surface-variant w-12 h-12 hover:text-primary transition-transform hover:brightness-125 transition-all active:scale-90 duration-150" href="#"><span class="material-symbols-outlined">payments</span></a></nav>
+<!-- Web Nav Cluster (Hidden on Mobile, Visible on Desktop to adhere to rules) -->
+<nav class="hidden md:flex fixed top-0 right-margin-desktop h-[72px] items-center gap-6 z-[60]">
+<!-- Repeating icons for desktop top nav context -->
+<a class="text-primary-container hover:brightness-125 transition-all" href="#"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span></a>
+<a class="text-on-surface-variant hover:text-primary hover:brightness-125 transition-all" href="#"><span class="material-symbols-outlined">swords</span></a>
+<a class="text-on-surface-variant hover:text-primary hover:brightness-125 transition-all" href="#"><span class="material-symbols-outlined">bolt</span></a>
+<a class="text-on-surface-variant hover:text-primary hover:brightness-125 transition-all" href="#"><span class="material-symbols-outlined">payments</span></a>
+</nav>
+
+
+</body></html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kho Danh Hiệu - System Leveling</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-surface": "#e3e0f8",
+                        "primary-container": "#4a9eff",
+                        "surface-tint": "#a4c9ff",
+                        "on-tertiary-fixed-variant": "#005226",
+                        "tertiary": "#40e17e",
+                        "outline-variant": "#414752",
+                        "on-tertiary-fixed": "#00210c",
+                        "error-container": "#93000a",
+                        "outline": "#8a919e",
+                        "on-secondary-container": "#725f00",
+                        "on-error-container": "#ffdad6",
+                        "primary-fixed-dim": "#a4c9ff",
+                        "on-primary-fixed": "#001c39",
+                        "secondary-container": "#ffdb3c",
+                        "tertiary-fixed-dim": "#40e17e",
+                        "surface-container-high": "#29283a",
+                        "surface-bright": "#38374a",
+                        "tertiary-container": "#00b35b",
+                        "surface-container-low": "#1a1a2b",
+                        "inverse-primary": "#005fad",
+                        "on-secondary-fixed": "#221b00",
+                        "background": "#121222",
+                        "secondary-fixed-dim": "#e9c400",
+                        "surface-dim": "#121222",
+                        "on-secondary": "#3a3000",
+                        "on-tertiary-container": "#003c1a",
+                        "surface-variant": "#333345",
+                        "on-primary-container": "#003463",
+                        "inverse-surface": "#e3e0f8",
+                        "on-error": "#690005",
+                        "on-background": "#e3e0f8",
+                        "surface-container-highest": "#333345",
+                        "on-tertiary": "#003919",
+                        "primary": "#a4c9ff",
+                        "primary-fixed": "#d4e3ff",
+                        "secondary-fixed": "#ffe16d",
+                        "surface-container": "#1e1e2f",
+                        "surface": "#121222",
+                        "on-primary-fixed-variant": "#004884",
+                        "error": "#ffb4ab",
+                        "on-surface-variant": "#c0c7d4",
+                        "inverse-on-surface": "#2f2f40",
+                        "tertiary-fixed": "#63ff97",
+                        "surface-container-lowest": "#0c0c1d",
+                        "secondary": "#fff9ef",
+                        "on-secondary-fixed-variant": "#544600",
+                        "on-primary": "#00315d"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "margin-desktop": "32px",
+                        "margin-mobile": "16px",
+                        "container-gap": "24px",
+                        "unit": "4px",
+                        "gutter": "16px"
+                    },
+                    fontFamily: {
+                        "body-bold": ["Inter"],
+                        "label-caps": ["Rajdhani"],
+                        "display-lg": ["Rajdhani"],
+                        "headline-md-mobile": ["Rajdhani"],
+                        "headline-md": ["Rajdhani"],
+                        "body-base": ["Inter"]
+                    },
+                    fontSize: {
+                        "body-bold": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "headline-md-mobile": ["20px", { "lineHeight": "28px", "letterSpacing": "0.02em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "0.02em", "fontWeight": "700" }],
+                        "body-base": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Base Environment */
+        body {
+            background-color: theme('colors.background');
+            background-image: radial-gradient(circle at 50% 0%, rgba(74, 158, 255, 0.15), transparent 60%),
+                              radial-gradient(circle at 80% 100%, rgba(255, 219, 60, 0.05), transparent 50%);
+            background-attachment: fixed;
+            color: theme('colors.on-surface');
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Holographic Shimmer Effect for Rare Items */
+        .shimmer-wrapper {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .shimmer-wrapper::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent 45%,
+                rgba(255, 255, 255, 0.15) 50%,
+                transparent 55%
+            );
+            transform: rotate(30deg) translateY(-100%);
+            animation: sweep 4s infinite linear;
+            pointer-events: none;
+        }
+
+        @keyframes sweep {
+            0% { transform: translateY(-100%) translateX(-100%) rotate(30deg); }
+            100% { transform: translateY(100%) translateX(100%) rotate(30deg); }
+        }
+
+        /* System Inner Glow */
+        .system-glow-blue {
+            box-shadow: inset 0 0 20px rgba(74, 158, 255, 0.2), 0 0 15px rgba(74, 158, 255, 0.4);
+        }
+        .system-glow-gold {
+            box-shadow: inset 0 0 20px rgba(255, 219, 60, 0.2), 0 0 25px rgba(255, 219, 60, 0.5);
+        }
+        
+        /* Floating Animation */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
+        }
+        .floating-element {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        /* Material Icons Setup */
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* Custom Scrollbar for Grid */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.02);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-base pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/60 backdrop-blur-3xl border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.5)] flex justify-between items-center px-margin-mobile py-4 transition-all">
+<!-- Leading Avatar -->
+<div class="flex items-center gap-3">
+<div class="relative w-10 h-10 rounded-full border border-primary overflow-hidden shrink-0">
+<img alt="Player Avatar" class="w-full h-full object-cover" data-alt="A close-up digital portrait of a high-level RPG player character. The character has intense, glowing eyes and is illuminated by cool, high-tech blue light. The background is a dark, indistinct void. The art style is hyper-realistic with strong contrast, fitting a sci-fi fantasy system leveling game." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCp_55FMVjxLb-r2Tfyxx9eN4vQc4afpZmn_JHfozMF2te5Uw0rEOVuBEhn-S6k7RpmJ5rSexUD1NsOHGkkDmSb-tmtkpkdmpYn-PRh3rcYLPyXLfBR-tQvjriJMEvtwKnvWbBwfzLBZF9b3CBJHi5yn6f2zCE4O7d1w5yUdw92Yjh0GhPpWNzk5pH2DOUHZZgxNkSYqGo4OhdUWHBs0JucgRsLvnrx-5zRFy037ZvH0dekW0gtdkUdqLkQghcRZySeEaXXlrp-qw"/>
+</div>
+<h1 class="font-headline-md text-headline-md tracking-widest text-primary drop-shadow-[0_0_8px_rgba(164,121,255,0.8)] uppercase">
+                SYSTEM LEVELING
+            </h1>
+</div>
+<!-- Trailing Action -->
+<div class="px-3 py-1 bg-surface-container-highest/80 rounded-full border border-white/10">
+<span class="font-label-caps text-label-caps text-primary tracking-widest">Lvl. 42</span>
+</div>
+</header>
+<main class="pt-28 px-margin-mobile md:px-margin-desktop max-w-7xl mx-auto flex flex-col gap-container-gap">
+<!-- Screen Title -->
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-primary text-3xl drop-shadow-[0_0_10px_rgba(164,121,255,0.8)]" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+<h2 class="font-headline-md-mobile md:font-headline-md text-headline-md-mobile md:text-headline-md text-on-surface">KHO DANH HIỆU</h2>
+</div>
+<!-- Section: Danh Hiệu Đang Sử Dụng (Equipped Title) -->
+<section class="flex flex-col gap-4">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant tracking-widest uppercase">Danh Hiệu Đang Sử Dụng</h3>
+<!-- Hero Card: Mythic/Legendary -->
+<div class="shimmer-wrapper relative bg-surface-container/65 backdrop-blur-[40px] border border-secondary-fixed rounded-xl p-6 md:p-8 system-glow-gold flex flex-col md:flex-row items-center gap-6 overflow-hidden z-10 transition-transform duration-300 hover:scale-[1.01]">
+<!-- Radiant Background Effect behind icon -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-secondary-fixed/20 blur-[80px] rounded-full z-0 pointer-events-none"></div>
+<!-- Icon/Badge -->
+<div class="relative z-10 w-24 h-24 rounded-full bg-surface-container-highest border border-secondary-fixed flex items-center justify-center shadow-[0_0_30px_rgba(255,219,60,0.3)] floating-element shrink-0">
+<span class="material-symbols-outlined text-5xl text-secondary-fixed drop-shadow-[0_0_15px_rgba(255,219,60,0.8)]" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+<!-- Details -->
+<div class="relative z-10 flex flex-col text-center md:text-left gap-2 w-full">
+<div class="flex items-center justify-center md:justify-start gap-2 mb-1">
+<span class="px-2 py-0.5 bg-secondary-container text-on-secondary-container font-label-caps text-[10px] rounded-full uppercase font-bold shadow-[0_0_10px_rgba(255,219,60,0.5)]">
+                            Thần Thoại (Mythic)
+                        </span>
+</div>
+<h4 class="font-headline-md text-[28px] leading-tight text-secondary-fixed drop-shadow-[0_0_5px_rgba(255,219,60,0.5)] uppercase tracking-wide">
+                        Kẻ Nỗ Lực Không Ngừng
+                    </h4>
+<p class="font-body-base text-body-base text-on-surface-variant max-w-2xl mt-1">
+                        Một minh chứng cho ý chí sắt đá. Tăng toàn bộ chỉ số cơ bản lên 15% và giảm 10% sát thương nhận vào khi HP dưới 30%.
+                    </p>
+<!-- Stats preview -->
+<div class="flex flex-wrap justify-center md:justify-start gap-3 mt-4">
+<div class="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-sm" style="font-variation-settings: 'FILL' 1;">arrow_upward</span>
+<span class="font-body-bold text-sm text-tertiary">All Stats +15%</span>
+</div>
+<div class="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">shield</span>
+<span class="font-body-bold text-sm text-primary">Damage Reduction</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section: Bộ Sưu Tập (Collection Grid) -->
+<section class="flex flex-col gap-4 mt-8">
+<div class="flex justify-between items-end border-b border-white/10 pb-2">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant tracking-widest uppercase">Bộ Sưu Tập</h3>
+<span class="font-body-bold text-sm text-primary-container">Đã mở khóa: 12/45</span>
+</div>
+<!-- Bento Grid Layout for Collection -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-container-gap">
+<!-- Card 1: Unlocked - Epic (Purple/Primary Container) -->
+<div class="bg-surface-container/65 backdrop-blur-[40px] border border-primary-container/50 rounded-xl p-5 flex flex-col gap-3 relative overflow-hidden group hover:bg-surface-container-highest/80 transition-all duration-300">
+<!-- Subtle background glow on hover -->
+<div class="absolute inset-0 bg-gradient-to-br from-primary-container/0 to-primary-container/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+<div class="flex justify-between items-start relative z-10">
+<div class="w-12 h-12 rounded-full bg-surface-dim border border-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">swords</span>
+</div>
+<span class="font-label-caps text-[10px] text-primary-container border border-primary-container/30 px-2 py-0.5 rounded-sm uppercase tracking-wider">
+                            Sử Thi (Epic)
+                        </span>
+</div>
+<div class="relative z-10 mt-2">
+<h4 class="font-body-bold text-lg text-on-surface mb-1 group-hover:text-primary-container transition-colors">Thợ Săn Huyết Nguyệt</h4>
+<p class="font-body-base text-sm text-on-surface-variant line-clamp-2">
+                            Tiêu diệt 100 quái vật tinh anh trong sự kiện Huyết Nguyệt. Tăng 5% tỉ lệ bạo kích.
+                        </p>
+</div>
+</div>
+<!-- Card 2: Unlocked - Rare (Blue/Primary) -->
+<div class="bg-surface-container/65 backdrop-blur-[40px] border border-primary/30 rounded-xl p-5 flex flex-col gap-3 relative overflow-hidden group hover:bg-surface-container-highest/80 transition-all duration-300">
+<div class="flex justify-between items-start relative z-10">
+<div class="w-12 h-12 rounded-full bg-surface-dim border border-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</div>
+<span class="font-label-caps text-[10px] text-primary border border-primary/30 px-2 py-0.5 rounded-sm uppercase tracking-wider">
+                            Hiếm (Rare)
+                        </span>
+</div>
+<div class="relative z-10 mt-2">
+<h4 class="font-body-bold text-lg text-on-surface mb-1 group-hover:text-primary transition-colors">Tia Chớp Xanh</h4>
+<p class="font-body-base text-sm text-on-surface-variant line-clamp-2">
+                            Hoàn thành hầm ngục dưới 5 phút. Tăng 10 tốc độ di chuyển cơ bản.
+                        </p>
+</div>
+</div>
+<!-- Card 3: Unlocked - Uncommon (Green/Tertiary) -->
+<div class="bg-surface-container/65 backdrop-blur-[40px] border border-tertiary/30 rounded-xl p-5 flex flex-col gap-3 relative overflow-hidden group hover:bg-surface-container-highest/80 transition-all duration-300">
+<div class="flex justify-between items-start relative z-10">
+<div class="w-12 h-12 rounded-full bg-surface-dim border border-tertiary flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">eco</span>
+</div>
+<span class="font-label-caps text-[10px] text-tertiary border border-tertiary/30 px-2 py-0.5 rounded-sm uppercase tracking-wider">
+                            Khá (Uncommon)
+                        </span>
+</div>
+<div class="relative z-10 mt-2">
+<h4 class="font-body-bold text-lg text-on-surface mb-1 group-hover:text-tertiary transition-colors">Người Sống Sót</h4>
+<p class="font-body-base text-sm text-on-surface-variant line-clamp-2">
+                            Sống sót qua đợt tấn công đầu tiên. Tăng nhẹ khả năng hồi phục ngoài giao tranh.
+                        </p>
+</div>
+</div>
+<!-- Card 4: Locked (Progress State) -->
+<div class="bg-surface-container-low/40 backdrop-blur-[20px] border border-white/5 rounded-xl p-5 flex flex-col gap-3 relative overflow-hidden opacity-75 grayscale-[30%]">
+<!-- Lock Overlay Icon -->
+<div class="absolute top-4 right-4 z-20">
+<span class="material-symbols-outlined text-outline text-xl">lock</span>
+</div>
+<div class="flex justify-between items-start relative z-10">
+<div class="w-12 h-12 rounded-full bg-surface-dim border border-outline flex items-center justify-center opacity-50">
+<span class="material-symbols-outlined text-outline">skull</span>
+</div>
+</div>
+<div class="relative z-10 mt-2">
+<h4 class="font-body-bold text-lg text-outline-variant mb-1">Chúa Tể Vực Thẳm</h4>
+<p class="font-body-base text-sm text-outline line-clamp-2 mb-4">
+                            Đánh bại 50 Boss hạng S. Mở khóa kỹ năng đặc biệt.
+                        </p>
+<!-- Progress Bar -->
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 mb-1">
+<div class="bg-outline h-1.5 rounded-full" style="width: 60%"></div>
+</div>
+<div class="flex justify-between font-label-caps text-[10px] text-outline">
+<span>Tiến độ</span>
+<span>30 / 50</span>
+</div>
+</div>
+</div>
+<!-- Card 5: Locked (Empty State) -->
+<div class="bg-surface-container-low/40 backdrop-blur-[20px] border border-white/5 rounded-xl p-5 flex flex-col gap-3 relative overflow-hidden opacity-50 grayscale-[50%]">
+<div class="absolute top-4 right-4 z-20">
+<span class="material-symbols-outlined text-outline text-xl">lock</span>
+</div>
+<div class="flex justify-between items-start relative z-10">
+<div class="w-12 h-12 rounded-full bg-surface-dim border border-outline flex items-center justify-center opacity-30">
+<span class="material-symbols-outlined text-outline">question_mark</span>
+</div>
+</div>
+<div class="relative z-10 mt-2">
+<h4 class="font-body-bold text-lg text-outline-variant mb-1">???</h4>
+<p class="font-body-base text-sm text-outline line-clamp-2">
+                            Điều kiện chưa được khám phá. Hãy tiếp tục hành trình.
+                        </p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] rounded-full bg-surface-container/65 backdrop-blur-[40px] border border-white/12 shadow-[0_8px_32px_0_rgba(0,0,0,0.8)] z-50">
+<div class="flex justify-around items-center px-4 py-2 w-full">
+<!-- Icon 1: home -->
+<button class="flex items-center justify-center text-on-surface-variant w-12 h-12 hover:text-primary transition-transform active:scale-90 duration-150 group">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">home</span>
+</button>
+<!-- Icon 2: swords -->
+<button class="flex items-center justify-center text-on-surface-variant w-12 h-12 hover:text-primary transition-transform active:scale-90 duration-150 group">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">swords</span>
+</button>
+<!-- Icon 3: bolt -->
+<button class="flex items-center justify-center text-on-surface-variant w-12 h-12 hover:text-primary transition-transform active:scale-90 duration-150 group">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">bolt</span>
+</button>
+<!-- Icon 4: payments -->
+<button class="flex items-center justify-center text-on-surface-variant w-12 h-12 hover:text-primary transition-transform active:scale-90 duration-150 group">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">payments</span>
+</button>
+<!-- Icon 5: more_horiz (Active state for Profile/Settings/Gallery context) -->
+<button class="flex items-center justify-center bg-primary-container text-on-primary-container rounded-full w-12 h-12 shadow-[0_0_15px_rgba(74,158,255,0.6)] scale-110 active:scale-95 duration-150">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">more_horiz</span>
+</button>
+</div>
+</nav>
+</body></html>

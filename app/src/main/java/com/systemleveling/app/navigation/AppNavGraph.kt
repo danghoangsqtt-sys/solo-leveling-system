@@ -63,7 +63,8 @@ fun AppNavGraph(
                 onNavigateToJournal = { navController.navigate("journal") },
                 onNavigateToCalendar = { navController.navigate("calendar") },
                 onNavigateToNpc = { navController.navigate("npc") },
-                onNavigateToAdvancement = { navController.navigate("advancement") }
+                onNavigateToAdvancement = { navController.navigate("advancement") },
+                onNavigateToDailySummary = { navController.navigate("daily_summary") }
             )
         }
 
@@ -146,6 +147,14 @@ fun AppNavGraph(
         composable("calendar") {
             val viewModel: com.systemleveling.feature.calendar.ui.CalendarViewModel = hiltViewModel()
             com.systemleveling.feature.calendar.ui.CalendarScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable("daily_summary") {
+            val viewModel: com.systemleveling.feature.home.summary.DailySummaryViewModel = hiltViewModel()
+            com.systemleveling.feature.home.summary.DailySummaryScreen(
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() }
             )

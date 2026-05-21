@@ -1,0 +1,157 @@
+/* ═══ Main Layout Styles ═══ */
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ── Main Content ── */
+.main-content {
+  flex: 1;
+  padding-bottom: var(--bottom-nav-height);
+  min-height: 100vh;
+}
+
+@media (min-width: 769px) {
+  .main-content {
+    margin-left: var(--sidebar-width);
+    padding-bottom: 0;
+  }
+}
+
+/* ── Sidebar Character Preview ── */
+.sidebar__character {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  background: var(--bg-hover);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+}
+
+.sidebar__character-avatar {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--system-blue), var(--system-purple));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sidebar__character-glow {
+  position: absolute;
+  inset: -3px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--system-blue), var(--system-purple));
+  opacity: 0.3;
+  filter: blur(6px);
+  animation: breathe 4s ease-in-out infinite;
+}
+
+.sidebar__character-emoji {
+  font-size: 1.4rem;
+  position: relative;
+  z-index: 1;
+}
+
+.sidebar__character-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.sidebar__character-name {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar__character-level {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* ── Sidebar Nav ── */
+.sidebar__nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar__badge {
+  margin-left: auto;
+  background: var(--system-red);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  min-width: 18px;
+  text-align: center;
+}
+
+/* ── Aura Button ── */
+.sidebar__aura-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  margin-top: auto;
+  background: linear-gradient(135deg, rgba(74, 158, 255, 0.12), rgba(178, 102, 255, 0.12));
+  border: 1px solid rgba(74, 158, 255, 0.3);
+  border-radius: var(--radius-md);
+  color: var(--system-blue);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  width: 100%;
+  text-align: left;
+}
+
+.sidebar__aura-btn:hover {
+  background: linear-gradient(135deg, rgba(74, 158, 255, 0.2), rgba(178, 102, 255, 0.2));
+  border-color: var(--system-blue);
+  box-shadow: var(--shadow-glow-blue);
+}
+
+.sidebar__aura-icon {
+  font-size: 1.2rem;
+  animation: float 3s ease-in-out infinite;
+}
+
+/* ── Aura Global Panel ── */
+.aura-panel {
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: var(--aura-panel-width);
+  max-width: 100vw;
+  height: 100vh;
+  z-index: var(--z-modal);
+  transition: right var(--transition-spring);
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+}
+
+.aura-panel--open {
+  right: 0;
+}
+
+@media (max-width: 768px) {
+  .aura-panel {
+    width: 100vw;
+    z-index: calc(var(--z-sticky) + 10); /* Above bottom nav */
+  }
+}

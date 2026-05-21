@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Hệ Thống Kỹ Năng - IELTS 7.0 Mastery</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Rajdhani:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-container": "#ffdb3c",
+                        "on-tertiary-fixed": "#00210c",
+                        "on-primary-fixed": "#001c39",
+                        "background": "#121222",
+                        "tertiary-container": "#00b35b",
+                        "tertiary": "#40e17e",
+                        "outline-variant": "#414752",
+                        "on-surface-variant": "#c0c7d4",
+                        "error": "#ffb4ab",
+                        "primary-fixed-dim": "#a4c9ff",
+                        "on-secondary-fixed-variant": "#544600",
+                        "primary-fixed": "#d4e3ff",
+                        "surface-container-highest": "#333345",
+                        "secondary-fixed-dim": "#e9c400",
+                        "surface-bright": "#38374a",
+                        "on-error": "#690005",
+                        "surface-container-high": "#29283a",
+                        "on-surface": "#e3e0f8",
+                        "on-primary-container": "#003463",
+                        "secondary": "#fff9ef",
+                        "on-secondary-fixed": "#221b00",
+                        "surface-dim": "#121222",
+                        "on-secondary": "#3a3000",
+                        "on-secondary-container": "#725f00",
+                        "surface-container-low": "#1a1a2b",
+                        "on-tertiary-container": "#003c1a",
+                        "outline": "#8a919e",
+                        "on-tertiary": "#003919",
+                        "inverse-primary": "#005fad",
+                        "on-tertiary-fixed-variant": "#005226",
+                        "primary-container": "#4a9eff",
+                        "primary": "#a4c9ff",
+                        "surface-variant": "#333345",
+                        "error-container": "#93000a",
+                        "on-primary-fixed-variant": "#004884",
+                        "on-primary": "#00315d",
+                        "surface-container-lowest": "#0c0c1d",
+                        "on-error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#40e17e",
+                        "surface": "#121222",
+                        "surface-container": "#1e1e2f",
+                        "inverse-surface": "#e3e0f8",
+                        "tertiary-fixed": "#63ff97",
+                        "on-background": "#e3e0f8",
+                        "surface-tint": "#a4c9ff",
+                        "inverse-on-surface": "#2f2f40",
+                        "secondary-fixed": "#ffe16d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "unit": "4px",
+                        "container-gap": "24px",
+                        "gutter": "16px",
+                        "margin-desktop": "32px"
+                    },
+                    "fontFamily": {
+                        "body-bold": ["Inter"],
+                        "label-caps": ["Rajdhani"],
+                        "headline-md-mobile": ["Rajdhani"],
+                        "body-base": ["Inter"],
+                        "display-lg": ["Rajdhani"],
+                        "headline-md": ["Rajdhani"]
+                    },
+                    "fontSize": {
+                        "body-bold": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "600" }],
+                        "headline-md-mobile": ["20px", { "lineHeight": "28px", "letterSpacing": "0.02em", "fontWeight": "700" }],
+                        "body-base": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+            overflow: hidden; /* Prevent scrolling, use zoom canvas */
+        }
+        
+        /* Cosmic Void Background with Pulse */
+        .cosmic-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            background: radial-gradient(circle at 50% 50%, #1a1a2b 0%, #0c0c1d 100%);
+        }
+        .particle {
+            position: absolute;
+            background: rgba(164, 201, 255, 0.5);
+            border-radius: 50%;
+            animation: float-up 10s infinite linear;
+        }
+        @keyframes float-up {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            50% { opacity: 1; transform: scale(1); }
+            100% { transform: translateY(-10vh) scale(0); opacity: 0; }
+        }
+
+        /* Hexagon Node Styles */
+        .hex-node {
+            width: 80px;
+            height: 92px;
+            background-color: rgba(30, 30, 47, 0.8);
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(4px);
+        }
+        
+        .hex-border {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            z-index: -1;
+            transform: scale(1.05);
+        }
+
+        /* Status Colors */
+        .status-locked .hex-border { background-color: theme('colors.outline-variant'); }
+        .status-locked .material-symbols-outlined { color: theme('colors.outline-variant'); }
+        
+        .status-novice .hex-border { background-color: theme('colors.primary-fixed-dim'); }
+        .status-novice .material-symbols-outlined { color: theme('colors.primary-fixed-dim'); text-shadow: 0 0 10px rgba(164, 201, 255, 0.5); }
+        
+        .status-expert .hex-border { background-color: theme('colors.secondary-container'); box-shadow: 0 0 20px rgba(255, 219, 60, 0.6); }
+        .status-expert .material-symbols-outlined { color: theme('colors.secondary-container'); text-shadow: 0 0 15px rgba(255, 219, 60, 0.8); }
+
+        .hex-node:hover {
+            transform: scale(1.1);
+            z-index: 10;
+        }
+        .hex-node.active {
+            transform: scale(1.15);
+            z-index: 10;
+        }
+        .hex-node.active .hex-border {
+            background-color: theme('colors.primary');
+            box-shadow: 0 0 25px theme('colors.primary');
+        }
+
+        /* Connecting Lines */
+        svg.connections {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .connection-line {
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 2;
+            fill: none;
+        }
+        .connection-line.active {
+            stroke: theme('colors.primary');
+            stroke-width: 3;
+            filter: drop-shadow(0 0 5px theme('colors.primary'));
+            stroke-dasharray: 10;
+            animation: dash 2s linear infinite;
+        }
+        @keyframes dash {
+            to { stroke-dashoffset: -20; }
+        }
+
+        /* Zoom Canvas */
+        #zoom-canvas {
+            transform-origin: center center;
+            transition: transform 0.1s ease-out;
+            width: 2000px;
+            height: 2000px;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Bottom Sheet */
+        .bottom-sheet {
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .bottom-sheet.open {
+            transform: translateY(0);
+        }
+
+        /* Shimmer Effect */
+        .shimmer {
+            position: relative;
+            overflow: hidden;
+        }
+        .shimmer::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                to bottom right,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.1) 40%,
+                rgba(255, 255, 255, 0.3) 50%,
+                rgba(255, 255, 255, 0.1) 60%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            transform: rotate(30deg);
+            animation: shimmer 3s infinite linear;
+            pointer-events: none;
+        }
+        @keyframes shimmer {
+            0% { transform: translate(-100%, -100%) rotate(30deg); }
+            100% { transform: translate(100%, 100%) rotate(30deg); }
+        }
+
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-base text-body-base antialiased">
+<!-- Background -->
+<div class="cosmic-bg" id="particles-container"></div>
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/60 backdrop-blur-3xl border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
+<div class="flex justify-between items-center px-margin-mobile py-4 w-full">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-white/12">
+<img alt="Player Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnBzzEVKQcAtxyGCCZNnkp_wWYA23JbhyLrZeCQGf2j-QqA_h0hQ5YLuOgKkinJBFhfv67IEZFB3biQKdZFYW-YUfQ1vKxmKdOvliFsuAdHieb17uLY0KkIwtFQmlGqK7S_LcY7XiagtPjTd1l_11aq9uMuT-TxDRMBW7ZILvmeG9W9f4_SS7S8W3f-ZJks0_HbjVLby_2aBShVgWvwIfS7hLxCoH_zoOWq3agYluE6WxKBJI1JHdjVlXrqR4Vv6s8kx8DQdf9Sg"/>
+</div>
+<h1 class="font-display-lg text-headline-md text-primary drop-shadow-[0_0_8px_rgba(164,121,255,0.8)]">SYSTEM LEVELING</h1>
+</div>
+<div class="px-3 py-1 rounded-full bg-surface-container/50 border border-white/10">
+<span class="font-label-caps text-label-caps text-primary">Lvl. 42</span>
+</div>
+</div>
+</header>
+<!-- Main Canvas Area -->
+<main class="w-full h-screen relative overflow-hidden" id="canvas-container">
+<div class="absolute top-24 left-6 z-20">
+<h2 class="font-headline-md text-headline-md text-on-surface">Cây Kỹ Năng: IELTS 7.0</h2>
+<p class="font-body-base text-body-base text-on-surface-variant">Kéo để di chuyển, cuộn để thu phóng</p>
+</div>
+<div class="absolute top-24 right-6 z-20 flex flex-col gap-2">
+<button class="w-10 h-10 rounded-full bg-surface-container/65 backdrop-blur-md border border-white/12 flex items-center justify-center text-on-surface hover:text-primary hover:scale-110 transition-all shadow-lg" onclick="zoomIn()">
+<span class="material-symbols-outlined">add</span>
+</button>
+<button class="w-10 h-10 rounded-full bg-surface-container/65 backdrop-blur-md border border-white/12 flex items-center justify-center text-on-surface hover:text-primary hover:scale-110 transition-all shadow-lg" onclick="zoomOut()">
+<span class="material-symbols-outlined">remove</span>
+</button>
+<button class="w-10 h-10 rounded-full bg-surface-container/65 backdrop-blur-md border border-white/12 flex items-center justify-center text-on-surface hover:text-primary hover:scale-110 transition-all shadow-lg mt-4" onclick="resetView()">
+<span class="material-symbols-outlined">filter_center_focus</span>
+</button>
+</div>
+<div id="zoom-canvas">
+<!-- Connections -->
+<svg class="connections">
+<!-- Core to branches -->
+<path class="connection-line active" d="M1000,1000 L850,850"></path>
+<path class="connection-line" d="M1000,1000 L1150,850"></path>
+<path class="connection-line active" d="M1000,1000 L850,1150"></path>
+<path class="connection-line" d="M1000,1000 L1150,1150"></path>
+<!-- Sub-branches Reading -->
+<path class="connection-line active" d="M850,850 L750,700"></path>
+<path class="connection-line" d="M850,850 L950,700"></path>
+<!-- Sub-branches Listening -->
+<path class="connection-line" d="M850,1150 L750,1300"></path>
+</svg>
+<!-- Nodes -->
+<!-- Core Node -->
+<div class="hex-node status-expert shimmer" onclick="selectNode(this, 'Core IELTS', 'Nền tảng vững chắc cho mọi kỹ năng. Bạn đã đạt mức Master ở kỹ năng lõi này.', '100%', 'Expert')" style="left: calc(1000px - 40px); top: calc(1000px - 46px);">
+<div class="hex-border"></div>
+<span class="material-symbols-outlined" data-icon="school" style="font-size: 32px;">school</span>
+</div>
+<!-- Reading Branch -->
+<div class="hex-node status-novice active" onclick="selectNode(this, 'Reading', 'Kỹ năng đọc hiểu. Đang trong quá trình rèn luyện để tăng tốc độ quét thông tin.', '60%', 'Novice')" style="left: calc(850px - 40px); top: calc(850px - 46px);">
+<div class="hex-border"></div>
+<span class="material-symbols-outlined" data-icon="menu_book" style="font-size: 32px;">menu_book</span>
+</div>
+<div class="hex-node status-locked" onclick="selectNode(this, 'Skimming', 'Quét nhanh ý chính của đoạn văn.', '20%', 'Locked')" style="left: calc(750px - 40px); top: calc(700px - 46px);">
+<div class="hex-border"></div>
+<span class="material-symbols-outlined" data-icon="speed" style="font-size: 28px;">speed</span>
+</div>
+<div class="hex-node status-locked" onclick="selectNode(this, 'Scanning', 'Tìm kiếm chi tiết cụ thể.', '0%', 'Locked')" style="left: calc(950px - 40px); top: calc(700px - 46px);">
+<div class="hex-border"></div>
+<span class="material-symbols-outlined" data-icon="search" style="font-size: 28px;">search</span>
+</div>
+<!-- Writing Branch -->
+<div class="hex-node status-locked" onclick="selectNode(this, 'Writing', 'Kỹ năng viết luận. Cần mở khóa thêm từ vựng học thuật.', '10%', 'Locked')" style="left: calc(1150px - 40px); top: calc(850px - 46px);">
+<div class="hex-border"></div>
+<span class="material-symbols-outlined" data-icon="edit_document" style="font-size: 32px;">edit_document</span>
+</div>
+<!-- Listening Branch -->
+<div class="hex-node status-novice" onclick="selectNode(this, 'Listening', 'Kỹ năng nghe hiểu đa giọng điệu.', '45%', 'Novice')" style="left: calc(850px - 40px); top: calc(1150px - 46px);">
+<div class="hex-border"></div>
+<span class="material-symbols-outlined" data-icon="headphones" style="font-size: 32px;">headphones</span>
+</div>
+<div class="hex-node status-locked" onclick="selectNode(this, 'Note-taking', 'Ghi chú nhanh trong khi nghe.', '5%', 'Locked')" style="left: calc(750px - 40px); top: calc(1300px - 46px);">
+<div class="hex-border"></div>
+<span class="material-symbols-outlined" data-icon="notes" style="font-size: 28px;">notes</span>
+</div>
+<!-- Speaking Branch -->
+<div class="hex-node status-locked" onclick="selectNode(this, 'Speaking', 'Kỹ năng nói lưu loát và tự nhiên.', '0%', 'Locked')" style="left: calc(1150px - 40px); top: calc(1150px - 46px);">
+<div class="hex-border"></div>
+<span class="material-symbols-outlined" data-icon="record_voice_over" style="font-size: 32px;">record_voice_over</span>
+</div>
+</div>
+</main>
+<!-- Detail Bottom Sheet -->
+<div class="bottom-sheet fixed bottom-0 left-0 w-full bg-surface-container-high/90 backdrop-blur-[50px] border-t border-white/10 rounded-t-3xl z-40 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] pb-[100px] open" id="detail-sheet">
+<div class="w-12 h-1 bg-white/20 rounded-full mx-auto mt-3 mb-4"></div>
+<div class="px-gutter md:px-margin-desktop py-4 flex flex-col md:flex-row gap-6">
+<!-- Skill Info -->
+<div class="flex-1">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-md text-headline-md text-on-surface" id="skill-title">Reading</h3>
+<span class="px-3 py-1 rounded-full bg-primary-container/20 text-primary border border-primary/30 font-label-caps text-label-caps uppercase tracking-wider" id="skill-status">Novice</span>
+</div>
+<p class="font-body-base text-body-base text-on-surface-variant mb-4" id="skill-desc">Kỹ năng đọc hiểu. Đang trong quá trình rèn luyện để tăng tốc độ quét thông tin.</p>
+<div class="mb-2 flex justify-between items-center font-label-caps text-label-caps">
+<span class="text-on-surface-variant">Tiến độ SP (Skill Points)</span>
+<span class="text-primary" id="skill-progress-text">60%</span>
+</div>
+<div class="w-full h-2 bg-surface-container-lowest rounded-full overflow-hidden border border-white/5">
+<div class="h-full bg-primary transition-all duration-1000 ease-out" id="skill-progress-bar" style="width: 60%;"></div>
+</div>
+</div>
+<!-- Action Area -->
+<div class="flex flex-col justify-end gap-3 min-w-[200px]">
+<button class="w-full py-3 rounded-lg bg-gradient-to-r from-primary-container to-inverse-primary text-on-primary-container font-body-bold text-body-bold shadow-[0_0_15px_rgba(74,158,255,0.4)] hover:brightness-110 active:scale-95 transition-all">
+                    Huấn Luyện
+                </button>
+<button class="w-full py-3 rounded-lg bg-surface/50 border border-white/10 text-on-surface font-body-bold text-body-bold hover:bg-white/5 active:scale-95 transition-all">
+                    Đóng
+                </button>
+</div>
+</div>
+</div>
+<!-- BottomNavBar (Hidden on Desktop) -->
+<nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] rounded-full bg-surface-container/65 backdrop-blur-[40px] border border-white/12 shadow-[0_8px_32px_0_rgba(0,0,0,0.8)] z-50 md:hidden flex justify-around items-center px-4 py-2">
+<a class="flex items-center justify-center text-on-surface-variant w-12 h-12 hover:text-primary transition-transform active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+</a>
+<a class="flex items-center justify-center bg-primary-container text-on-primary-container rounded-full w-12 h-12 shadow-[0_0_15px_rgba(74,158,255,0.6)] scale-110 hover:text-primary transition-transform active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="swords">swords</span>
+</a>
+<a class="flex items-center justify-center text-on-surface-variant w-12 h-12 hover:text-primary transition-transform active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="bolt">bolt</span>
+</a>
+<a class="flex items-center justify-center text-on-surface-variant w-12 h-12 hover:text-primary transition-transform active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+</a>
+<a class="flex items-center justify-center text-on-surface-variant w-12 h-12 hover:text-primary transition-transform active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
+</a>
+</nav>
+<!-- SideNav (Visible on Desktop) -->
+<aside class="hidden md:flex flex-col h-full w-80 rounded-r-xl bg-surface-dim/95 backdrop-blur-[50px] border-r border-white/10 shadow-2xl fixed top-0 left-0 z-40 p-gutter pt-[80px]">
+<div class="mb-8">
+<h3 class="font-headline-md text-secondary-fixed mb-2">Hồ Sơ Thợ Săn</h3>
+<p class="font-body-base text-body-base text-on-surface">S-Rank Hunter</p>
+<p class="font-body-base text-body-base text-on-surface-variant text-sm">Mana: 2,400/2,400 | Rank #122</p>
+</div>
+<nav class="flex flex-col gap-2">
+<a class="flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:bg-white/5 transition-colors duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="backpack">backpack</span>
+<span>Inventory</span>
+</a>
+<a class="flex items-center gap-3 p-3 rounded-lg text-secondary-fixed-dim bg-secondary-container/20 font-bold transition-colors duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="military_tech">military_tech</span>
+<span>Achievements</span>
+</a>
+<a class="flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:bg-white/5 transition-colors duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+<a class="flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:bg-white/5 transition-colors duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span>Support</span>
+</a>
+</nav>
+</aside>
+<script>
+        // Generate Particles
+        const container = document.getElementById('particles-container');
+        for (let i = 0; i < 30; i++) {
+            const particle = document.createElement('div');
+            particle.classList.add('particle');
+            
+            const size = Math.random() * 4 + 2;
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            
+            particle.style.left = `${Math.random() * 100}vw`;
+            particle.style.animationDelay = `${Math.random() * 10}s`;
+            particle.style.animationDuration = `${10 + Math.random() * 10}s`;
+            
+            container.appendChild(particle);
+        }
+
+        // Canvas Zoom & Pan Logic
+        const canvasContainer = document.getElementById('canvas-container');
+        const zoomCanvas = document.getElementById('zoom-canvas');
+        let scale = 1;
+        let isDragging = false;
+        let startX, startY, translateX = 0, translateY = 0;
+
+        const MIN_SCALE = 0.5;
+        const MAX_SCALE = 2;
+        const ZOOM_SPEED = 0.1;
+
+        function updateTransform() {
+            zoomCanvas.style.transform = `translate(calc(-50% + ${translateX}px), calc(-50% + ${translateY}px)) scale(${scale})`;
+        }
+
+        function zoomIn() { scale = Math.min(MAX_SCALE, scale + ZOOM_SPEED); updateTransform(); }
+        function zoomOut() { scale = Math.max(MIN_SCALE, scale - ZOOM_SPEED); updateTransform(); }
+        function resetView() { scale = 1; translateX = 0; translateY = 0; updateTransform(); }
+
+        canvasContainer.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (e.deltaY < 0) zoomIn();
+            else zoomOut();
+        });
+
+        canvasContainer.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            canvasContainer.style.cursor = 'grabbing';
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            canvasContainer.style.cursor = 'default';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            updateTransform();
+        });
+        
+        // Touch events for mobile panning
+        canvasContainer.addEventListener('touchstart', (e) => {
+            if(e.touches.length === 1) {
+                isDragging = true;
+                startX = e.touches[0].clientX - translateX;
+                startY = e.touches[0].clientY - translateY;
+            }
+        });
+        
+        window.addEventListener('touchend', () => { isDragging = false; });
+        
+        window.addEventListener('touchmove', (e) => {
+            if (!isDragging || e.touches.length !== 1) return;
+            translateX = e.touches[0].clientX - startX;
+            translateY = e.touches[0].clientY - startY;
+            updateTransform();
+        });
+
+
+        // Node Selection Logic
+        function selectNode(element, title, desc, progress, status) {
+            // Remove active class from all
+            document.querySelectorAll('.hex-node').forEach(el => el.classList.remove('active'));
+            // Add active class to clicked
+            element.classList.add('active');
+
+            // Update Sheet Data
+            document.getElementById('skill-title').textContent = title;
+            document.getElementById('skill-desc').textContent = desc;
+            document.getElementById('skill-progress-text').textContent = progress;
+            
+            const bar = document.getElementById('skill-progress-bar');
+            bar.style.width = '0%';
+            setTimeout(() => { bar.style.width = progress; }, 100);
+
+            const statusEl = document.getElementById('skill-status');
+            statusEl.textContent = status;
+            
+            // Status styling in sheet
+            statusEl.className = 'px-3 py-1 rounded-full font-label-caps text-label-caps uppercase tracking-wider border ';
+            if(status === 'Expert') {
+                statusEl.classList.add('bg-secondary-container/20', 'text-secondary-fixed', 'border-secondary-container/50');
+            } else if (status === 'Novice') {
+                statusEl.classList.add('bg-primary-container/20', 'text-primary', 'border-primary/30');
+            } else {
+                statusEl.classList.add('bg-surface-variant', 'text-on-surface-variant', 'border-white/10');
+            }
+
+            // Open Sheet
+            document.getElementById('detail-sheet').classList.add('open');
+        }
+
+        // Close sheet button logic
+        document.querySelector('.bottom-sheet button:last-child').addEventListener('click', () => {
+            document.getElementById('detail-sheet').classList.remove('open');
+            document.querySelectorAll('.hex-node').forEach(el => el.classList.remove('active'));
+        });
+
+        // Initialize view
+        resetView();
+
+    </script>
+</body></html>

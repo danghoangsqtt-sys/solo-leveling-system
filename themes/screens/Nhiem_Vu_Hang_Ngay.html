@@ -1,0 +1,339 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Daily Quests</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary-fixed-dim": "#40e17e",
+                      "surface-container-high": "#29283a",
+                      "on-secondary-container": "#725f00",
+                      "surface-tint": "#a4c9ff",
+                      "on-tertiary": "#003919",
+                      "secondary": "#fff9ef",
+                      "on-tertiary-fixed": "#00210c",
+                      "on-secondary-fixed": "#221b00",
+                      "secondary-fixed-dim": "#e9c400",
+                      "surface-bright": "#38374a",
+                      "on-error": "#690005",
+                      "on-background": "#e3e0f8",
+                      "on-error-container": "#ffdad6",
+                      "primary": "#a4c9ff",
+                      "on-secondary-fixed-variant": "#544600",
+                      "on-primary": "#00315d",
+                      "inverse-on-surface": "#2f2f40",
+                      "surface-dim": "#121222",
+                      "surface-variant": "#333345",
+                      "primary-fixed-dim": "#a4c9ff",
+                      "inverse-surface": "#e3e0f8",
+                      "on-secondary": "#3a3000",
+                      "surface": "#121222",
+                      "outline": "#8a919e",
+                      "inverse-primary": "#005fad",
+                      "secondary-container": "#ffdb3c",
+                      "on-tertiary-fixed-variant": "#005226",
+                      "tertiary-container": "#00b35b",
+                      "surface-container-lowest": "#0c0c1d",
+                      "surface-container-low": "#1a1a2b",
+                      "secondary-fixed": "#ffe16d",
+                      "primary-fixed": "#d4e3ff",
+                      "outline-variant": "#414752",
+                      "on-surface": "#e3e0f8",
+                      "error-container": "#93000a",
+                      "on-surface-variant": "#c0c7d4",
+                      "surface-container-highest": "#333345",
+                      "on-primary-container": "#003463",
+                      "tertiary": "#40e17e",
+                      "primary-container": "#4a9eff",
+                      "tertiary-fixed": "#63ff97",
+                      "surface-container": "#1e1e2f",
+                      "on-primary-fixed": "#001c39",
+                      "error": "#ffb4ab",
+                      "background": "#121222",
+                      "on-primary-fixed-variant": "#004884",
+                      "on-tertiary-container": "#003c1a"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-mobile": "16px",
+                      "unit": "4px",
+                      "margin-desktop": "32px",
+                      "gutter": "16px",
+                      "container-gap": "24px"
+              },
+              "fontFamily": {
+                      "headline-md-mobile": ["Rajdhani"],
+                      "body-bold": ["Inter"],
+                      "body-base": ["Inter"],
+                      "headline-md": ["Rajdhani"],
+                      "label-caps": ["Rajdhani"],
+                      "display-lg": ["Rajdhani"]
+              },
+              "fontSize": {
+                      "headline-md-mobile": ["20px", {"lineHeight": "28px", "letterSpacing": "0.02em", "fontWeight": "700"}],
+                      "body-bold": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+                      "body-base": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "0.02em", "fontWeight": "700"}],
+                      "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "600"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "0.05em", "fontWeight": "700"}]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        .system-grid-bg {
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .glow-blue { box-shadow: 0 0 15px rgba(164,201,255,0.4); }
+        .glow-red { box-shadow: 0 0 15px rgba(255,100,100,0.4); }
+        .glow-orange { box-shadow: 0 0 15px rgba(255,150,50,0.4); }
+        .glow-purple { box-shadow: 0 0 15px rgba(200,100,255,0.4); }
+        .glow-green { box-shadow: 0 0 15px rgba(100,255,150,0.4); }
+        .glow-white { box-shadow: 0 0 15px rgba(255,255,255,0.2); }
+        
+        .pulse-energy { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0% { opacity: 0.8; box-shadow: 0 0 10px rgba(164,201,255,0.5); }
+            50% { opacity: 1; box-shadow: 0 0 20px rgba(164,201,255,0.8); }
+            100% { opacity: 0.8; box-shadow: 0 0 10px rgba(164,201,255,0.5); }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background system-grid-bg min-h-screen pb-24 md:pb-8 flex flex-col md:flex-row font-body-base overflow-x-hidden">
+<!-- Ambient Glow Effects -->
+<div class="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
+<div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/10 rounded-full blur-[100px]"></div>
+<div class="absolute bottom-[20%] right-[-10%] w-[40%] h-[40%] bg-tertiary/5 rounded-full blur-[100px]"></div>
+</div>
+<!-- TopAppBar (Web) / Header (Mobile) -->
+<header class="fixed top-0 w-full z-50 bg-surface/65 backdrop-blur-[40px] border-b border-white/12 shadow-[0_0_20px_rgba(164,201,255,0.1)] flex items-center justify-between px-margin-mobile h-16 md:px-margin-desktop md:h-20">
+<div class="flex items-center gap-4">
+<img alt="Avatar" class="w-10 h-10 rounded-full border border-primary/30" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOiFtJyqlkZOqr5eFBCc2lJmkA2l9CeVpDnth29EGHltn2iIKS5mfofCgvCksDdtJf1lYQ6b60X7jakFosEc9T6kaFw12ODnPljVOMcBKCFnwe2lojOL0P5NWMPI50xhOWKuUFhLyBKEv3CXRUX5TgWwUYszf0ptPTzrPMeuIUFApx2QcP1AX_9ZPIM0TLl4BWs7iiFMEzN22_8P69tCPyG33K1V3EpEjfyhjOZ39DibuJmtEM6XUuT-K7ZWBAb6ohEj17SyhPUA">
+<h1 class="font-headline-md-mobile text-headline-md-mobile md:font-headline-md md:text-headline-md text-primary tracking-widest">SYSTEM STATUS</h1>
+</div>
+<div class="flex items-center gap-6 hidden md:flex">
+<nav class="flex gap-8"><a class="font-label-caps text-label-caps text-on-surface-variant hover:opacity-80 transition-opacity flex items-center gap-2" href="#"><span class="material-symbols-outlined text-sm">home</span> Home</a>
+<a class="font-label-caps text-label-caps text-primary drop-shadow-[0_0_10px_rgba(164,201,255,0.5)] flex items-center gap-2" href="#"><span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">explore</span> Quests</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:opacity-80 transition-opacity flex items-center gap-2" href="#"><span class="material-symbols-outlined text-sm">bolt</span> Skills</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:opacity-80 transition-opacity flex items-center gap-2" href="#"><span class="material-symbols-outlined text-sm">backpack</span> Inventory</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:opacity-80 transition-opacity flex items-center gap-2" href="#"><span class="material-symbols-outlined text-sm">payments</span> Finance</a></nav>
+</div>
+<div>
+<span class="material-symbols-outlined text-primary cursor-pointer hover:opacity-80 transition-opacity">military_tech</span>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 w-full max-w-3xl mx-auto mt-20 md:mt-28 px-margin-mobile md:px-0 relative z-10">
+<!-- Dashboard Header -->
+<section class="mb-container-gap relative">
+<div class="bg-surface/65 backdrop-blur-[40px] border border-white/12 rounded-xl p-6 glow-blue relative overflow-hidden">
+<!-- Shimmer Effect -->
+<div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_4s_infinite]"></div>
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 relative z-10">
+<div>
+<h2 class="font-display-lg text-display-lg text-primary tracking-widest uppercase shadow-sm">DAILY QUESTS</h2>
+<div class="flex items-center gap-3 mt-2">
+<p class="font-body-base text-body-base text-on-surface-variant">Tuesday, May 20, 2026</p>
+<span class="bg-secondary-container text-on-secondary-container font-label-caps text-label-caps px-2 py-1 rounded-sm flex items-center gap-1 border border-secondary-fixed">
+<span class="material-symbols-outlined text-[14px]">local_fire_department</span> Streak: 12
+                            </span>
+</div>
+</div>
+<div class="w-full md:w-64">
+<div class="flex justify-between text-label-caps font-label-caps text-on-surface mb-2">
+<span class="">Quest Progress</span>
+<span class="text-primary">3/8 (37.5%)</span>
+</div>
+<div class="h-2 w-full bg-surface-container-high rounded-full overflow-hidden border border-white/5">
+<div class="h-full bg-primary pulse-energy rounded-full" style="width: 37.5%;"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Quest Timeline -->
+<section class="relative">
+<!-- Vertical Timeline Line -->
+<div class="absolute left-6 top-4 bottom-0 w-px bg-white/10 md:left-8"></div>
+<div class="flex flex-col gap-6 relative">
+<!-- Quest 1 (Completed - Rank E) -->
+<div class="flex gap-4 relative group">
+<div class="w-12 h-12 flex-shrink-0 flex items-center justify-center relative z-10 mt-1">
+<div class="w-8 h-8 rounded-full bg-surface border border-white/30 flex items-center justify-center glow-white transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined text-white text-[16px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+</div>
+<div class="flex-1 bg-surface-container-low/80 backdrop-blur-[40px] border border-white/30 rounded-lg p-4 transition-all hover:bg-surface-container/90 glow-white">
+<div class="flex justify-between items-start mb-2">
+<div class="flex items-center gap-2">
+<span class="bg-white/10 text-white font-label-caps text-[10px] px-2 py-0.5 rounded border border-white/20">[RANK E]</span>
+<h3 class="font-body-bold text-body-bold text-on-surface line-through opacity-70">Morning Hydration</h3>
+</div>
+<span class="font-label-caps text-label-caps text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 06:00
+                            </span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-caps text-[10px] text-tertiary-fixed-dim bg-tertiary-fixed-dim/10 px-2 py-0.5 rounded-sm border border-tertiary-fixed-dim/30">COMPLETED</span>
+</div>
+</div>
+</div>
+<!-- Quest 2 (In Progress - Rank C) -->
+<div class="flex gap-4 relative group">
+<div class="w-12 h-12 flex-shrink-0 flex items-center justify-center relative z-10 mt-1">
+<div class="w-8 h-8 rounded-full bg-surface border border-primary flex items-center justify-center glow-blue transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined text-primary text-[16px] animate-spin" style="animation-duration: 3s;">autorenew</span>
+</div>
+</div>
+<div class="flex-1 bg-surface-container-low/80 backdrop-blur-[40px] border border-primary rounded-lg p-4 transition-all hover:bg-surface-container/90 glow-blue">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-2">
+<span class="bg-primary/10 text-primary font-label-caps text-[10px] px-2 py-0.5 rounded border border-primary/30">[RANK C]</span>
+<h3 class="font-body-bold text-body-bold text-primary">Morning Warrior Training</h3>
+</div>
+<span class="font-label-caps text-label-caps text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 06:30-07:15
+                            </span>
+</div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center gap-2">
+<span class="font-label-caps text-[10px] text-secondary-fixed-dim bg-secondary-fixed-dim/10 px-2 py-0.5 rounded-sm border border-secondary-fixed-dim/30 animate-pulse">IN PROGRESS</span>
+</div>
+<div class="bg-surface/50 border border-white/5 rounded p-3 flex gap-4">
+<div>
+<span class="block font-label-caps text-[10px] text-on-surface-variant mb-1">REWARDS</span>
+<div class="flex gap-2">
+<span class="text-tertiary text-[12px] font-body-bold">+150 EXP</span>
+<span class="text-secondary-fixed-dim text-[12px] font-body-bold">+10 SP (Cardio)</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Quest 3 (Pending - Rank B) -->
+<div class="flex gap-4 relative group">
+<div class="w-12 h-12 flex-shrink-0 flex items-center justify-center relative z-10 mt-1">
+<div class="w-8 h-8 rounded-full bg-surface border border-[#c864ff] flex items-center justify-center glow-purple transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined text-[#c864ff] text-[16px]">menu_book</span>
+</div>
+</div>
+<div class="flex-1 bg-surface-container-low/80 backdrop-blur-[40px] border border-[#c864ff]/50 rounded-lg p-4 transition-all hover:bg-surface-container/90 hover:border-[#c864ff] hover:shadow-[0_0_15px_rgba(200,100,255,0.4)]">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-2">
+<span class="bg-[#c864ff]/10 text-[#c864ff] font-label-caps text-[10px] px-2 py-0.5 rounded border border-[#c864ff]/30">[RANK B]</span>
+<h3 class="font-body-bold text-body-bold text-on-surface">Deep Focus: IELTS Reading</h3>
+</div>
+<span class="font-label-caps text-label-caps text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 08:00
+                            </span>
+</div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center gap-2">
+<span class="font-label-caps text-[10px] text-on-surface-variant bg-surface-variant/50 px-2 py-0.5 rounded-sm border border-white/10">PENDING</span>
+</div>
+<div class="bg-surface/50 border border-white/5 rounded p-3 flex gap-4">
+<div>
+<span class="block font-label-caps text-[10px] text-on-surface-variant mb-1">REWARDS</span>
+<div class="flex gap-2">
+<span class="text-tertiary text-[12px] font-body-bold">+250 EXP</span>
+<span class="text-secondary-fixed-dim text-[12px] font-body-bold">+15 SP (Reading)</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Quest 4 (Pending - Rank C) -->
+<div class="flex gap-4 relative group">
+<div class="w-12 h-12 flex-shrink-0 flex items-center justify-center relative z-10 mt-1">
+<div class="w-8 h-8 rounded-full bg-surface border border-primary flex items-center justify-center transition-transform group-hover:scale-110 group-hover:glow-blue">
+<span class="material-symbols-outlined text-primary text-[16px]">code</span>
+</div>
+</div>
+<div class="flex-1 bg-surface-container-low/80 backdrop-blur-[40px] border border-primary/30 rounded-lg p-4 transition-all hover:bg-surface-container/90 hover:border-primary hover:glow-blue">
+<div class="flex justify-between items-start mb-2">
+<div class="flex items-center gap-2">
+<span class="bg-primary/10 text-primary font-label-caps text-[10px] px-2 py-0.5 rounded border border-primary/30">[RANK C]</span>
+<h3 class="font-body-bold text-body-bold text-on-surface">Code Practice: MQTT Protocol</h3>
+</div>
+<span class="font-label-caps text-label-caps text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 10:00
+                            </span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-caps text-[10px] text-on-surface-variant bg-surface-variant/50 px-2 py-0.5 rounded-sm border border-white/10">PENDING</span>
+</div>
+</div>
+</div>
+<!-- Quest 5 (Pending - Rank D) -->
+<div class="flex gap-4 relative group">
+<div class="w-12 h-12 flex-shrink-0 flex items-center justify-center relative z-10 mt-1">
+<div class="w-8 h-8 rounded-full bg-surface border border-tertiary flex items-center justify-center transition-transform group-hover:scale-110 group-hover:glow-green">
+<span class="material-symbols-outlined text-tertiary text-[16px]">translate</span>
+</div>
+</div>
+<div class="flex-1 bg-surface-container-low/80 backdrop-blur-[40px] border border-tertiary/30 rounded-lg p-4 transition-all hover:bg-surface-container/90 hover:border-tertiary hover:glow-green">
+<div class="flex justify-between items-start mb-2">
+<div class="flex items-center gap-2">
+<span class="bg-tertiary/10 text-tertiary font-label-caps text-[10px] px-2 py-0.5 rounded border border-tertiary/30">[RANK D]</span>
+<h3 class="font-body-bold text-body-bold text-on-surface">Vocabulary Builder</h3>
+</div>
+<span class="font-label-caps text-label-caps text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 12:00
+                            </span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-caps text-[10px] text-on-surface-variant bg-surface-variant/50 px-2 py-0.5 rounded-sm border border-white/10">PENDING</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (Mobile) -->
+<nav class="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 w-[92%] rounded-full z-50 bg-surface-container/80 backdrop-blur-[50px] border border-white/12 shadow-[0_8px_32px_rgba(0,0,0,0.6)] flex justify-around items-center py-3 px-4"><a class="flex flex-col items-center justify-center text-on-surface-variant hover:scale-110 transition-transform" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-caps text-label-caps mt-1 text-[10px]">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary drop-shadow-[0_0_8px_rgba(164,201,255,0.5)] scale-110 duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">explore</span>
+<span class="font-label-caps text-label-caps mt-1 text-[10px]">Quests</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:scale-110 transition-transform" href="#">
+<span class="material-symbols-outlined">bolt</span>
+<span class="font-label-caps text-label-caps mt-1 text-[10px]">Skills</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:scale-110 transition-transform" href="#">
+<span class="material-symbols-outlined">backpack</span>
+<span class="font-label-caps text-label-caps mt-1 text-[10px]">Inventory</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:scale-110 transition-transform" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-caps text-label-caps mt-1 text-[10px]">Finance</span>
+</a></nav>
+<style>
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+    </style>
+
+
+</body></html>

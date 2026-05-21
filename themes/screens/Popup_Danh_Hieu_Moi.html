@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Title Acquired</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=Rajdhani:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 1; filter: drop-shadow(0 0 15px rgba(255, 219, 60, 0.6)); }
+            50% { opacity: 0.8; filter: drop-shadow(0 0 25px rgba(255, 219, 60, 0.9)); }
+        }
+        @keyframes sweep {
+            0% { transform: translateX(-100%) rotate(45deg); }
+            100% { transform: translateX(200%) rotate(45deg); }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes particle-up {
+            0% { transform: translateY(0) scale(1); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-100px) scale(0); opacity: 0; }
+        }
+        
+        .mythic-glow {
+            animation: pulse-glow 3s infinite;
+        }
+        .shimmer-wrapper {
+            overflow: hidden;
+            position: relative;
+        }
+        .shimmer-wrapper::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                to right,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.1) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            transform: rotate(45deg);
+            animation: sweep 4s infinite linear;
+            pointer-events: none;
+        }
+        
+        .particle {
+            position: absolute;
+            background: #ffdb3c;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: particle-up linear infinite;
+        }
+
+        .bg-rays {
+            background: conic-gradient(from 0deg at 50% 50%, 
+                rgba(255, 219, 60, 0) 0deg, 
+                rgba(255, 219, 60, 0.1) 45deg, 
+                rgba(255, 219, 60, 0) 90deg, 
+                rgba(255, 219, 60, 0.1) 135deg, 
+                rgba(255, 219, 60, 0) 180deg, 
+                rgba(255, 219, 60, 0.1) 225deg, 
+                rgba(255, 219, 60, 0) 270deg, 
+                rgba(255, 219, 60, 0.1) 315deg, 
+                rgba(255, 219, 60, 0) 360deg);
+            animation: spin 30s linear infinite;
+        }
+        
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-high": "#29283a",
+                        "on-tertiary-fixed-variant": "#005226",
+                        "on-background": "#e3e0f8",
+                        "primary-fixed": "#d4e3ff",
+                        "error-container": "#93000a",
+                        "on-primary": "#00315d",
+                        "on-tertiary-fixed": "#00210c",
+                        "on-surface": "#e3e0f8",
+                        "secondary-fixed-dim": "#e9c400",
+                        "secondary-fixed": "#ffe16d",
+                        "surface-container-highest": "#333345",
+                        "secondary": "#fff9ef",
+                        "outline": "#8a919e",
+                        "on-primary-fixed-variant": "#004884",
+                        "on-surface-variant": "#c0c7d4",
+                        "surface-container-lowest": "#0c0c1d",
+                        "primary": "#a4c9ff",
+                        "tertiary-container": "#00b35b",
+                        "surface-tint": "#a4c9ff",
+                        "on-secondary": "#3a3000",
+                        "on-error": "#690005",
+                        "inverse-primary": "#005fad",
+                        "surface-container": "#1e1e2f",
+                        "on-tertiary": "#003919",
+                        "on-primary-container": "#003463",
+                        "surface-container-low": "#1a1a2b",
+                        "inverse-surface": "#e3e0f8",
+                        "inverse-on-surface": "#2f2f40",
+                        "on-secondary-fixed": "#221b00",
+                        "surface-variant": "#333345",
+                        "surface-dim": "#121222",
+                        "tertiary-fixed": "#63ff97",
+                        "on-secondary-fixed-variant": "#544600",
+                        "tertiary": "#40e17e",
+                        "surface": "#121222",
+                        "on-tertiary-container": "#003c1a",
+                        "surface-bright": "#38374a",
+                        "on-secondary-container": "#725f00",
+                        "on-error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#40e17e",
+                        "primary-fixed-dim": "#a4c9ff",
+                        "primary-container": "#4a9eff",
+                        "secondary-container": "#ffdb3c",
+                        "background": "#121222",
+                        "error": "#ffb4ab",
+                        "outline-variant": "#414752",
+                        "on-primary-fixed": "#001c39"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "margin-desktop": "32px",
+                        "margin-mobile": "16px",
+                        "container-gap": "24px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-md-mobile": ["Rajdhani"],
+                        "body-bold": ["Inter"],
+                        "display-lg": ["Rajdhani"],
+                        "body-base": ["Inter"],
+                        "label-caps": ["Rajdhani"],
+                        "headline-md": ["Rajdhani"]
+                    },
+                    "fontSize": {
+                        "headline-md-mobile": ["20px", { "lineHeight": "28px", "letterSpacing": "0.02em", "fontWeight": "700" }],
+                        "body-bold": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "body-base": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-base antialiased min-h-screen overflow-hidden">
+<!-- Modal Overlay Backdrop -->
+<div class="fixed inset-0 z-50 flex flex-col items-center justify-center p-gutter md:p-margin-desktop bg-surface-dim/80 backdrop-blur-[50px]">
+<!-- Background Effects -->
+<div class="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center opacity-30">
+<div class="absolute w-[800px] h-[800px] bg-secondary-container rounded-full blur-[150px] opacity-20"></div>
+<div class="absolute w-[150vw] h-[150vw] md:w-[100vw] md:h-[100vw] bg-rays opacity-50"></div>
+</div>
+<!-- NPC Guide (Aura) -->
+<img alt="" class="absolute bottom-[-10%] right-[-5%] w-[40%] max-w-[300px] opacity-40 pointer-events-none drop-shadow-[0_0_20px_rgba(74,158,255,0.4)] md:right-10 md:bottom-10 mix-blend-screen" src="https://lh3.googleusercontent.com/aida/ADBb0ujY486TkPuNJoh9m4tnoZV0dPWtyxmqG1eMkx1QIFguuNWwb0lnv5t_CgDnG46GKrIYZNxwLW08tLcWpmG4dv-pOj_9Hui-KzctrjdCNg7hX0GGDNXtaqiVNGf7PDBui2gSUGXskoDwDRwoT4nxZJtt7Xrk89lbkEBC2BojT5RLYptVcov838lOgCQbtTgCVSARTaUygd8LAluLkbwgdnetsTvFKpdzwYm82P6ir5trgpCIF2AqvkwIYw"/>
+<!-- Top Announcement Text -->
+<div class="relative z-10 text-center mb-8 animate-[float_4s_ease-in-out_infinite]">
+<span class="font-label-caps text-label-caps text-secondary tracking-[0.3em] uppercase block mb-2 opacity-80">
+                System Alert
+            </span>
+<h1 class="font-display-lg text-display-lg text-secondary-fixed drop-shadow-[0_0_15px_rgba(255,219,60,0.8)] mythic-glow">
+                NEW TITLE ACQUIRED
+            </h1>
+</div>
+<!-- The Mythic Card -->
+<div class="relative z-10 w-full max-w-md shimmer-wrapper group">
+<div class="bg-surface-container/65 backdrop-blur-[40px] border border-secondary-container rounded-xl p-8 flex flex-col items-center justify-center shadow-[0_8px_32px_0_rgba(0,0,0,0.8)] shadow-[0_0_40px_rgba(255,219,60,0.15)] relative overflow-hidden transition-transform duration-500 hover:scale-[1.02]">
+<!-- Inner Glow Overlay -->
+<div class="absolute inset-0 bg-gradient-to-b from-secondary-container/10 to-transparent opacity-50 pointer-events-none"></div>
+<!-- Rarity Badge -->
+<div class="bg-secondary-container text-on-secondary-container font-label-caps text-label-caps px-4 py-1 rounded-full mb-6 border border-secondary-fixed flex items-center gap-2 relative z-10">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                    MYTHIC - THẦN THOẠI
+                    <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<!-- Icon Container -->
+<div class="w-32 h-32 mb-6 rounded-full bg-surface-dim border-2 border-secondary-container flex items-center justify-center shadow-[0_0_30px_rgba(255,219,60,0.4)] relative">
+<div class="absolute inset-0 rounded-full border border-secondary-fixed animate-[spin_10s_linear_infinite] opacity-50 border-dashed"></div>
+<span class="material-symbols-outlined text-[64px] text-secondary-fixed drop-shadow-[0_0_15px_rgba(255,219,60,1)]" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+<!-- Title Name -->
+<h2 class="font-headline-md text-headline-md text-secondary-fixed mb-4 text-center drop-shadow-lg tracking-wider">
+                    KẺ NỖ LỰC KHÔNG NGỪNG
+                </h2>
+<!-- Description -->
+<p class="font-body-base text-body-base text-on-surface-variant text-center max-w-sm mb-2 relative z-10">
+                    Một minh chứng cho ý chí sắt đá và sự kiên trì vượt qua mọi giới hạn của bản thân.
+                </p>
+<div class="w-12 h-[1px] bg-secondary-container/50 my-4"></div>
+<p class="font-label-caps text-label-caps text-secondary-fixed-dim text-center opacity-80">
+                    +15% All Stats | +10% EXP Gain
+                </p>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="relative z-10 flex flex-col md:flex-row gap-4 mt-10 w-full max-w-md">
+<button class="flex-1 bg-primary-container text-on-primary-container font-body-bold text-body-bold py-4 px-6 rounded-lg shadow-[0_0_20px_rgba(74,158,255,0.4)] hover:shadow-[0_0_30px_rgba(74,158,255,0.6)] transition-all active:scale-95 flex items-center justify-center gap-2 group shimmer-wrapper">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">bolt</span>
+                TRANG BỊ NGAY
+            </button>
+<button class="flex-1 bg-surface-container-high text-on-surface border border-outline-variant font-body-bold text-body-bold py-4 px-6 rounded-lg hover:bg-surface-variant transition-colors active:scale-95">
+                ĐÓNG
+            </button>
+</div>
+</div>
+<!-- Particle Script -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.body;
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                createParticle();
+            }
+
+            function createParticle() {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Random properties
+                const size = Math.random() * 4 + 2; // 2px to 6px
+                const left = Math.random() * 100; // 0% to 100%
+                const top = Math.random() * 100; // 0% to 100%
+                const duration = Math.random() * 3 + 2; // 2s to 5s
+                const delay = Math.random() * 5; // 0s to 5s
+                
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${left}%`;
+                particle.style.top = `${top}%`;
+                particle.style.animationDuration = `${duration}s`;
+                particle.style.animationDelay = `${delay}s`;
+                
+                container.appendChild(particle);
+            }
+        });
+    </script>
+</body></html>
