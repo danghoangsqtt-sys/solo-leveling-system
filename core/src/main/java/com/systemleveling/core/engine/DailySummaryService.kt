@@ -11,6 +11,7 @@ import com.systemleveling.core.database.entity.JournalEntity
 import com.systemleveling.core.model.Mood
 import com.systemleveling.core.model.QuestStatus
 import com.systemleveling.core.network.GeminiApiService
+import com.systemleveling.core.settings.SettingsManager
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
@@ -33,7 +34,8 @@ class DailySummaryService @Inject constructor(
     private val itemDao: ItemDao,
     private val journalDao: JournalDao,
     private val dailySummaryDao: DailySummaryDao,
-    private val geminiApiService: GeminiApiService
+    private val geminiApiService: GeminiApiService,
+    private val settingsManager: SettingsManager
 ) {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
@@ -62,13 +64,16 @@ class DailySummaryService @Inject constructor(
         val goldEarned = completed.sumOf { it.goldReward }
         val itemsDropped = completed.count { it.droppedItemId != null }
 
-        // 3. Stat changes (estimate from quest categories)
+        // 3. Stat changes — read from quest.statPointRewards (matches RewardEngine precision)
         val statChanges = mutableMapOf<String, Int>()
         for (quest in completed) {
-            val stats = com.systemleveling.core.model.QuestCategoryStatMap.getStatsForCategory(quest.category)
-            val gainPerStat = kotlin.math.ceil(quest.expReward.toDouble() / 50.0 / stats.size).toInt()
-            for (stat in stats) {
-                statChanges[stat] = (statChanges[stat] ?: 0) + gainPerStat
+            try {
+                val statMap = json.decodeFromString<Map<String, Int>>(quest.statPointRewards)
+                for ((stat, gain) in statMap) {
+                    if (gain > 0) statChanges[stat] = (statChanges[stat] ?: 0) + gain
+                }
+            } catch (_: Exception) {
+                // Fallback for legacy/health quests with no statPointRewards
             }
         }
 
@@ -197,14 +202,26 @@ Hãy tiếp tục con đường trở thành Vua Bóng Tối.
         val failedTitles = failed.joinToString(", ") { it.title }
         val completedCategories = completed.map { it.category }.distinct().joinToString(", ")
 
+        val weeklyPlan = settingsManager.weeklyPlanItems.first()
+        val monthlyPlan = settingsManager.monthlyPlanItems.first()
+        val weeklyBlock = if (weeklyPlan.isEmpty()) "Chưa có" else
+            weeklyPlan.joinToString("; ") { "[${it.priority}] ${it.title}" }
+        val monthlyBlock = if (monthlyPlan.isEmpty()) "Chưa có" else
+            monthlyPlan.joinToString("; ") { "[${it.priority}] ${it.title}" }
+
         val prompt = """
 You are the AI Quest Master of an RPG personal development app.
-Based on today's results, suggest 5-7 todo items for tomorrow.
+Based on today's results and the user's multi-horizon plans, suggest 5-7 todo items for tomorrow.
 
 TODAY'S RESULTS:
 - Completed categories: $completedCategories
 - Failed quests: $failedTitles
-- Areas that need attention: ${if (failed.isNotEmpty()) "Retry failed quests, balance workload" else "Keep pushing forward"}
+
+WEEKLY GOALS (use to align tomorrow's plan):
+$weeklyBlock
+
+MONTHLY GOALS (use to align long-term focus):
+$monthlyBlock
 
 Generate a JSON array of todo items for tomorrow's plan:
 [
@@ -212,11 +229,11 @@ Generate a JSON array of todo items for tomorrow's plan:
   ...
 ]
 
-Include:
-1. Retry any failed quests from today
-2. Continue streak of successful categories
+Rules:
+1. Retry any failed quests from today (mark HIGH priority)
+2. Include 1-2 items that advance the weekly goals
 3. Balance fitness, study, and rest
-4. At least 1 creative or social activity
+4. Align at least 1 item with monthly goals if relevant
 
 Respond with ONLY the JSON array.
         """.trimIndent()

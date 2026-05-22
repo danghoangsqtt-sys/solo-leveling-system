@@ -21,4 +21,15 @@ class AuraRepository @Inject constructor(
         val apiKey = settingsManager.geminiApiKey.first()
         return auraService.chat(apiKey, history, userMessage)
     }
+
+    suspend fun analyzeSurvey(apiKey: String, surveyData: AiSurveyData): Result<String> {
+        return auraService.analyzeSurvey(apiKey, surveyData)
+    }
+
+    suspend fun generateRoadmapV2(apiKey: String, goalInput: AiGoalInput): Result<String> {
+        return auraService.generateRoadmapV2(apiKey, goalInput)
+    }
+    suspend fun generateCompleteOnboarding(apiKey: String, surveyData: AiSurveyData, goals: String): Result<String> {
+        return auraService.generateCompleteOnboarding(apiKey, surveyData, goals)
+    }
 }

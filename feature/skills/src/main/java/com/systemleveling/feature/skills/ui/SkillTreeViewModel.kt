@@ -12,37 +12,100 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+data class SkillGroup(
+    val parent: SkillEntity,
+    val children: List<SkillEntity>
+) {
+    val aggregateCurrentSp: Int get() = if (children.isEmpty()) parent.currentSp
+        else children.sumOf { it.currentSp }
+
+    val aggregateMaxSp: Int get() = if (children.isEmpty()) parent.level.maxSp
+        else children.sumOf { it.level.maxSp }
+
+    val aggregateProgress: Float get() =
+        if (aggregateMaxSp == 0) 0f
+        else (aggregateCurrentSp.toFloat() / aggregateMaxSp).coerceIn(0f, 1f)
+
+    val masteryLevel: SkillLevel get() {
+        if (children.isEmpty()) return parent.level
+        val avgProgress = aggregateProgress
+        return when {
+            avgProgress >= 1f   -> SkillLevel.GRAND_MASTER
+            avgProgress >= 0.8f -> SkillLevel.MASTER
+            avgProgress >= 0.6f -> SkillLevel.EXPERT
+            avgProgress >= 0.4f -> SkillLevel.ADVANCED
+            avgProgress >= 0.2f -> SkillLevel.INTERMEDIATE
+            avgProgress >= 0.05f -> SkillLevel.APPRENTICE
+            else                 -> SkillLevel.NOVICE
+        }
+    }
+}
+
 @HiltViewModel
 class SkillTreeViewModel @Inject constructor(
     private val skillDao: SkillDao
 ) : ViewModel() {
 
-    private val _skills = MutableStateFlow<List<SkillEntity>>(emptyList())
-    val skills: StateFlow<List<SkillEntity>> = _skills.asStateFlow()
+    private val _skillGroups = MutableStateFlow<List<SkillGroup>>(emptyList())
+    val skillGroups: StateFlow<List<SkillGroup>> = _skillGroups.asStateFlow()
+
+    // Kept for backward compat (empty — SkillTreeScreen uses skillGroups)
+    val skills: StateFlow<List<SkillEntity>> = MutableStateFlow(emptyList())
 
     init {
-        // Collect from DB
         viewModelScope.launch {
-            skillDao.getAllSkills().collect { dbSkills ->
-                if (dbSkills.isEmpty()) {
+            skillDao.getAllSkills().collect { all ->
+                if (all.isEmpty()) {
                     seedMockData()
                 } else {
-                    _skills.value = dbSkills
+                    buildGroups(all)
                 }
             }
         }
     }
 
+    private fun buildGroups(all: List<SkillEntity>) {
+        val parents = all.filter { it.parentId == null }
+        val childMap = all.filter { it.parentId != null }.groupBy { it.parentId }
+
+        _skillGroups.value = parents.map { parent ->
+            SkillGroup(
+                parent = parent,
+                children = childMap[parent.id] ?: emptyList()
+            )
+        }
+    }
+
     private suspend fun seedMockData() {
-        val list = listOf(
-            SkillEntity("S1", "IELTS 7.0 Mastery", "Khả năng sử dụng tiếng Anh thành thạo", SkillLevel.ADVANCED, 600, null, "🎯", 0f, 0f),
-            SkillEntity("S2", "Reading", "Đọc hiểu thần tốc", SkillLevel.INTERMEDIATE, 350, "S1", "📖", -150f, 150f),
-            SkillEntity("S3", "Writing", "Viết luận sắc bén", SkillLevel.APPRENTICE, 150, "S1", "✍", 150f, 150f),
-            SkillEntity("S4", "Vocabulary", "Từ vựng mở rộng", SkillLevel.EXPERT, 1200, "S2", "📚", -200f, 300f),
-            SkillEntity("S5", "Task 2", "Cấu trúc bài luận", SkillLevel.NOVICE, 50, "S3", "📝", 100f, 300f),
-            SkillEntity("S6", "Coherence", "Logic chặt chẽ", SkillLevel.NOVICE, 0, "S5", "🔗", 100f, 450f),
-            SkillEntity("S7", "Listening", "Nghe như người bản xứ", SkillLevel.INTERMEDIATE, 450, "S1", "🎧", -400f, 100f)
+        val mockGroups = listOf(
+            Triple("tieng-anh", "Tiếng Anh IELTS", listOf(
+                SkillEntity("S2", "Reading", "Đọc hiểu thần tốc", SkillLevel.INTERMEDIATE, 350, "tieng-anh", "📖"),
+                SkillEntity("S3", "Writing", "Viết luận sắc bén", SkillLevel.APPRENTICE, 150, "tieng-anh", "✍️"),
+                SkillEntity("S7", "Listening", "Nghe như người bản xứ", SkillLevel.INTERMEDIATE, 450, "tieng-anh", "🎧"),
+                SkillEntity("S4", "Vocabulary", "Từ vựng mở rộng", SkillLevel.EXPERT, 1200, "tieng-anh", "📚")
+            )),
+            Triple("lap-trinh", "Lập Trình & Kỹ Thuật", listOf(
+                SkillEntity("S8", "Kotlin Android", "Xây dựng ứng dụng native", SkillLevel.APPRENTICE, 200, "lap-trinh", "🤖"),
+                SkillEntity("S9", "Clean Architecture", "Kiến trúc sạch, tách biệt", SkillLevel.NOVICE, 40, "lap-trinh", "🏗️")
+            )),
+            Triple("the-chat", "Thể Chất", listOf(
+                SkillEntity("S10", "Cardio", "Sức bền tim mạch", SkillLevel.NOVICE, 80, "the-chat", "🏃"),
+                SkillEntity("S11", "Sức Mạnh", "Luyện tạ, hít đất", SkillLevel.APPRENTICE, 160, "the-chat", "💪")
+            ))
         )
-        skillDao.insertSkills(list)
+
+        val toInsert = mutableListOf<SkillEntity>()
+        mockGroups.forEach { (parentId, parentName, children) ->
+            toInsert.add(
+                SkillEntity(parentId, parentName, "Nhánh kỹ năng: $parentName",
+                    SkillLevel.NOVICE, 0, null,
+                    children.firstOrNull()?.iconId, 0f, 0f,
+                    "parent", null, "[]", 0, System.currentTimeMillis(), true)
+            )
+            children.forEach { child ->
+                toInsert.add(child)
+            }
+        }
+        skillDao.insertSkills(toInsert)
     }
 }

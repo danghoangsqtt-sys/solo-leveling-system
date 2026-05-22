@@ -80,4 +80,8 @@ class FinanceViewModel @Inject constructor(
             )
         }
     }
+
+    fun deleteTransaction(id: String) {
+        viewModelScope.launch { financeDao.deleteTransaction(id) }
+    }
 }

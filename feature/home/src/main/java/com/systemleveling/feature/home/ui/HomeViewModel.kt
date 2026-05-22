@@ -2,21 +2,22 @@ package com.systemleveling.feature.home.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.systemleveling.core.database.dao.FinanceDao
 import com.systemleveling.core.database.dao.QuestDao
 import com.systemleveling.core.database.dao.UserDao
 import com.systemleveling.core.database.entity.StatEntity
 import com.systemleveling.core.database.entity.UserEntity
 import com.systemleveling.core.model.QuestStatus
+import com.systemleveling.core.settings.SettingsManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import javax.inject.Inject
-
-import com.systemleveling.core.settings.SettingsManager
 import kotlinx.coroutines.launch
+import java.util.Calendar
+import javax.inject.Inject
 
 data class QuestSummary(val total: Int, val completed: Int)
 
@@ -24,8 +25,15 @@ data class QuestSummary(val total: Int, val completed: Int)
 class HomeViewModel @Inject constructor(
     userDao: UserDao,
     questDao: QuestDao,
+    financeDao: FinanceDao,
     private val settingsManager: SettingsManager
 ) : ViewModel() {
+
+    private val todayStart: Long = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
+    private val todayEnd: Long = todayStart + 86_400_000L
 
     val user: StateFlow<UserEntity?> = userDao.getUser()
         .stateIn(
@@ -71,6 +79,15 @@ class HomeViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = ""
         )
+
+    val totalBalance: StateFlow<Long> = combine(
+        financeDao.getTotalIncome(),
+        financeDao.getTotalExpense()
+    ) { income, expense -> (income ?: 0L) - (expense ?: 0L) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
+
+    val todayExpense: StateFlow<Long> = financeDao.getTodayExpense(todayStart, todayEnd)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
 
     fun saveApiKey(key: String) {
         viewModelScope.launch {

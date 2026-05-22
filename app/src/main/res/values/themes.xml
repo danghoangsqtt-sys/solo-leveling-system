@@ -13,8 +13,8 @@
     <style name="Theme.SystemLeveling.Splash" parent="Theme.SplashScreen">
         <!-- Cosmic Void background -->
         <item name="windowSplashScreenBackground">@color/bg_void</item>
-        <!-- Use the launcher icon -->
-        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <!-- Hide the default OS splash screen icon to seamlessly transition to Compose loading -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/transparent</item>
         <!-- Transition to main theme after splash -->
         <item name="postSplashScreenTheme">@style/Theme.SystemLeveling</item>
     </style>

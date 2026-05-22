@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Live2D Aura</title>
+    <script src="js/pixi.min.js"></script>
+    <script src="js/live2d.min.js"></script>
+    <script src="js/live2dcubismcore.min.js"></script>
+    <script src="js/pixi-live2d-display.min.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background: transparent;
+        }
+        /* Canvas is appended by PIXI — force it to fill viewport */
+        canvas {
+            position: fixed !important;
+            top: 0 !important; left: 0 !important;
+            width: 100vw !important; height: 100vh !important;
+            display: block;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ── CSS fallback: animated Aura silhouette ── */
+        #fallback {
+            display: none;
+            position: fixed; inset: 0;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 8%;
+            pointer-events: none;
+        }
+        #fallback.visible { display: flex; }
+
+        .aura-wrap {
+            position: relative;
+            width: min(55vw, 240px);
+            height: min(88vh, 460px);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: flex-end;
+            animation: breathe 3.6s ease-in-out infinite;
+        }
+        .glow-ring {
+            position: absolute; bottom: 0; left: 50%;
+            transform: translateX(-50%);
+            width: 100%; height: 40%;
+            border-radius: 50%;
+            background: radial-gradient(ellipse at center,
+                rgba(180,142,255,0.35) 0%, rgba(74,158,255,0.15) 50%, transparent 70%);
+            filter: blur(8px);
+            animation: pulse-glow 3.6s ease-in-out infinite;
+        }
+        .body-shape {
+            position: absolute; bottom: 0; left: 50%;
+            transform: translateX(-50%);
+            width: 48%; height: 70%;
+            background: linear-gradient(180deg,
+                rgba(180,142,255,0.55) 0%, rgba(74,158,255,0.40) 50%, rgba(100,80,200,0.25) 100%);
+            border-radius: 48% 48% 38% 38% / 30% 30% 20% 20%;
+            filter: blur(1px);
+        }
+        .hair-shape {
+            position: absolute; bottom: 62%; left: 50%;
+            transform: translateX(-50%);
+            width: 52%; height: 30%;
+            background: linear-gradient(180deg, rgba(120,80,220,0.7) 0%, rgba(180,142,255,0.4) 100%);
+            border-radius: 50% 50% 30% 30% / 60% 60% 20% 20%;
+            filter: blur(1.5px);
+        }
+        .head-shape {
+            position: absolute; bottom: 74%; left: 50%;
+            transform: translateX(-50%);
+            width: 30%; height: 19%;
+            background: linear-gradient(180deg, rgba(255,220,200,0.65) 0%, rgba(220,180,255,0.50) 100%);
+            border-radius: 50%;
+            filter: blur(1px);
+        }
+        .particle { position: absolute; border-radius: 50%; background: rgba(180,142,255,0.6); animation: float-up linear infinite; }
+        .p1 { width:4px; height:4px; left:20%; bottom:10%; animation-duration:4s; }
+        .p2 { width:3px; height:3px; left:75%; bottom:20%; animation-duration:5s; animation-delay:1.2s; }
+        .p3 { width:5px; height:5px; left:45%; bottom:5%;  animation-duration:3.5s; animation-delay:0.8s; }
+        .p4 { width:2px; height:2px; left:60%; bottom:15%; animation-duration:6s; animation-delay:2s; }
+        .p5 { width:3px; height:3px; left:30%; bottom:25%; animation-duration:4.5s; animation-delay:1.5s; }
+
+        @keyframes breathe {
+            0%,100% { transform: scaleY(1) translateY(0); }
+            50%      { transform: scaleY(1.025) translateY(-6px); }
+        }
+        @keyframes pulse-glow {
+            0%,100% { opacity:0.7; transform:translateX(-50%) scaleX(1); }
+            50%      { opacity:1.0; transform:translateX(-50%) scaleX(1.08); }
+        }
+        @keyframes float-up {
+            0%   { opacity:0;   transform:translateY(0) scale(1); }
+            20%  { opacity:0.8; }
+            80%  { opacity:0.4; }
+            100% { opacity:0;   transform:translateY(-80px) scale(0.5); }
+        }
+    </style>
+</head>
+<body>
+    <div id="fallback">
+        <div class="aura-wrap">
+            <div class="glow-ring"></div>
+            <div class="body-shape"></div>
+            <div class="hair-shape"></div>
+            <div class="head-shape"></div>
+            <div class="particle p1"></div>
+            <div class="particle p2"></div>
+            <div class="particle p3"></div>
+            <div class="particle p4"></div>
+            <div class="particle p5"></div>
+        </div>
+    </div>
+
+    <script>
+        let app = null;
+        let modelRef = null;
+        let currentVolume = 0;
+        let currentMouthOpen = 0;
+
+        const MODEL_URL = "file:///android_asset/models/Mao/Mao.model3.json";
+        const LOAD_TIMEOUT_MS = 10000;
+
+        function showFallback() {
+            document.getElementById('fallback').classList.add('visible');
+        }
+
+        function fitModel(model) {
+            const sw = app.screen.width  || window.innerWidth;
+            const sh = app.screen.height || window.innerHeight;
+
+            // Reset scale so model.width/height = natural unscaled bounds
+            model.scale.set(1);
+            const nw = model.width  || 1024;
+            const nh = model.height || 1024;
+
+            console.log('[Live2D] natural=' + nw + 'x' + nh + ' screen=' + sw + 'x' + sh);
+
+            // Scale to fit 90% of screen height, to ensure head is visible
+            const scale = (sh / nh) * 0.9;
+            model.scale.set(scale);
+            model.x = (sw - nw * scale) / 2;
+            
+            // Push model down by 10% of screen height so hat/head is fully inside
+            model.y = sh * 0.1;
+
+            console.log('[Live2D] scale=' + scale.toFixed(3) + ' x=' + Math.round(model.x) + ' y=' + Math.round(model.y));
+        }
+
+        async function initLive2D() {
+            const timeout = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("Load timeout after " + LOAD_TIMEOUT_MS + "ms")), LOAD_TIMEOUT_MS)
+            );
+
+            try {
+                app = new PIXI.Application({
+                    view: document.createElement('canvas'),
+                    width:  window.innerWidth,
+                    height: window.innerHeight,
+                    backgroundAlpha: 1,
+                    backgroundColor: 0x0D0D1A,
+                    resolution: window.devicePixelRatio || 1,
+                    autoDensity: true,
+                });
+                document.body.appendChild(app.view);
+
+                const Live2DModel = PIXI.live2d.Live2DModel;
+                const model = await Promise.race([Live2DModel.from(MODEL_URL), timeout]);
+                modelRef = model;
+                app.stage.addChild(model);
+
+                // Wait for PIXI tick → then one rAF so model.width/height are valid
+                await new Promise(resolve =>
+                    app.ticker.addOnce(() => requestAnimationFrame(resolve))
+                );
+
+                fitModel(model);
+                window.addEventListener('resize', () => fitModel(model));
+
+
+
+                // Lip sync — Mao uses "ParamA" for mouth open
+                model.internalModel.on('beforeModelUpdate', () => {
+                    const core = model.internalModel.coreModel;
+                    if (!core) return;
+                    let target = 0;
+                    if (currentVolume > 0.05) {
+                        target = currentVolume > 1.0
+                            ? Math.min(1.0, currentVolume / 60.0)
+                            : Math.min(1.0, currentVolume * 5.0);
+                    }
+                    currentMouthOpen += (target - currentMouthOpen) * 0.4;
+                    if (currentMouthOpen > 0.01 || target === 0) {
+                        if (typeof core.setParameterValueById === 'function') {
+                            core.setParameterValueById('ParamA', currentMouthOpen);
+                        } else if (typeof core.setParamFloat === 'function') {
+                            core.setParamFloat('ParamA', currentMouthOpen);
+                        }
+                    }
+                });
+
+                window.addEventListener('pointermove', e => model.focus(e.clientX, e.clientY));
+                console.log('[Live2D] Model ready');
+
+            } catch (err) {
+                console.error('[Live2D] Load error:', err.message || err);
+                if (app) { try { app.destroy(true); } catch (_) {} app = null; }
+                showFallback();
+            }
+        }
+
+        // Called from Android Kotlin via JavascriptInterface
+        function setVolume(vol) {
+            currentVolume = parseFloat(vol) || 0;
+            if (!modelRef) {
+                const wrap = document.querySelector('.aura-wrap');
+                if (wrap) wrap.style.animationDuration = (currentVolume > 0.5 ? 1.2 : 3.6) + 's';
+            }
+        }
+
+        async function setModel(url) {
+            if (!app || !url) return;
+            if (modelRef) { app.stage.removeChild(modelRef); modelRef.destroy(); modelRef = null; }
+            try {
+                const model = await PIXI.live2d.Live2DModel.from(url);
+                modelRef = model;
+                app.stage.addChild(model);
+                await new Promise(resolve =>
+                    app.ticker.addOnce(() => requestAnimationFrame(resolve))
+                );
+                fitModel(model);
+            } catch (err) {
+                console.error('[Live2D] setModel error:', err.message || err);
+            }
+        }
+
+        window.onload = initLive2D;
+    </script>
+</body>
+</html>

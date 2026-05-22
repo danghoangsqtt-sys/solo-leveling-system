@@ -9,16 +9,25 @@ import com.systemleveling.core.model.DroppedItemInfo
 import com.systemleveling.core.model.QuestCategoryStatMap
 import com.systemleveling.core.model.QuestStatus
 import com.systemleveling.core.model.RewardResult
+import com.systemleveling.core.model.SkillLevel
 import com.systemleveling.core.model.SkillLevelUpInfo
 import kotlinx.coroutines.flow.first
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.math.ceil
 
 /**
  * Processes rewards when a quest is completed.
- * Handles: EXP, Gold, Stat gains, Skill Points, Item drops, Level ups.
+ *
+ * Stat resolution order:
+ *   1. quest.statPointRewards (AI-specified per-quest — precise and calibrated)
+ *   2. QuestCategoryStatMap fallback (legacy/health quests) with capped minimal gain
+ *
+ * SP resolution:
+ *   - quest.skillPointRewards maps child skill IDs → SP amount
+ *   - Handles skill level-up when SP crosses SkillLevel.maxSp threshold
  */
 @Singleton
 class RewardEngine @Inject constructor(
@@ -29,120 +38,101 @@ class RewardEngine @Inject constructor(
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
-    /**
-     * Process quest completion: update user stats, skills, potentially drop an item.
-     * Returns a RewardResult for the UI to display.
-     */
     suspend fun processQuestCompletion(quest: QuestEntity): RewardResult {
-        val user = userDao.getUser().first() ?: throw IllegalStateException("No user found")
-        val stats = userDao.getStats().first() ?: throw IllegalStateException("No stats found")
+        val user = userDao.getUser().first()
+            ?: com.systemleveling.core.database.entity.UserEntity(
+                id = "local_user", nickname = "Player", avatarUri = null, characterClass = "Unknown"
+            )
+        val stats = userDao.getStats().first()
+            ?: com.systemleveling.core.database.entity.StatEntity(id = "local_stats")
 
-        // 1. Calculate stat gains from quest category
-        val affectedStats = QuestCategoryStatMap.getStatsForCategory(quest.category)
-        val statGainPerStat = ceil(quest.expReward.toDouble() / 50.0 / affectedStats.size).toInt()
+        // ── 1. Stat gains ────────────────────────────────────────────────────
         val statChanges = mutableMapOf<String, Int>()
+        var newStr = stats.str; var newInt = stats.intStat; var newAgi = stats.agi
+        var newVit = stats.vit; var newWis = stats.wis; var newCha = stats.cha
 
-        var newStr = stats.str
-        var newInt = stats.intStat
-        var newAgi = stats.agi
-        var newVit = stats.vit
-        var newWis = stats.wis
-        var newCha = stats.cha
-
-        for (stat in affectedStats) {
-            statChanges[stat] = statGainPerStat
-            when (stat) {
-                "STR" -> newStr += statGainPerStat
-                "INT" -> newInt += statGainPerStat
-                "AGI" -> newAgi += statGainPerStat
-                "VIT" -> newVit += statGainPerStat
-                "WIS" -> newWis += statGainPerStat
-                "CHA" -> newCha += statGainPerStat
+        val perQuestStats = parseStatRewards(quest.statPointRewards)
+        val statSource = if (perQuestStats.isNotEmpty()) {
+            // AI-specified — trust and apply directly
+            perQuestStats
+        } else {
+            // Fallback: category map but cap at 1 point total (health reminders, legacy)
+            val affected = QuestCategoryStatMap.getStatsForCategory(quest.category)
+            if (affected.isNotEmpty() && !quest.isHealthReminder) {
+                mapOf(affected.first() to 1) // only 1 point to 1 stat max
+            } else {
+                emptyMap()
             }
         }
 
-        // Cap stats at user's statCap
-        val cap = user.statCap
-        newStr = newStr.coerceAtMost(cap)
-        newInt = newInt.coerceAtMost(cap)
-        newAgi = newAgi.coerceAtMost(cap)
-        newVit = newVit.coerceAtMost(cap)
-        newWis = newWis.coerceAtMost(cap)
-        newCha = newCha.coerceAtMost(cap)
+        for ((stat, gain) in statSource) {
+            statChanges[stat] = gain
+            when (stat.uppercase()) {
+                "STR" -> newStr += gain
+                "INT" -> newInt += gain
+                "AGI" -> newAgi += gain
+                "VIT" -> newVit += gain
+                "WIS" -> newWis += gain
+                "CHA" -> newCha += gain
+            }
+        }
 
-        // Save stat changes
+        // Cap at user's statCap
+        val cap = user.statCap
+        newStr = newStr.coerceAtMost(cap); newInt = newInt.coerceAtMost(cap)
+        newAgi = newAgi.coerceAtMost(cap); newVit = newVit.coerceAtMost(cap)
+        newWis = newWis.coerceAtMost(cap); newCha = newCha.coerceAtMost(cap)
+
         userDao.insertStats(stats.copy(
             str = newStr, intStat = newInt, agi = newAgi,
             vit = newVit, wis = newWis, cha = newCha
         ))
 
-        // 2. EXP and Gold
+        // ── 2. EXP, Gold, Level ──────────────────────────────────────────────
         val newExp = user.exp + quest.expReward
         val newGold = user.gold + quest.goldReward
-
-        // 3. Check level up (exp >= level * 1000)
         val expForNextLevel = user.level * 1000
         val leveledUp = newExp >= expForNextLevel
         val newLevel = if (leveledUp) user.level + 1 else user.level
         val finalExp = if (leveledUp) newExp - expForNextLevel else newExp
 
-        // 4. Update streak
-        val newStreak = user.streak + (if (quest.type == com.systemleveling.core.model.QuestType.DAILY) 0 else 0) // streak managed by end-of-day
+        userDao.insertUser(user.copy(exp = finalExp, gold = newGold, level = newLevel))
 
-        userDao.insertUser(user.copy(
-            exp = finalExp,
-            gold = newGold,
-            level = newLevel,
-            streak = newStreak
-        ))
-
-        // 5. Skill Point rewards (from quest.skillPointRewards JSON)
+        // ── 3. Skill Point awards ────────────────────────────────────────────
         val skillPointChanges = mutableMapOf<String, Int>()
         val skillLevelUps = mutableListOf<SkillLevelUpInfo>()
         try {
-            val spMap = json.decodeFromString<Map<String, Int>>(quest.skillPointRewards)
+            val spMap = json.decodeFromString(
+                MapSerializer(String.serializer(), Int.serializer()), quest.skillPointRewards
+            )
             for ((skillId, spGain) in spMap) {
-                val skill = skillDao.getSkillByIdSync(skillId)
-                if (skill != null) {
-                    val newSp = skill.currentSp + spGain
-                    skillPointChanges[skill.name] = spGain
+                val skill = skillDao.getSkillByIdSync(skillId) ?: continue
+                val newSp = skill.currentSp + spGain
+                skillPointChanges[skill.name] = spGain
 
-                    // Check skill level up
-                    val currentMaxSp = skill.level.maxSp
-                    if (newSp >= currentMaxSp) {
-                        val nextLevel = com.systemleveling.core.model.SkillLevel.entries
-                            .getOrNull(skill.level.ordinal + 1)
-                        if (nextLevel != null) {
-                            skillDao.updateSkill(skill.copy(currentSp = newSp - currentMaxSp, level = nextLevel))
-                            skillLevelUps.add(SkillLevelUpInfo(skillId, skill.name, skill.level, nextLevel))
-                        } else {
-                            skillDao.updateSkill(skill.copy(currentSp = currentMaxSp)) // Max level
-                        }
+                if (newSp >= skill.level.maxSp) {
+                    val nextLevel = SkillLevel.entries.getOrNull(skill.level.ordinal + 1)
+                    if (nextLevel != null) {
+                        skillDao.updateSkill(skill.copy(currentSp = newSp - skill.level.maxSp, level = nextLevel))
+                        skillLevelUps.add(SkillLevelUpInfo(skillId, skill.name, skill.level, nextLevel))
                     } else {
-                        skillDao.updateSkill(skill.copy(currentSp = newSp))
+                        skillDao.updateSkill(skill.copy(currentSp = skill.level.maxSp))
                     }
+                } else {
+                    skillDao.updateSkill(skill.copy(currentSp = newSp))
                 }
             }
-        } catch (_: Exception) {
-            // Invalid JSON, no SP rewards
-        }
+        } catch (_: Exception) { /* malformed JSON, skip SP */ }
 
-        // 6. Loot drop
+        // ── 4. Loot drop ─────────────────────────────────────────────────────
         var droppedItemInfo: DroppedItemInfo? = null
         val droppedItem = LootTable.rollDrop(quest.rank, quest.id)
         if (droppedItem != null) {
             itemDao.insertItem(droppedItem)
-            // Update quest with dropped item ID
-            questDao.updateQuest(quest.copy(
-                status = QuestStatus.COMPLETED,
-                droppedItemId = droppedItem.id
-            ))
+            questDao.updateQuest(quest.copy(status = QuestStatus.COMPLETED, droppedItemId = droppedItem.id))
             droppedItemInfo = DroppedItemInfo(
-                itemId = droppedItem.id,
-                name = droppedItem.name,
-                rarity = droppedItem.rarity,
-                category = droppedItem.category,
-                iconId = droppedItem.iconId ?: "📦",
+                itemId = droppedItem.id, name = droppedItem.name, rarity = droppedItem.rarity,
+                category = droppedItem.category, iconId = droppedItem.iconId ?: "📦",
                 loreDescription = droppedItem.loreDescription ?: ""
             )
         } else {
@@ -161,5 +151,13 @@ class RewardEngine @Inject constructor(
             newLevel = if (leveledUp) newLevel else null,
             skillLeveledUp = skillLevelUps
         )
+    }
+
+    private fun parseStatRewards(raw: String): Map<String, Int> {
+        if (raw.isBlank() || raw == "{}") return emptyMap()
+        return try {
+            json.decodeFromString(MapSerializer(String.serializer(), Int.serializer()), raw)
+                .filter { (_, v) -> v > 0 }
+        } catch (_: Exception) { emptyMap() }
     }
 }

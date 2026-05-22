@@ -10,9 +10,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.datastore.preferences.core.edit
+import kotlinx.coroutines.launch
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import com.systemleveling.app.navigation.AppNavGraph
@@ -41,8 +44,17 @@ class MainActivity : ComponentActivity() {
                     color = md_theme_dark_background
                 ) {
                     var postSplashDestination by remember { mutableStateOf<String?>(null) }
+                    val scope = rememberCoroutineScope()
 
                     LaunchedEffect(Unit) {
+                        // Check if launched from notification deep-link
+                        val navExtra = intent?.getStringExtra("nav_destination")
+                        if (navExtra != null) {
+                            postSplashDestination = navExtra
+                            isReady = true
+                            return@LaunchedEffect
+                        }
+
                         val isOnboardedKey = booleanPreferencesKey("isOnboarded")
                         val isOnboarded = applicationContext.dataStore.data
                             .map { it[isOnboardedKey] ?: false }
@@ -55,7 +67,18 @@ class MainActivity : ComponentActivity() {
                         postSplashDestination?.let { dest ->
                             AppNavGraph(startDestination = dest, postSplashDestination = dest)
                         }
-                        DebugOverlay(modifier = Modifier.align(Alignment.TopEnd))
+                        DebugOverlay(
+                            modifier = Modifier.align(Alignment.TopEnd),
+                            onResetOnboarding = {
+                                scope.launch {
+                                    val isOnboardedKey = booleanPreferencesKey("isOnboarded")
+                                    applicationContext.dataStore.edit { prefs ->
+                                        prefs[isOnboardedKey] = false
+                                    }
+                                    postSplashDestination = "onboarding"
+                                }
+                            }
+                        )
                     }
                 }
             }

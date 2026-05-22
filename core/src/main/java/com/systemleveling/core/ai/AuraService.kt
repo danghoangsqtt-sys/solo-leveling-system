@@ -11,11 +11,12 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private const val GEMINI_MODEL = "gemini-2.0-flash"
+private const val GEMINI_MODEL = "gemini-2.5-flash"
 private const val GEMINI_BASE_URL =
     "https://generativelanguage.googleapis.com/v1beta/models/$GEMINI_MODEL:generateContent"
 
@@ -89,11 +90,211 @@ class AuraService @Inject constructor() {
                     ?.text
                     ?: "Ta không nhận được phản hồi từ hệ thống."
                 Result.success(text)
+            } else if (response.status == HttpStatusCode.TooManyRequests) {
+                Result.failure(Exception("Lỗi 429: API Key của bạn đã hết hạn mức (Quota Exceeded) hoặc bị giới hạn. Vui lòng kiểm tra lại Google AI Studio."))
             } else {
-                Result.failure(Exception("Lỗi Gemini API: ${response.status.value}"))
+                Result.failure(Exception("Lỗi Gemini API: ${response.status.value} - ${response.body<String>()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    suspend fun analyzeSurvey(
+        apiKey: String,
+        surveyData: AiSurveyData
+    ): Result<String> {
+        if (apiKey.isBlank()) return Result.failure(IllegalArgumentException("API key chưa được cài đặt"))
+
+        val systemPrompt = """
+            Bạn là Hệ Thống Phân Tích Chỉ Số của Solo Leveling.
+            Dựa vào các thông số thể chất và thói quen sinh hoạt của người dùng ở thế giới thực, hãy tính toán và quy đổi thành các chỉ số RPG (Sức mạnh, Trí tuệ, Nhanh nhẹn, Thể lực, Thông thái, Sức hút).
+            Sau đó, đề xuất 3-5 Nghề nghiệp (Job Class) phù hợp với người dùng. Nghề nghiệp có thể là đời thực (Lập trình viên, Nhà thiết kế) nhưng hãy đặt tên nghe thật "ngầu" và kỳ ảo (như game nhập vai).
+            Trường iconEmoji hãy chọn 1 Emoji phù hợp nhất với nghề nghiệp đó mang phong cách Pixel/Game RPG.
+            Phải trả về ĐÚNG cấu trúc JSON sau, KHÔNG bao gồm markdown (như ```json):
+            {
+              "stats": {
+                "str": 10, "intStat": 20, "agi": 15, "vit": 10, "wis": 18, "cha": 8
+              },
+              "jobClasses": [
+                {
+                  "className": "Kẻ Kiến Tạo Mã Hóa (Software Engineer)",
+                  "description": "Bậc thầy điều khiển logic và ngôn ngữ máy tính.",
+                  "iconEmoji": "💻"
+                }
+              ]
+            }
+            Lưu ý: Điểm số từ 5 đến 30. Trả về đúng định dạng JSON chuẩn.
+        """.trimIndent()
+
+        val userPrompt = """
+            Chiều cao: ${surveyData.height} cm
+            Cân nặng: ${surveyData.weight} kg
+            Khả năng hít đất tối đa: ${surveyData.pushUps}
+            Mức tạ / khả năng nâng vác: ${surveyData.lifting}
+            Tốc độ chạy / thời gian chạy bộ: ${surveyData.runningPace}
+            Thời gian học tập, nghiên cứu mỗi ngày: ${surveyData.studyHours}
+            Trình độ ngoại ngữ: ${surveyData.languageLevel}
+            Giấc ngủ: ${surveyData.sleepHours}
+            Phong cách làm việc: ${surveyData.workStyle}
+        """.trimIndent()
+
+        return executeJsonRequest(apiKey, systemPrompt, userPrompt)
+    }
+
+    suspend fun generateCompleteOnboarding(
+        apiKey: String,
+        surveyData: AiSurveyData,
+        goals: String
+    ): Result<String> {
+        if (apiKey.isBlank()) return Result.failure(IllegalArgumentException("API key chưa được cài đặt"))
+
+        val systemPrompt = """
+            Bạn là Hệ Thống Phân Tích Chỉ Số và Lộ Trình của Solo Leveling.
+            Nhiệm vụ của bạn là dựa vào thông tin thể chất, thói quen và mục tiêu của người dùng, phân tích và trả lời ĐÚNG CẤU TRÚC JSON duy nhất (KHÔNG có markdown block ```json).
+
+            1. Tính toán Chỉ số (STAT): Dựa vào logic thực tế (từ 5 đến 30 điểm):
+               - Tính BMI từ chiều cao và cân nặng để làm cơ sở cho Thể Lực (VIT).
+               - Dùng Số cái hít đất và Nâng tạ để tính Sức Mạnh (STR).
+               - Dùng Thời gian chạy bộ/tốc độ để tính Nhanh Nhẹn (AGI).
+               - Dùng Số giờ học tập/nghiên cứu để tính Trí Tuệ (INT).
+               - Dùng Trình độ ngoại ngữ và phong cách làm việc để tính Thông Thái (WIS) và Sức Hút (CHA).
+
+            2. Đề xuất ĐÚNG 4 Nghề Nghiệp (Job Classes) mang phong cách MapleStory/MMORPG — đa dạng như: Kiếm Sĩ, Pháp Sư, Xạ Thủ, Đạo Tặc, Chiến Binh, Học Giả, Nhà Giả Kim...
+               ⚠️ QUY TẮC QUAN TRỌNG: Bốn nghề là 4 PHONG CÁCH PHÁT TRIỂN KHÁC NHAU — KHÔNG phải mỗi nghề chỉ tập trung vào 1 mục tiêu.
+               Cả 4 nghề đều giúp người dùng đạt được TẤT CẢ các mục tiêu đã đặt ra, chỉ khác ở phong cách, thứ tự ưu tiên và cách tiếp cận.
+               Ví dụ với mục tiêu [IELTS, Lập trình, Thể hình]:
+               - "Chiến Binh Cân Bằng" — đều đặn cả 3, không có điểm yếu
+               - "Thần Đồng Trí Tuệ" — ưu tiên học thuật + ngoại ngữ, thể hình làm nền tảng
+               - "Chiến Binh Thép Kỷ Luật" — ưu tiên thể hình + kỷ luật, dùng kỷ luật thể chất để học hiệu quả hơn
+               - "Pháp Sư Công Nghệ" — ưu tiên kỹ năng kỹ thuật, kết hợp ngoại ngữ và sức khỏe để duy trì
+               Mỗi nghề đi kèm 1 iconEmoji độc đáo (ví dụ ⚔️, 🔮, 🏹, 🗡️, 🛡️, 🧙, 🎯, ⚡).
+
+            3. Mỗi nghề có roadmap kỹ năng riêng (6-8 kỹ năng) — roadmap PHẢI PHỦ ĐẦY ĐỦ TẤT CẢ các mục tiêu người dùng, không bỏ sót mục tiêu nào:
+               - Với MỖI MỤC TIÊU cụ thể trong danh sách, phải có ÍT NHẤT 2 kỹ năng liên quan trực tiếp.
+               - Bốn nghề khác nhau ở thứ tự ưu tiên và tên gọi kỹ năng, nhưng đều bao trùm toàn bộ mục tiêu.
+               - Đặt tên kỹ năng thật "ngầu" mang phong cách MapleStory/RPG. Mô tả phải cụ thể, thực tế, có thể hành động hàng ngày.
+               - Trường `category` là tên mục tiêu mà kỹ năng đó phục vụ (VD: "IELTS", "Lập Trình", "Thể Hình").
+
+            Danh sách mục tiêu người dùng (PHẢI bao phủ hết trong mỗi roadmap):
+            $goals
+
+            JSON format:
+            {
+              "stats": {
+                "str": 10, "intStat": 20, "agi": 15, "vit": 10, "wis": 18, "cha": 8
+              },
+              "suggestedClasses": [
+                {
+                  "className": "Kiếm Sĩ Bóng Tối",
+                  "description": "Bậc thầy cân bằng giữa sức mạnh thể chất và bóng tối.",
+                  "iconEmoji": "🗡️",
+                  "roadmap": [
+                    {
+                      "name": "Bước Chân Thầm Lặng",
+                      "description": "Luyện tập chạy bộ 5km mỗi ngày không nghỉ để tăng tốc độ di chuyển",
+                      "tier": 1,
+                      "category": "Sức Khỏe",
+                      "iconEmoji": "🏃"
+                    }
+                  ]
+                }
+              ]
+            }
+        """.trimIndent()
+
+        val userPrompt = """
+            Chiều cao: ${surveyData.height} cm
+            Cân nặng: ${surveyData.weight} kg
+            Khả năng hít đất tối đa: ${surveyData.pushUps}
+            Mức tạ / khả năng nâng vác: ${surveyData.lifting}
+            Tốc độ chạy / thời gian chạy bộ: ${surveyData.runningPace}
+            Thời gian học tập, nghiên cứu mỗi ngày: ${surveyData.studyHours}
+            Trình độ ngoại ngữ: ${surveyData.languageLevel}
+            Giấc ngủ: ${surveyData.sleepHours}
+            Phong cách làm việc: ${surveyData.workStyle}
+        """.trimIndent()
+
+        return executeJsonRequest(apiKey, systemPrompt, userPrompt, maxOutputTokens = 8192, temperature = 0.3)
+    }
+
+    suspend fun generateRoadmapV2(
+        apiKey: String,
+        goalInput: AiGoalInput
+    ): Result<String> {
+        if (apiKey.isBlank()) return Result.failure(IllegalArgumentException("API key chưa được cài đặt"))
+
+        val systemPrompt = """
+            Bạn là Hệ Thống Phân Tích Kỹ Năng của Solo Leveling.
+            Người dùng đã chọn chức nghiệp: ${goalInput.jobClass}.
+            Người dùng có 3 mục tiêu lớn trong năm:
+            1. ${goalInput.goal1}
+            2. ${goalInput.goal2}
+            3. ${goalInput.goal3}
+            
+            Hãy tạo ra một Lộ trình Kỹ năng (Roadmap) để đạt được 3 mục tiêu này.
+            Mỗi mục tiêu sẽ cần 2-4 kỹ năng (Skill Node).
+            Hãy đặt tên Kỹ năng nghe thật "ngầu" giống như kỹ năng trong game nhập vai, nhưng mô tả phải thực tế.
+            Trường `category` là tên mục tiêu mà kỹ năng đó thuộc về.
+            Trường `iconEmoji` hãy dùng các emoji mang phong cách game RPG hoặc Maplestory (như 🗡️, 🛡️, 📚, 🧪, 🔮).
+            
+            Phải trả về ĐÚNG cấu trúc JSON sau, KHÔNG bao gồm markdown (như ```json):
+            {
+              "roadmap": [
+                {
+                  "name": "Nhãn Quan Mã Hóa (Cơ bản C/C++)",
+                  "description": "Hiểu cấu trúc dữ liệu nền tảng",
+                  "tier": 1,
+                  "category": "Mục tiêu 1",
+                  "iconEmoji": "🔮"
+                }
+              ]
+            }
+        """.trimIndent()
+
+        return executeJsonRequest(apiKey, systemPrompt, "Tạo lộ trình cho ta.")
+    }
+
+    private suspend fun executeJsonRequest(apiKey: String, systemPrompt: String, userPrompt: String, maxOutputTokens: Int = 1024, temperature: Double = 0.7): Result<String> {
+        val request = GeminiRequest(
+            systemInstruction = GeminiSystemInstruction(parts = listOf(GeminiPart(systemPrompt))),
+            contents = listOf(GeminiContent(role = "user", parts = listOf(GeminiPart(userPrompt)))),
+            generationConfig = GeminiGenerationConfig(
+                responseMimeType = "application/json",
+                maxOutputTokens = maxOutputTokens,
+                temperature = temperature
+            )
+        )
+
+        var lastError: Exception = Exception("Không rõ lỗi")
+        repeat(3) { attempt ->
+            try {
+                val response: HttpResponse = client.post("$GEMINI_BASE_URL?key=$apiKey") {
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
+                }
+                when {
+                    response.status == HttpStatusCode.OK -> {
+                        val text = response.body<GeminiResponse>()
+                            .candidates.firstOrNull()
+                            ?.content?.parts?.firstOrNull()?.text
+                            ?: return Result.failure(Exception("Không có dữ liệu trả về từ AI"))
+                        return Result.success(text)
+                    }
+                    response.status == HttpStatusCode.TooManyRequests ->
+                        return Result.failure(Exception("Lỗi 429: API Key đã hết hạn mức (Quota Exceeded). Kiểm tra lại Google AI Studio."))
+                    response.status.value == 503 || response.status.value == 529 -> {
+                        lastError = Exception("Máy chủ Gemini đang quá tải (${response.status.value}). Đang thử lại... (${attempt + 1}/3)")
+                        if (attempt < 2) delay(2000L * (attempt + 1))
+                    }
+                    else ->
+                        return Result.failure(Exception("Lỗi Gemini API: ${response.status.value}"))
+                }
+            } catch (e: Exception) {
+                lastError = e
+                if (attempt < 2) delay(1500L)
+            }
+        }
+        return Result.failure(lastError)
     }
 }

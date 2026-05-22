@@ -29,6 +29,7 @@ class NotificationHelper @Inject constructor(
 
         const val NOTIFICATION_QUEST_NEW = 1001
         const val NOTIFICATION_QUEST_DEADLINE = 1002
+        const val NOTIFICATION_QUEST_FOCUS_URGE = 1003
         const val NOTIFICATION_DAILY_SUMMARY = 2001
         const val NOTIFICATION_HEALTH_WATER = 3001
         const val NOTIFICATION_HEALTH_STANDUP = 3002
@@ -122,6 +123,18 @@ class NotificationHelper @Inject constructor(
             else -> "⚠️"
         }
 
+        // Deep-link intent → opens MainActivity which navigates to daily_summary
+        val launchIntent = context.packageManager
+            .getLaunchIntentForPackage(context.packageName)
+            ?.apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra("nav_destination", "daily_summary")
+            }
+        val pendingIntent = if (launchIntent != null) {
+            PendingIntent.getActivity(context, NOTIFICATION_DAILY_SUMMARY, launchIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        } else null
+
         val notification = NotificationCompat.Builder(context, CHANNEL_DAILY_SUMMARY)
             .setSmallIcon(android.R.drawable.ic_menu_report_image)
             .setContentTitle("$emoji Báo Cáo Ngày — Hạng $grade")
@@ -131,6 +144,7 @@ class NotificationHelper @Inject constructor(
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .apply { if (pendingIntent != null) setContentIntent(pendingIntent) }
             .build()
 
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -176,6 +190,58 @@ class NotificationHelper @Inject constructor(
 
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.notify(NOTIFICATION_HEALTH_STANDUP, notification)
+    }
+
+    /**
+     * Urge user to complete a specific quest before its deadline.
+     * notificationId is quest-specific so each quest gets its own slot.
+     */
+    fun notifyQuestDeadlineWarning(questTitle: String, minutesLeft: Int, notificationId: Int = NOTIFICATION_QUEST_DEADLINE) {
+        val urgency = when {
+            minutesLeft <= 0 -> "⏰ ĐÃ QUÁ HẠN!"
+            minutesLeft <= 10 -> "🚨 CÒN $minutesLeft PHÚT!"
+            minutesLeft <= 30 -> "⚡ Còn $minutesLeft phút!"
+            else -> "⏳ Còn $minutesLeft phút"
+        }
+        val body = when {
+            minutesLeft <= 0 -> "\"$questTitle\" đã hết hạn. Hoàn thành ngay hoặc nhận Debt Point!"
+            minutesLeft <= 10 -> "\"$questTitle\" sắp hết hạn — tập trung ngay bây giờ!"
+            else -> "\"$questTitle\" — đừng để thất bại vì thiếu tập trung!"
+        }
+        val notification = NotificationCompat.Builder(context, CHANNEL_QUEST)
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setContentTitle("$urgency QUEST DEADLINE")
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVibrate(longArrayOf(0, 400, 200, 400))
+            .build()
+        (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+            .notify(notificationId, notification)
+    }
+
+    /**
+     * Periodic focus urge — fires every ~30 min while PENDING quests exist.
+     */
+    fun notifyQuestFocusUrge(pendingCount: Int, mostUrgentTitle: String) {
+        val messages = listOf(
+            "Chiến binh! Còn $pendingCount nhiệm vụ đang chờ. Đừng lãng phí thời gian!",
+            "$pendingCount nhiệm vụ chưa hoàn thành — streak của bạn đang bị đe dọa!",
+            "Tập trung! \"$mostUrgentTitle\" và $pendingCount nhiệm vụ khác đang chờ!",
+            "Hệ thống nhắc nhở: $pendingCount nhiệm vụ → hoàn thành ngay để tránh phạt!"
+        )
+        val notification = NotificationCompat.Builder(context, CHANNEL_QUEST)
+            .setSmallIcon(android.R.drawable.ic_menu_compass)
+            .setContentTitle("⚔️ Tập Trung Chiến Đấu!")
+            .setContentText(messages.random())
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .build()
+        (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+            .notify(NOTIFICATION_QUEST_FOCUS_URGE, notification)
     }
 
     /**

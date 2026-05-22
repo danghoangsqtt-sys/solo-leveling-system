@@ -8,7 +8,40 @@
       "Bash(git add *)",
       "Bash(git reset *)",
       "Bash(git commit -m ' *)",
-      "Bash(./gradlew :feature:onboarding:compileDebugKotlin --rerun-tasks)"
+      "Bash(./gradlew :feature:onboarding:compileDebugKotlin --rerun-tasks)",
+      "Bash(mkdir -p \"e:/data/2.MyProject/2026/solo-leveling-system/.viepilot/debug\")",
+      "Bash(curl -fsSL https://raw.githubusercontent.com/Live2D/CubismWebSamples/develop/Samples/Resources/Hiyori/Hiyori.model3.json -o e:/data/2.MyProject/2026/solo-leveling-system/feature/home/src/main/assets/models/Hiyori/Hiyori.model3.json)",
+      "Bash(curl -fsSL https://raw.githubusercontent.com/Live2D/CubismWebSamples/develop/Samples/Resources/Hiyori/Hiyori.physics3.json -o e:/data/2.MyProject/2026/solo-leveling-system/feature/home/src/main/assets/models/Hiyori/Hiyori.physics3.json)",
+      "Bash(curl -fsSL https://raw.githubusercontent.com/Live2D/CubismWebSamples/develop/Samples/Resources/Hiyori/Hiyori.pose3.json -o e:/data/2.MyProject/2026/solo-leveling-system/feature/home/src/main/assets/models/Hiyori/Hiyori.pose3.json)",
+      "Bash(curl -fsSL https://raw.githubusercontent.com/Live2D/CubismWebSamples/develop/Samples/Resources/Hiyori/Hiyori.userdata3.json -o e:/data/2.MyProject/2026/solo-leveling-system/feature/home/src/main/assets/models/Hiyori/Hiyori.userdata3.json)",
+      "Bash(curl -fsSL https://raw.githubusercontent.com/Live2D/CubismWebSamples/develop/Samples/Resources/Hiyori/Hiyori.cdi3.json -o e:/data/2.MyProject/2026/solo-leveling-system/feature/home/src/main/assets/models/Hiyori/Hiyori.cdi3.json)",
+      "Bash(curl -fsSL https://raw.githubusercontent.com/Live2D/CubismWebSamples/develop/Samples/Resources/Hiyori/Hiyori.moc3 -o e:/data/2.MyProject/2026/solo-leveling-system/feature/home/src/main/assets/models/Hiyori/Hiyori.moc3)",
+      "Bash(curl -fsSL https://raw.githubusercontent.com/Live2D/CubismWebSamples/develop/Samples/Resources/Hiyori/Hiyori.2048/texture_00.png -o e:/data/2.MyProject/2026/solo-leveling-system/feature/home/src/main/assets/models/Hiyori/Hiyori.2048/texture_00.png)",
+      "Bash(curl -fsSL https://raw.githubusercontent.com/Live2D/CubismWebSamples/develop/Samples/Resources/Hiyori/Hiyori.2048/texture_01.png -o e:/data/2.MyProject/2026/solo-leveling-system/feature/home/src/main/assets/models/Hiyori/Hiyori.2048/texture_01.png)",
+      "Bash(curl -fsSL \"https://api.github.com/repos/Live2D/CubismWebSamples/contents/Samples/Resources\")",
+      "Bash(python3 -c \"import sys,json; [print\\(x['name']\\) for x in json.load\\(sys.stdin\\) if x['type']=='dir']\")",
+      "Bash(curl -fsSL \"https://api.github.com/repos/Live2D/CubismWebSamples/contents/Samples/Resources?ref=develop\" -H \"Accept: application/vnd.github.v3+json\")",
+      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); [print\\(x['name']\\) for x in data if x['type']=='dir']\")",
+      "Bash(curl -fsSL \"https://raw.githubusercontent.com/Live2D/CubismWebSamples/develop/README.md\")",
+      "Bash(curl -fsSL \"https://raw.githubusercontent.com/Live2D/CubismWebSamples/develop/Samples/Resources/Mao/Mao.model3.json\")",
+      "Bash(curl -fsSL https://raw.githubusercontent.com/Live2D/CubismWebSamples/develop/Samples/Resources/Mao/Mao.moc3 -o e:/data/2.MyProject/2026/solo-leveling-system/feature/home/src/main/assets/models/Mao/Mao.moc3)",
+      "Bash(curl -fsSL https://raw.githubusercontent.com/Live2D/CubismWebSamples/develop/Samples/Resources/Mao/Mao.physics3.json -o e:/data/2.MyProject/2026/solo-leveling-system/feature/home/src/main/assets/models/Mao/Mao.physics3.json)",
+      "Bash(curl -fsSL https://raw.githubusercontent.com/Live2D/CubismWebSamples/develop/Samples/Resources/Mao/Mao.pose3.json -o e:/data/2.MyProject/2026/solo-leveling-system/feature/home/src/main/assets/models/Mao/Mao.pose3.json)",
+      "Bash(curl -fsSL https://raw.githubusercontent.com/Live2D/CubismWebSamples/develop/Samples/Resources/Mao/Mao.cdi3.json -o e:/data/2.MyProject/2026/solo-leveling-system/feature/home/src/main/assets/models/Mao/Mao.cdi3.json)",
+      "Bash(curl -fsSL https://raw.githubusercontent.com/Live2D/CubismWebSamples/develop/Samples/Resources/Mao/Mao.2048/texture_00.png -o e:/data/2.MyProject/2026/solo-leveling-system/feature/home/src/main/assets/models/Mao/Mao.2048/texture_00.png)",
+      "Bash(./gradlew :core:compileDebugKotlin :feature:skills:compileDebugKotlin :feature:onboarding:compileDebugKotlin)",
+      "Bash(./gradlew :core:compileDebugKotlin :feature:quests:compileDebugKotlin)",
+      "Bash(./gradlew :app:compileDebugKotlin)",
+      "Bash(./gradlew :core:compileDebugKotlin :feature:home:compileDebugKotlin :app:compileDebugKotlin --no-daemon)",
+      "Bash(./gradlew :feature:quests:compileDebugKotlin :app:compileDebugKotlin --no-daemon)",
+      "Bash(./gradlew :core:compileDebugKotlin :feature:quests:compileDebugKotlin :app:compileDebugKotlin --no-daemon)",
+      "Bash(./gradlew :feature:onboarding:compileDebugKotlin :app:compileDebugKotlin)",
+      "Bash(./gradlew :core:compileDebugKotlin)",
+      "Bash(./gradlew :feature:onboarding:compileDebugKotlin :core:compileDebugKotlin)",
+      "Bash(./gradlew :core:compileDebugKotlin :feature:onboarding:compileDebugKotlin)"
+    ],
+    "additionalDirectories": [
+      "e:\\data\\2.MyProject\\2026\\solo-leveling-system\\.viepilot"
     ]
   }
 }

@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.sp
 import com.systemleveling.core.database.entity.StatEntity
 import com.systemleveling.core.database.entity.UserEntity
 import com.systemleveling.core.designsystem.components.GlassCard
+import java.text.NumberFormat
+import java.util.Locale
 
 // ── Palette ──────────────────────────────────────────────────────────────────
 private val BG           = Color(0xFF121222)
@@ -61,6 +63,8 @@ fun HomeScreen(
     val questSummary by viewModel.questSummary.collectAsState()
     val isAdvancementReady by viewModel.isAdvancementReady.collectAsState()
     val geminiApiKey by viewModel.geminiApiKey.collectAsState()
+    val totalBalance by viewModel.totalBalance.collectAsState()
+    val todayExpense by viewModel.todayExpense.collectAsState()
 
     var showSettingsDialog by remember { mutableStateOf(false) }
 
@@ -97,6 +101,12 @@ fun HomeScreen(
                 QuestProgressCard(
                     questSummary = questSummary,
                     onNavigateToQuests = onNavigateToQuests
+                )
+                Spacer(Modifier.height(16.dp))
+                FinanceSummaryCard(
+                    totalBalance = totalBalance,
+                    todayExpense = todayExpense,
+                    onNavigateToFinance = onNavigateToFinance
                 )
                 Spacer(Modifier.height(16.dp))
                 QuickActionsRow(
@@ -514,6 +524,63 @@ private fun QuestProgressCard(
                 "$percent% hoàn thành · Còn $remaining nhiệm vụ",
                 color = TEXT_MUTED, fontSize = 11.sp
             )
+        }
+    }
+}
+
+// ── Finance summary card ──────────────────────────────────────────────────────
+@Composable
+private fun FinanceSummaryCard(
+    totalBalance: Long,
+    todayExpense: Long,
+    onNavigateToFinance: () -> Unit
+) {
+    val formatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+    val balanceColor = if (totalBalance >= 0) GREEN else Color(0xFFFF6B6B)
+
+    GlassCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onNavigateToFinance() }
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("💰", fontSize = 16.sp)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "TÀI CHÍNH",
+                        color = GOLD, fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold, letterSpacing = 0.08f.em
+                    )
+                }
+                Text("›", color = GOLD, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text("SỐ DƯ", color = TEXT_MUTED, fontSize = 10.sp, letterSpacing = 0.08f.em)
+                    Text(
+                        formatter.format(totalBalance),
+                        color = balanceColor, fontSize = 16.sp, fontWeight = FontWeight.Bold
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("CHI HÔM NAY", color = TEXT_MUTED, fontSize = 10.sp, letterSpacing = 0.08f.em)
+                    Text(
+                        "-${formatter.format(todayExpense)}",
+                        color = Color(0xFFFF6B6B), fontSize = 16.sp, fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
     }
 }

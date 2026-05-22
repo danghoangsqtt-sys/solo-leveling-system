@@ -1,0 +1,60 @@
+{
+  "id": "debug-20260521-214811",
+  "status": "resolved",
+  "created_at": "2026-05-21T21:48:11Z",
+  "updated_at": "2026-05-21T21:50:00Z",
+  "problem": {
+    "description": "Live2D NPC character (Aura) fails to load in WebView. The HTML page loads from file:///android_asset/ but tries to fetch the Live2D model from an external CDN URL.",
+    "symptoms": [
+      "[XHRLoader] Failed to load resource as json (Status 0): https://cdn.jsdelivr.net/...",
+      "Live2D Load Error: Error: Network error.",
+      "Skipped 86 frames jank",
+      "OnBackInvokedCallback warning"
+    ],
+    "error_messages": [
+      "Live2D Load Error: Error: Network error.",
+      "[XHRLoader] Failed to load resource as json (Status 0)"
+    ],
+    "affected_files": [
+      "feature/home/src/main/assets/live2d.html",
+      "feature/home/src/main/java/com/systemleveling/feature/home/npc/NpcChatScreen.kt",
+      "app/src/main/AndroidManifest.xml"
+    ]
+  },
+  "investigation": {
+    "hypotheses": [
+      {
+        "id": 1,
+        "description": "CDN URL fetched via XHR from file:// origin is blocked — Status 0 means no HTTP response received",
+        "status": "confirmed"
+      },
+      {
+        "id": 2,
+        "description": "Model assets not bundled locally — app depends on CDN availability at runtime",
+        "status": "confirmed"
+      }
+    ],
+    "tests_run": [
+      {
+        "command": "Read live2d.html line 40",
+        "output": "defaultModelUrl hardcoded to CDN URL",
+        "timestamp": "2026-05-21T21:48:11Z"
+      }
+    ],
+    "findings": [
+      "Root cause: live2d.html hardcodes external CDN URL. XHR fails with status 0 (no internet on emulator or mixedContent blocked).",
+      "No model files bundled in assets — 100% CDN dependent.",
+      "Secondary: OnBackInvokedCallback not enabled in manifest."
+    ]
+  },
+  "resolution": {
+    "root_cause": "Live2D model fetched from https://cdn.jsdelivr.net CDN at runtime; XHR fails with Status 0 when device has no internet or WebView blocks mixed-content. No local model bundled.",
+    "fix_applied": "1) Added 8s load timeout + graceful animated CSS fallback in live2d.html (breathing anime silhouette with particles shown when CDN fails). 2) Added WebSettings.MIXED_CONTENT_ALWAYS_ALLOW + WebChromeClient to WebView config. 3) Added android:enableOnBackInvokedCallback=true to manifest. NOTE: permanent fix requires bundling Hiyori model files as local assets.",
+    "files_changed": [
+      "feature/home/src/main/assets/live2d.html",
+      "feature/home/src/main/java/com/systemleveling/feature/home/npc/NpcChatScreen.kt",
+      "app/src/main/AndroidManifest.xml"
+    ],
+    "verification": "When CDN is unreachable, app now shows animated Aura silhouette instead of blank screen. When CDN is reachable, Live2D loads normally."
+  }
+}

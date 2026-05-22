@@ -3,13 +3,21 @@ package com.systemleveling.feature.home.summary
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.systemleveling.core.database.dao.DailySummaryDao
+import com.systemleveling.core.database.dao.FinanceDao
 import com.systemleveling.core.database.entity.DailySummaryEntity
 import com.systemleveling.core.engine.DailySummaryService
+import com.systemleveling.core.model.PlanItem
+import com.systemleveling.core.model.PlanScope
+import com.systemleveling.core.model.WorkPlanItem
+import com.systemleveling.core.settings.SettingsManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -19,10 +27,21 @@ import javax.inject.Inject
 @HiltViewModel
 class DailySummaryViewModel @Inject constructor(
     private val dailySummaryDao: DailySummaryDao,
-    private val dailySummaryService: DailySummaryService
+    private val dailySummaryService: DailySummaryService,
+    private val settingsManager: SettingsManager,
+    financeDao: FinanceDao
 ) : ViewModel() {
 
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
+
+    private val todayStart: Long = getTodayMidnight()
+    private val todayEnd: Long = todayStart + 86_400_000L
+
+    val todayFinanceIncome: StateFlow<Long> = financeDao.getTodayIncome(todayStart, todayEnd)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
+
+    val todayFinanceExpense: StateFlow<Long> = financeDao.getTodayExpense(todayStart, todayEnd)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
 
     private val _summary = MutableStateFlow<DailySummaryEntity?>(null)
     val summary: StateFlow<DailySummaryEntity?> = _summary.asStateFlow()
@@ -39,8 +58,23 @@ class DailySummaryViewModel @Inject constructor(
     private val _tomorrowPlan = MutableStateFlow<List<TodoItem>>(emptyList())
     val tomorrowPlan: StateFlow<List<TodoItem>> = _tomorrowPlan.asStateFlow()
 
+    // ── Editable plan items for tomorrow (WorkPlanItem for quest gen) ─────────
+    private val _tomorrowWorkPlan = MutableStateFlow<List<WorkPlanItem>>(emptyList())
+    val tomorrowWorkPlan: StateFlow<List<WorkPlanItem>> = _tomorrowWorkPlan.asStateFlow()
+
+    // ── Weekly and monthly plans from DataStore ────────────────────────────────
+    val weeklyPlanItems: StateFlow<List<PlanItem>> = settingsManager.weeklyPlanItems
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val monthlyPlanItems: StateFlow<List<PlanItem>> = settingsManager.monthlyPlanItems
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _plansSaved = MutableStateFlow(false)
+    val plansSaved: StateFlow<Boolean> = _plansSaved.asStateFlow()
+
     init {
         loadTodaySummary()
+        loadExistingTomorrowPlan()
     }
 
     private fun loadTodaySummary() {
@@ -49,11 +83,8 @@ class DailySummaryViewModel @Inject constructor(
                 val todayStart = getTodayMidnight()
                 val todayEnd = todayStart + 86400000L
 
-                // Try to load existing summary
                 var existing = dailySummaryDao.getSummaryByDateSync(todayStart, todayEnd)
-
                 if (existing == null) {
-                    // Generate summary
                     _isLoading.value = true
                     existing = dailySummaryService.generateDailySummary(todayStart, todayEnd, "")
                 }
@@ -65,6 +96,14 @@ class DailySummaryViewModel @Inject constructor(
         }
     }
 
+    private fun loadExistingTomorrowPlan() {
+        viewModelScope.launch {
+            _tomorrowWorkPlan.value = settingsManager.workPlanItems.first()
+        }
+    }
+
+    // ── Tomorrow plan (AI-suggested list editing) ─────────────────────────────
+
     fun updateTomorrowPlan(updatedPlan: List<TodoItem>) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
@@ -75,6 +114,47 @@ class DailySummaryViewModel @Inject constructor(
                     updatedPlan
                 )
                 dailySummaryDao.updateSummary(summary.copy(tomorrowPlan = planJson))
+            }
+        }
+    }
+
+    // ── Tomorrow WorkPlanItem CRUD (used for AI quest gen next day) ──────────
+
+    fun addTomorrowItem(item: WorkPlanItem) {
+        _tomorrowWorkPlan.value = _tomorrowWorkPlan.value + item
+    }
+
+    fun removeTomorrowItem(id: String) {
+        _tomorrowWorkPlan.value = _tomorrowWorkPlan.value.filter { it.id != id }
+    }
+
+    // ── Weekly plan CRUD ──────────────────────────────────────────────────────
+
+    fun addWeeklyItem(item: PlanItem) {
+        viewModelScope.launch { settingsManager.addWeeklyPlanItem(item.copy(scope = PlanScope.WEEKLY.name)) }
+    }
+
+    fun removeWeeklyItem(id: String) {
+        viewModelScope.launch { settingsManager.removeWeeklyPlanItem(id) }
+    }
+
+    // ── Monthly plan CRUD ─────────────────────────────────────────────────────
+
+    fun addMonthlyItem(item: PlanItem) {
+        viewModelScope.launch { settingsManager.addMonthlyPlanItem(item.copy(scope = PlanScope.MONTHLY.name)) }
+    }
+
+    fun removeMonthlyItem(id: String) {
+        viewModelScope.launch { settingsManager.removeMonthlyPlanItem(id) }
+    }
+
+    // ── Save all plans at once ────────────────────────────────────────────────
+
+    fun saveAllPlans() {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                settingsManager.saveWorkPlanItems(_tomorrowWorkPlan.value)
+                _plansSaved.value = true
             }
         }
     }
@@ -91,25 +171,15 @@ class DailySummaryViewModel @Inject constructor(
     }
 
     private fun parseJsonFields(entity: DailySummaryEntity) {
-        try {
-            _statChanges.value = json.decodeFromString(entity.statChanges)
-        } catch (_: Exception) { }
-        try {
-            _skillProgress.value = json.decodeFromString(entity.skillProgress)
-        } catch (_: Exception) { }
-        try {
-            _tomorrowPlan.value = json.decodeFromString(entity.tomorrowPlan)
-        } catch (_: Exception) { }
+        try { _statChanges.value = json.decodeFromString(entity.statChanges) } catch (_: Exception) { }
+        try { _skillProgress.value = json.decodeFromString(entity.skillProgress) } catch (_: Exception) { }
+        try { _tomorrowPlan.value = json.decodeFromString(entity.tomorrowPlan) } catch (_: Exception) { }
     }
 
-    private fun getTodayMidnight(): Long {
-        return Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
-    }
+    private fun getTodayMidnight(): Long = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
 }
 
 @kotlinx.serialization.Serializable

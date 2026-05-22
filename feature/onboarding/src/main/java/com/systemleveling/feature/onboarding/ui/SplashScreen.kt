@@ -31,17 +31,28 @@ private val Green    = Color(0xFF00FF87)
 private val TextDim  = Color(0xFF8BA3C7)
 
 private val BootMessages = listOf(
-    "[SYSTEM INITIALIZING...]",
-    "[SCANNING HOST COMPATIBILITY...]",
-    "[AWAKENING PROTOCOL ENGAGED...]",
-    "[SOLO LEVELING SYSTEM v2.0 — READY]"
+    "[SYSTEM INITIALIZATION SEQUENCE...]",
+    "[SCANNING NEURAL HOST SIGNATURE...]",
+    "[HUNTER DATABASE — CONNECTING...]",
+    "[MANA CORE STABILITY: NOMINAL]",
+    "[SHADOW MONARCH PROTOCOL — LOADING...]",
+    "[QUEST MATRIX CALIBRATION: OK]",
+    "[DAILY DUNGEON GATE — OPENING...]",
+    "[SOLO LEVELING SYSTEM v2.0 — ACTIVE ✓]"
 )
+
+private data class Star(val x: Float, val y: Float, val r: Float, val a: Float)
 
 @Composable
 fun SplashScreen(onComplete: () -> Unit) {
     var msgVisible by remember { mutableStateOf(0) }
     var loadingProgress by remember { mutableStateOf(0f) }
     var showReady by remember { mutableStateOf(false) }
+
+    val stars = remember {
+        val rng = java.util.Random(42L)
+        List(70) { Star(rng.nextFloat(), rng.nextFloat(), rng.nextFloat() * 1.5f + 0.5f, rng.nextFloat() * 0.5f + 0.1f) }
+    }
 
     val infiniteTransition = rememberInfiniteTransition(label = "splash")
 
@@ -65,16 +76,21 @@ fun SplashScreen(onComplete: () -> Unit) {
         infiniteRepeatable(tween(2800, easing = LinearEasing), RepeatMode.Restart),
         label = "scan"
     )
+    val starTwinkle by infiniteTransition.animateFloat(
+        0.5f, 1f,
+        infiniteRepeatable(tween(2200, easing = EaseInOutSine), RepeatMode.Reverse),
+        label = "stars"
+    )
 
     LaunchedEffect(Unit) {
         BootMessages.forEachIndexed { i, _ ->
-            delay(if (i == 0) 300L else 550L)
+            delay(if (i == 0) 200L else 320L)
             msgVisible = i + 1
             loadingProgress = (i + 1).toFloat() / BootMessages.size
         }
-        delay(400)
+        delay(300)
         showReady = true
-        delay(700)
+        delay(500)
         onComplete()
     }
 
@@ -84,6 +100,17 @@ fun SplashScreen(onComplete: () -> Unit) {
             .background(BgNavy),
         contentAlignment = Alignment.Center
     ) {
+        // Star field
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            stars.forEach { star ->
+                drawCircle(
+                    color = Cyan.copy(alpha = star.a * starTwinkle),
+                    radius = star.r.dp.toPx(),
+                    center = Offset(star.x * size.width, star.y * size.height)
+                )
+            }
+        }
+
         // Scan line
         Canvas(modifier = Modifier.fillMaxSize()) {
             val scanPos = scanY * size.height

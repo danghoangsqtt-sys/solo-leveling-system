@@ -133,8 +133,12 @@ fun FinanceScreen(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(transactions) { tx ->
-                    TransactionItem(tx = tx, formatter = formatter)
+                items(transactions, key = { it.id }) { tx ->
+                    TransactionItem(
+                        tx = tx,
+                        formatter = formatter,
+                        onDelete = { viewModel.deleteTransaction(tx.id) }
+                    )
                 }
             }
         }
@@ -151,11 +155,12 @@ fun FinanceScreen(
 }
 
 @Composable
-fun TransactionItem(tx: TransactionEntity, formatter: NumberFormat) {
+fun TransactionItem(tx: TransactionEntity, formatter: NumberFormat, onDelete: (() -> Unit)? = null) {
     val isIncome = tx.type == TransactionType.INCOME
     val amountColor = if (isIncome) Color(0xFF40E17E) else Color(0xFFFF5252)
     val sign = if (isIncome) "+" else "-"
-    
+    var confirmDelete by remember { mutableStateOf(false) }
+
     val categoryIcon = when (tx.category) {
         FinanceCategory.FOOD -> "🍔"
         FinanceCategory.TRANSPORT -> "🚕"
@@ -184,20 +189,41 @@ fun TransactionItem(tx: TransactionEntity, formatter: NumberFormat) {
         ) {
             Text(text = categoryIcon, fontSize = 24.sp)
         }
-        
+
         Spacer(modifier = Modifier.width(16.dp))
-        
+
         Column(modifier = Modifier.weight(1f)) {
             Text(text = tx.note, color = Color.White, style = MaterialTheme.typography.titleSmall)
             Text(text = tx.category.name, color = Color.Gray, style = MaterialTheme.typography.labelSmall)
         }
-        
+
         Text(
             text = "$sign${formatter.format(tx.amount)}",
             color = amountColor,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
+
+        if (onDelete != null) {
+            Spacer(modifier = Modifier.width(12.dp))
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (confirmDelete) Color(0xFFFF5252).copy(0.2f) else Color.Transparent)
+                    .clickable {
+                        if (confirmDelete) { onDelete(); confirmDelete = false }
+                        else confirmDelete = true
+                    }
+                    .padding(6.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (confirmDelete) "✓" else "🗑",
+                    fontSize = 16.sp,
+                    color = if (confirmDelete) Color(0xFFFF5252) else Color.Gray
+                )
+            }
+        }
     }
 }
 

@@ -16,7 +16,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.systemleveling.core.model.RewardResult
+import com.systemleveling.core.model.WorkPlanItem
 import com.systemleveling.core.database.entity.QuestEntity
+import kotlinx.coroutines.flow.collectLatest
 import com.systemleveling.core.designsystem.components.GlassCard
 import com.systemleveling.core.designsystem.theme.md_theme_dark_background
 import com.systemleveling.core.designsystem.theme.md_theme_dark_outline
@@ -32,7 +35,18 @@ fun QuestListScreen(
     onBack: () -> Unit
 ) {
     val quests by viewModel.quests.collectAsState()
-    var selectedQuest by remember { mutableStateOf<QuestEntity?>(null) }
+    val workPlanItems by viewModel.workPlanItems.collectAsState()
+    val isGenerating by viewModel.isGenerating.collectAsState()
+    val user by viewModel.user.collectAsState()
+    var rewardToShow by remember { mutableStateOf<RewardResult?>(null) }
+    var showWorkPlanSheet by remember { mutableStateOf(false) }
+
+    // Collect reward result from ViewModel and surface it in the dialog
+    LaunchedEffect(Unit) {
+        viewModel.rewardResult.collectLatest { result ->
+            rewardToShow = result
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -56,11 +70,41 @@ fun QuestListScreen(
                     color = md_theme_dark_primary,
                     modifier = Modifier.clickable { onBack() }
                 )
-                Text(
-                    text = "🔥 Streak: 12",
-                    color = Color.White
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Work Plan button
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(
+                                if (workPlanItems.isNotEmpty())
+                                    Color(0xFFFF4757).copy(alpha = 0.15f)
+                                else Color(0xFF4A9EFF).copy(alpha = 0.10f)
+                            )
+                            .clickable { showWorkPlanSheet = true }
+                            .padding(horizontal = 10.dp, vertical = 5.dp)
+                    ) {
+                        Text(
+                            text = if (workPlanItems.isNotEmpty()) "📋 ${workPlanItems.size}" else "📋 KẾ HOẠCH",
+                            color = if (workPlanItems.isNotEmpty()) Color(0xFFFF7F50) else md_theme_dark_primary,
+                            fontSize = 11.sp, fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Text(text = "🔥 ${user?.streak ?: 0} ngày", color = Color.White)
+                }
             }
+
+        if (showWorkPlanSheet) {
+            WorkPlanInputSheet(
+                items = workPlanItems,
+                onAdd = { viewModel.addWorkPlanItem(it) },
+                onRemove = { viewModel.removeWorkPlanItem(it) },
+                onDismiss = { showWorkPlanSheet = false },
+                onRegenerateQuests = { viewModel.regenerateQuests() }
+            )
+        }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -84,18 +128,46 @@ fun QuestListScreen(
                     QuestTimelineItem(quest = quest) {
                         if (quest.status != QuestStatus.COMPLETED) {
                             viewModel.completeQuest(quest)
-                            selectedQuest = quest
                         }
                     }
                 }
             }
         }
 
-        // Quest Complete Dialog
-        selectedQuest?.let { quest ->
+        // AI Quest Generating overlay
+        if (isGenerating) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(md_theme_dark_background.copy(alpha = 0.85f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(
+                        color = md_theme_dark_primary,
+                        modifier = Modifier.size(48.dp),
+                        strokeWidth = 3.dp
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        text = "🤖 AI đang tạo sinh nhiệm vụ...",
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = "Đang phân tích kỹ năng và kế hoạch của bạn",
+                        color = md_theme_dark_outline,
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            }
+        }
+
+        // Quest Complete Dialog — driven by RewardResult from ViewModel
+        rewardToShow?.let { result ->
             QuestCompleteDialog(
-                quest = quest,
-                onDismiss = { selectedQuest = null }
+                result = result,
+                onDismiss = { rewardToShow = null }
             )
         }
     }

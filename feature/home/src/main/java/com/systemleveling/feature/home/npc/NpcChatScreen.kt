@@ -1,525 +1,483 @@
 package com.systemleveling.feature.home.npc
 
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.*
+import android.annotation.SuppressLint
+import android.webkit.JavascriptInterface
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import com.systemleveling.feature.home.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.systemleveling.core.ai.ChatMessage
 import com.systemleveling.core.ai.MessageRole
-import kotlinx.coroutines.launch
 
-private val BgDeep    = Color(0xFF060612)
-private val BgMid     = Color(0xFF0E0E20)
-private val Primary   = Color(0xFF4A9EFF)
-private val Gold      = Color(0xFFFFD700)
-private val Purple    = Color(0xFFB48EFF)
-private val PurpleDim = Color(0xFF7A5EBD)
-private val GlassBorder = Color(0x1FFFFFFF)
-private val GlassSurface = Color(0x991E1E2F)
-private val TextMuted   = Color(0xFFC0C7D4)
-private val Green       = Color(0xFF2ED573)
+private val BgDeep   = Color(0xFF0D0D1A)
+private val GlassSurface = Color(0x28FFFFFF)
+private val GlassBorder  = Color(0x40FFFFFF)
+private val TextMuted    = Color(0xB3FFFFFF)
+private val Purple  = Color(0xFFB48EFF)
+private val Primary = Color(0xFF4A9EFF)
+private val UserBubbleBg = Color(0x55B48EFF)
+private val AiBubbleBg   = Color(0x33000000)
 
-private val QuickPrompts = listOf(
-    "Phân tích chỉ số của ta",
-    "Nhiệm vụ nào quan trọng nhất?",
-    "Lời khuyên luyện tập hôm nay",
-    "Cách tăng EXP nhanh nhất",
-    "Đánh giá tiến độ streak"
-)
-
+@SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun NpcChatScreen(
     viewModel: NpcChatViewModel,
     onBack: () -> Unit
 ) {
+    val apiKey   by viewModel.apiKey.collectAsState()
     val messages by viewModel.messages.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    val error by viewModel.error.collectAsState()
-    val apiKey by viewModel.apiKey.collectAsState()
+    val error    by viewModel.error.collectAsState()
 
-    var inputText by remember { mutableStateOf("") }
     var showApiKeyDialog by remember { mutableStateOf(false) }
-    val listState = rememberLazyListState()
-    val scope = rememberCoroutineScope()
+    var webViewRef by remember { mutableStateOf<WebView?>(null) }
+    var inputText  by remember { mutableStateOf("") }
+    val listState  = rememberLazyListState()
 
+    // Auto-scroll to newest message
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) listState.animateScrollToItem(messages.size - 1)
     }
 
-    LaunchedEffect(apiKey) {
-        if (apiKey.isBlank() && messages.isEmpty()) showApiKeyDialog = true
+    // Animate model mouth while AI is loading (fake thinking animation)
+    LaunchedEffect(isLoading) {
+        if (isLoading) {
+            while (true) {
+                val vol = (10..70).random() / 10f
+                webViewRef?.evaluateJavascript(
+                    "if(typeof window.setVolume==='function')window.setVolume($vol);", null
+                )
+                kotlinx.coroutines.delay(120)
+            }
+        } else {
+            webViewRef?.evaluateJavascript(
+                "if(typeof window.setVolume==='function')window.setVolume(0);", null
+            )
+        }
     }
 
     if (showApiKeyDialog) {
         ApiKeyDialog(
             onDismiss = { showApiKeyDialog = false },
-            onConfirm = { key ->
-                viewModel.saveApiKey(key)
-                showApiKeyDialog = false
-            }
+            onConfirm = { key -> viewModel.saveApiKey(key); showApiKeyDialog = false }
         )
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(listOf(Color(0xFF12102A), BgDeep, BgMid))
-            )
-    ) {
-        // Character layer
-        AuraCharacterView()
+    Box(modifier = Modifier.fillMaxSize().background(BgDeep)) {
 
-        Column(modifier = Modifier.fillMaxSize()) {
-
-            AuraHeader(
-                messageCount = messages.size,
-                hasKey = apiKey.isNotBlank(),
-                onBack = onBack,
-                onSettings = { showApiKeyDialog = true },
-                onClear = { viewModel.clearHistory() }
-            )
-
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(top = 180.dp, bottom = 16.dp) // Leave space for character
-            ) {
-                if (messages.isEmpty()) {
-                    item {
-                        QuickPromptsRow { prompt ->
-                            viewModel.sendMessage(prompt)
-                        }
-                    }
-                }
-                items(messages) { msg ->
-                    MessageBubble(msg)
-                }
-                if (isLoading) {
-                    item { TypingIndicator() }
-                }
-            }
-
-            error?.let { err ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color(0xFFFF6B6B).copy(0.12f))
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(err, color = Color(0xFFFF6B6B), fontSize = 12.sp, modifier = Modifier.weight(1f))
-                        Text(
-                            "✕", color = Color(0xFFFF6B6B), fontSize = 14.sp,
-                            modifier = Modifier.clickable { viewModel.clearError() }
-                        )
-                    }
-                }
-            }
-
-            ChatInputBar(
-                value = inputText,
-                isLoading = isLoading,
-                onValueChange = { inputText = it },
-                onSend = {
-                    if (inputText.isNotBlank()) {
-                        viewModel.sendMessage(inputText)
-                        inputText = ""
-                        scope.launch { if (messages.isNotEmpty()) listState.animateScrollToItem(messages.size) }
-                    }
-                }
-            )
-        }
-    }
-}
-
-@Composable
-private fun AuraHeader(
-    messageCount: Int,
-    hasKey: Boolean,
-    onBack: () -> Unit,
-    onSettings: () -> Unit,
-    onClear: () -> Unit
-) {
-    val glow by rememberInfiniteTransition(label = "hdr").animateFloat(
-        0.5f, 1f,
-        infiniteRepeatable(tween(1500, easing = EaseInOutSine), RepeatMode.Reverse),
-        label = "glow"
-    )
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xBB060612))
-            .border(BorderStroke(0.5.dp, Purple.copy(0.15f)))
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            // Back
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(GlassSurface.copy(0.4f))
-                    .border(0.5.dp, GlassBorder, CircleShape)
-                    .clickable { onBack() },
-                contentAlignment = Alignment.Center
-            ) {
-                Text("◀", color = Primary, fontSize = 14.sp)
-            }
-
-            // Center: Aura identity
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Animated orb
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(CircleShape)
-                            .background(
-                                Brush.radialGradient(listOf(Purple.copy(glow * 0.6f), Color(0xFF1A0A2E)))
-                            )
-                            .border(1.dp, Purple.copy(glow), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) { Text("✦", fontSize = 12.sp, color = Purple.copy(glow)) }
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        "AURA",
-                        color = Purple,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 0.15f.em
+        // ── 1. Full-screen Live2D WebView ───────────────────────────────────────
+        AndroidView(
+            modifier = Modifier.fillMaxSize(),
+            factory = { ctx ->
+                WebView(ctx).apply {
+                    layoutParams = android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
                     )
-                }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .clip(CircleShape)
-                            .background(if (hasKey) Green else Color(0xFFFF6B6B))
-                    )
-                    Text(
-                        if (hasKey) "Đang hoạt động · gemini-2.0-flash" else "Chưa kết nối",
-                        color = TextMuted,
-                        fontSize = 9.sp
-                    )
-                    if (messageCount > 0) {
-                        Text("·", color = TextMuted, fontSize = 9.sp)
-                        Text("$messageCount tin", color = TextMuted, fontSize = 9.sp)
-                    }
+                    setBackgroundColor(android.graphics.Color.parseColor("#0D0D1A"))
+                    settings.javaScriptEnabled = true
+                    settings.domStorageEnabled = true
+                    settings.mediaPlaybackRequiresUserGesture = false
+                    settings.allowFileAccessFromFileURLs = true
+                    settings.allowUniversalAccessFromFileURLs = true
+                    @Suppress("DEPRECATION")
+                    settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                    webViewClient = WebViewClient()
+                    webChromeClient = WebChromeClient()
+                    addJavascriptInterface(object : Any() {
+                        @JavascriptInterface fun onModelLoaded() {}
+                    }, "AndroidBridge")
+                    loadUrl("file:///android_asset/live2d.html")
+                    webViewRef = this
                 }
             }
-
-            // Right actions
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (messageCount > 0) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(GlassSurface.copy(0.4f))
-                            .border(0.5.dp, GlassBorder, CircleShape)
-                            .clickable { onClear() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("🗑", fontSize = 14.sp)
-                    }
-                }
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(GlassSurface.copy(0.4f))
-                        .border(0.5.dp, GlassBorder, CircleShape)
-                        .clickable { onSettings() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("⚙", color = TextMuted, fontSize = 16.sp)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun AuraCharacterView() {
-    val breath by rememberInfiniteTransition(label = "breath").animateFloat(
-        0.98f, 1.02f,
-        infiniteRepeatable(tween(2500, easing = EaseInOutSine), RepeatMode.Reverse),
-        label = "br"
-    )
-    val glow by rememberInfiniteTransition(label = "glow_char").animateFloat(
-        0.2f, 0.6f,
-        infiniteRepeatable(tween(2000, easing = EaseInOutSine), RepeatMode.Reverse),
-        label = "gc"
-    )
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(320.dp),
-        contentAlignment = Alignment.TopCenter
-    ) {
-        // Back glow
-        Box(
-            modifier = Modifier
-                .size(240.dp)
-                .offset(y = 40.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        listOf(Purple.copy(glow), Color.Transparent)
-                    )
-                )
         )
-        
-        // Character Image
-        Image(
-            painter = painterResource(id = R.drawable.aura_npc),
-            contentDescription = "Aura NPC",
-            modifier = Modifier
-                .padding(top = 60.dp)
-                .height(280.dp)
-                .scale(1f, breath) // Breathing effect
-        )
-        
-        // Front fade to blend with chat
+
+        // ── 2. Gradient overlay (bottom 65%) ───────────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(80.dp)
+                .fillMaxHeight(0.68f)
                 .align(Alignment.BottomCenter)
                 .background(
                     Brush.verticalGradient(
-                        listOf(Color.Transparent, Color(0xFF12102A))
+                        colors = listOf(Color.Transparent, Color(0xCC0D0D1A), BgDeep)
                     )
                 )
         )
+
+        // ── 3. UI overlay ───────────────────────────────────────────────────────
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp)
+        ) {
+            // Top bar
+            NpcTopBar(
+                apiKeySet     = apiKey.isNotBlank(),
+                onBack        = onBack,
+                onSettings    = { showApiKeyDialog = true },
+                onClearHistory = { viewModel.clearHistory() }
+            )
+
+            Spacer(modifier = Modifier.weight(1f)) // Character visible area
+
+            // ── CHAT SUGGESTIONS ──
+            if (messages.isEmpty() && apiKey.isNotBlank()) {
+                val suggestions = listOf(
+                    "Xin chào Aura! 👋",
+                    "Bạn có thể làm gì?",
+                    "Kể cho tôi một câu chuyện",
+                    "Giao cho tôi một nhiệm vụ",
+                    "Hôm nay bạn thấy thế nào?"
+                )
+                androidx.compose.foundation.lazy.LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+                ) {
+                    items(suggestions) { text ->
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(GlassSurface)
+                                .border(1.dp, GlassBorder, RoundedCornerShape(16.dp))
+                                .clickable { inputText = text }
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            Text(text, color = Color.White, fontSize = 13.sp)
+                        }
+                    }
+                }
+            }
+
+            // Chat messages (max ~240dp, scrollable)
+            if (messages.isNotEmpty()) {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 240.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    contentPadding = PaddingValues(bottom = 4.dp)
+                ) {
+                    items(messages) { msg -> ChatBubble(msg) }
+                }
+            }
+
+            // Error banner
+            error?.let { errMsg ->
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "⚠ $errMsg",
+                    color = Color(0xFFFF6B6B),
+                    fontSize = 12.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0x33FF0000))
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                        .clickable { viewModel.clearError() }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // ── VOICE RECOGNIZER LAUNCHER ──
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val speechLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+            ) { result ->
+                if (result.resultCode == android.app.Activity.RESULT_OK) {
+                    val data = result.data?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)
+                    val spokenText = data?.get(0) ?: ""
+                    if (spokenText.isNotBlank()) {
+                        viewModel.sendMessage(spokenText)
+                    }
+                }
+            }
+
+            // Input row
+            ChatInputRow(
+                text         = inputText,
+                onTextChange = { inputText = it },
+                isLoading    = isLoading,
+                hasApiKey    = apiKey.isNotBlank(),
+                onSend       = {
+                    if (inputText.isNotBlank()) {
+                        viewModel.sendMessage(inputText)
+                        inputText = ""
+                    }
+                },
+                onApiKeyClick = { showApiKeyDialog = true },
+                onMicClick = {
+                    val intent = android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                        putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                        putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE, "vi-VN")
+                        putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, "Nói gì đó với Aura...")
+                    }
+                    try {
+                        speechLauncher.launch(intent)
+                    } catch (e: Exception) {
+                        // Fallback if no speech recognizer installed
+                    }
+                }
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+        }
     }
 }
 
+// ── Top bar ────────────────────────────────────────────────────────────────────
 @Composable
-private fun QuickPromptsRow(onPrompt: (String) -> Unit) {
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(horizontal = 0.dp)
+private fun NpcTopBar(
+    apiKeySet: Boolean,
+    onBack: () -> Unit,
+    onSettings: () -> Unit,
+    onClearHistory: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        items(QuickPrompts) { prompt ->
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Purple.copy(0.08f))
-                    .border(0.5.dp, Purple.copy(0.3f), RoundedCornerShape(20.dp))
-                    .clickable { onPrompt(prompt) }
-                    .padding(horizontal = 14.dp, vertical = 8.dp)
-            ) {
+        // Back
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(GlassSurface)
+                .clickable(onClick = onBack),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Rounded.ArrowBack, contentDescription = "Back",
+                tint = Color.White, modifier = Modifier.size(20.dp))
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        // Title
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                "AURA",
+                color = Color.White,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 3.sp
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .clip(CircleShape)
+                        .background(if (apiKeySet) Color(0xFF44FF88) else Color(0xFFFF4444))
+                )
+                Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    "✦  $prompt",
-                    color = Purple.copy(0.9f),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium
+                    if (apiKeySet) "Online" else "API Key Required",
+                    color = TextMuted, fontSize = 10.sp, letterSpacing = 0.5.sp
                 )
             }
         }
+
+        // Clear history
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(GlassSurface)
+                .clickable(onClick = onClearHistory),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Rounded.Delete, contentDescription = "Clear history",
+                tint = TextMuted, modifier = Modifier.size(17.dp))
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Settings
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(GlassSurface)
+                .clickable(onClick = onSettings),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Rounded.Settings, contentDescription = "Settings",
+                tint = TextMuted, modifier = Modifier.size(17.dp))
+        }
     }
 }
 
+// ── Chat bubble ────────────────────────────────────────────────────────────────
 @Composable
-private fun MessageBubble(msg: ChatMessage) {
-    val isUser = msg.role == MessageRole.USER
+private fun ChatBubble(message: ChatMessage) {
+    val isUser = message.role == MessageRole.USER
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start,
-        verticalAlignment = Alignment.Bottom
+        horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
     ) {
-        if (!isUser) {
-            Box(
-                modifier = Modifier
-                    .size(30.dp)
-                    .clip(CircleShape)
-                    .background(Brush.radialGradient(listOf(Purple.copy(0.35f), Color(0xFF1A0A2E))))
-                    .border(0.5.dp, Purple.copy(0.5f), CircleShape),
-                contentAlignment = Alignment.Center
-            ) { Text("✦", fontSize = 12.sp, color = Purple) }
-            Spacer(Modifier.width(8.dp))
-        }
         Box(
             modifier = Modifier
-                .widthIn(max = 285.dp)
+                .fillMaxWidth(0.82f)
                 .clip(
                     RoundedCornerShape(
-                        topStart = if (isUser) 18.dp else 4.dp,
-                        topEnd = if (isUser) 4.dp else 18.dp,
-                        bottomStart = 18.dp,
-                        bottomEnd = 18.dp
+                        topStart    = if (isUser) 16.dp else 4.dp,
+                        topEnd      = if (isUser) 4.dp  else 16.dp,
+                        bottomStart = 16.dp,
+                        bottomEnd   = 16.dp
                     )
                 )
-                .background(
-                    if (isUser)
-                        Brush.linearGradient(listOf(Primary.copy(0.22f), Primary.copy(0.12f)))
-                    else
-                        Brush.linearGradient(listOf(Purple.copy(0.14f), GlassSurface.copy(0.5f)))
-                )
+                .background(if (isUser) UserBubbleBg else AiBubbleBg)
                 .border(
-                    0.5.dp,
-                    if (isUser) Primary.copy(0.3f) else Purple.copy(0.22f),
-                    RoundedCornerShape(
-                        topStart = if (isUser) 18.dp else 4.dp,
-                        topEnd = if (isUser) 4.dp else 18.dp,
-                        bottomStart = 18.dp,
-                        bottomEnd = 18.dp
-                    )
+                    1.dp,
+                    if (isUser) Purple.copy(alpha = 0.5f) else GlassBorder,
+                    RoundedCornerShape(16.dp)
                 )
                 .padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
             Text(
-                text = msg.content,
-                color = if (isUser) Color.White else Color(0xFFEEE8FF),
-                fontSize = 13.sp,
-                lineHeight = 1.55.em
+                text      = message.content,
+                color     = Color.White,
+                fontSize  = 14.sp,
+                lineHeight = 20.sp
             )
         }
-        if (isUser) Spacer(Modifier.width(8.dp))
     }
 }
 
+// ── Chat input row ─────────────────────────────────────────────────────────────
 @Composable
-private fun TypingIndicator() {
-    val phase by rememberInfiniteTransition(label = "typing").animateFloat(
-        0f, 3f,
-        infiniteRepeatable(tween(900, easing = LinearEasing), RepeatMode.Restart),
-        label = "phase"
-    )
-    Row(verticalAlignment = Alignment.Bottom) {
-        Box(
-            modifier = Modifier
-                .size(30.dp)
-                .clip(CircleShape)
-                .background(Purple.copy(0.12f))
-                .border(0.5.dp, Purple.copy(0.4f), CircleShape),
-            contentAlignment = Alignment.Center
-        ) { Text("✦", fontSize = 12.sp, color = Purple) }
-        Spacer(Modifier.width(8.dp))
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(18.dp))
-                .background(Purple.copy(0.1f))
-                .border(0.5.dp, Purple.copy(0.2f), RoundedCornerShape(18.dp))
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-        ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
-                repeat(3) { i ->
-                    val alpha = if (phase.toInt() == i) 1f else 0.3f
-                    Box(
-                        modifier = Modifier
-                            .size(7.dp)
-                            .clip(CircleShape)
-                            .background(Purple.copy(alpha))
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ChatInputBar(
-    value: String,
+private fun ChatInputRow(
+    text: String,
+    onTextChange: (String) -> Unit,
     isLoading: Boolean,
-    onValueChange: (String) -> Unit,
-    onSend: () -> Unit
+    hasApiKey: Boolean,
+    onSend: () -> Unit,
+    onApiKeyClick: () -> Unit,
+    onMicClick: () -> Unit
 ) {
-    val canSend = value.isNotBlank() && !isLoading
+    if (!hasApiKey) {
+        // Full-width API key button when no key set
+        Button(
+            onClick = onApiKeyClick,
+            modifier = Modifier.fillMaxWidth().height(52.dp),
+            shape = RoundedCornerShape(26.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = GlassSurface)
+        ) {
+            Icon(Icons.Rounded.AutoAwesome, contentDescription = null,
+                tint = Purple, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(
+                "NHẬP API KEY",
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.5.sp,
+                fontSize = 13.sp
+            )
+        }
+        return
+    }
+
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xEE060612))
-            .border(BorderStroke(0.5.dp, Purple.copy(0.12f)))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            placeholder = { Text("Nhắn tin với Aura...", color = TextMuted.copy(0.6f), fontSize = 13.sp) },
+            value = text,
+            onValueChange = onTextChange,
+            placeholder = {
+                Text("Nói gì đó với Aura...", color = TextMuted, fontSize = 14.sp)
+            },
             modifier = Modifier.weight(1f),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-            keyboardActions = KeyboardActions(onSend = { onSend() }),
+            maxLines = 4,
+            shape = RoundedCornerShape(20.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Purple.copy(0.45f),
+                focusedBorderColor   = Purple,
                 unfocusedBorderColor = GlassBorder,
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                cursorColor = Purple,
-                focusedContainerColor = GlassSurface.copy(0.3f),
-                unfocusedContainerColor = GlassSurface.copy(0.15f)
+                focusedTextColor     = Color.White,
+                unfocusedTextColor   = Color.White,
+                focusedContainerColor   = Color(0x28000000),
+                unfocusedContainerColor = Color(0x1A000000)
             ),
-            shape = RoundedCornerShape(14.dp)
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+            keyboardActions = KeyboardActions(onSend = { onSend() })
         )
-        Spacer(Modifier.width(10.dp))
+
+        // Send / Mic button
+        val isTyping = text.isNotBlank()
         Box(
             modifier = Modifier
-                .size(46.dp)
+                .size(52.dp)
                 .clip(CircleShape)
                 .background(
-                    if (canSend)
-                        Brush.radialGradient(listOf(Purple, Color(0xFF6A3FA0)))
-                    else
-                        Brush.radialGradient(listOf(GlassSurface.copy(0.5f), GlassSurface.copy(0.3f)))
+                    brush = Brush.linearGradient(
+                        if (isTyping || isLoading) listOf(Purple, Primary) else listOf(GlassSurface, GlassSurface)
+                    )
                 )
-                .border(1.dp, if (canSend) Purple.copy(0.6f) else GlassBorder, CircleShape)
-                .clickable(enabled = canSend) { onSend() },
+                .clickable(enabled = !isLoading) {
+                    if (isTyping) onSend() else onMicClick()
+                },
             contentAlignment = Alignment.Center
         ) {
             if (isLoading) {
-                Text("✦", fontSize = 16.sp, color = Purple)
+                CircularProgressIndicator(
+                    modifier = Modifier.size(22.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp
+                )
+            } else if (isTyping) {
+                Icon(
+                    Icons.Rounded.Send,
+                    contentDescription = "Send",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
             } else {
-                Text("▶", color = if (canSend) Color.White else TextMuted.copy(0.3f), fontSize = 14.sp)
+                Icon(
+                    Icons.Rounded.Mic,
+                    contentDescription = "Mic",
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp)
+                )
             }
         }
     }
 }
 
+// ── API Key dialog ─────────────────────────────────────────────────────────────
 @Composable
 private fun ApiKeyDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
     var keyText by remember { mutableStateOf("") }
@@ -551,14 +509,14 @@ private fun ApiKeyDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Purple,
+                        focusedBorderColor   = Purple,
                         unfocusedBorderColor = GlassBorder,
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
+                        focusedTextColor     = Color.White,
+                        unfocusedTextColor   = Color.White
                     )
                 )
                 Text(
-                    if (showKey) "🙈 Ẩn key" else "👁 Hiện key",
+                    if (showKey) "Ẩn key" else "Hiện key",
                     color = Primary, fontSize = 11.sp,
                     modifier = Modifier.clickable { showKey = !showKey }
                 )

@@ -28,5 +28,7 @@ data class QuestEntity(
     val relatedSkillIds: String = "[]", // JSON array of skill IDs
     val relatedGoalId: String? = null,
     val droppedItemId: String? = null, // item ID if loot dropped
-    val isHealthReminder: Boolean = false // true for water/stand/sleep reminders
+    val isHealthReminder: Boolean = false, // true for water/stand/sleep reminders
+    val statPointRewards: String = "{}", // JSON map: {"STR": 1, "INT": 2} — per-quest specific stat gains
+    val priorityScore: Int = 50 // 0-100: AI-assigned priority (100=critical, 0=optional)
 )

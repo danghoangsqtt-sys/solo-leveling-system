@@ -8,6 +8,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.systemleveling.core.worker.DailyQuestWorker
 import com.systemleveling.core.worker.EndOfDayWorker
+import com.systemleveling.core.worker.QuestReminderWorker
 import dagger.hilt.android.HiltAndroidApp
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
@@ -56,6 +57,17 @@ class SystemLevelingApp : Application(), Configuration.Provider {
             EndOfDayWorker.WORK_NAME,
             ExistingPeriodicWorkPolicy.KEEP,
             endOfDayRequest
+        )
+
+        // Quest Reminder — runs every 30 minutes to urge completion of pending quests
+        val reminderRequest = PeriodicWorkRequestBuilder<QuestReminderWorker>(
+            30, TimeUnit.MINUTES
+        ).build()
+
+        workManager.enqueueUniquePeriodicWork(
+            QuestReminderWorker.WORK_NAME,
+            ExistingPeriodicWorkPolicy.KEEP,
+            reminderRequest
         )
     }
 

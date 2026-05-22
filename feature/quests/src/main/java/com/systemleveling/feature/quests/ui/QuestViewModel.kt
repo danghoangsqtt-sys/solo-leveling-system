@@ -8,7 +8,9 @@ import com.systemleveling.core.database.entity.QuestEntity
 import com.systemleveling.core.engine.RewardEngine
 import com.systemleveling.core.model.QuestStatus
 import com.systemleveling.core.model.RewardResult
+import com.systemleveling.core.model.WorkPlanItem
 import com.systemleveling.core.network.AiQuestGeneratorService
+import com.systemleveling.core.settings.SettingsManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -17,6 +19,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -28,48 +31,38 @@ class QuestViewModel @Inject constructor(
     private val questDao: QuestDao,
     private val userDao: UserDao,
     private val rewardEngine: RewardEngine,
-    private val aiQuestGenerator: AiQuestGeneratorService
+    private val aiQuestGenerator: AiQuestGeneratorService,
+    private val settingsManager: SettingsManager
 ) : ViewModel() {
 
-    // Today's quests, sorted by timeStart
     val quests: StateFlow<List<QuestEntity>> = questDao.getAllQuests()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Reward result events for the completion popup
+    val user: StateFlow<com.systemleveling.core.database.entity.UserEntity?> = userDao.getUser()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val workPlanItems: StateFlow<List<WorkPlanItem>> = settingsManager.workPlanItems
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     private val _rewardResult = MutableSharedFlow<RewardResult>()
     val rewardResult: SharedFlow<RewardResult> = _rewardResult.asSharedFlow()
 
-    // Loading state for AI quest generation
     private val _isGenerating = MutableStateFlow(false)
     val isGenerating: StateFlow<Boolean> = _isGenerating
 
     init {
-        // On first load, generate quests if none exist for today
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                ensureTodayQuests()
-            }
+            withContext(Dispatchers.IO) { ensureTodayQuests() }
         }
     }
 
-    /**
-     * Generate quests for today if none exist yet.
-     * Uses AI generator with fallback templates.
-     */
     private suspend fun ensureTodayQuests() {
         val todayStart = getTodayMidnight()
         val todayEnd = todayStart + 86400000L
-        val existingCount = questDao.getQuestCountByDate(todayStart, todayEnd)
-
-        if (existingCount == 0) {
+        if (questDao.getQuestCountByDate(todayStart, todayEnd) == 0) {
             _isGenerating.value = true
             try {
-                // TODO: Read API key from BuildConfig when user sets it up
-                val apiKey = "" // Will be populated from BuildConfig.GEMINI_API_KEY
+                val apiKey = settingsManager.geminiApiKey.first()
                 aiQuestGenerator.generateDailyQuests(apiKey, todayStart)
             } finally {
                 _isGenerating.value = false
@@ -77,12 +70,8 @@ class QuestViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Complete a quest and process rewards through the RewardEngine.
-     */
     fun completeQuest(quest: QuestEntity) {
         if (quest.status == QuestStatus.COMPLETED) return
-
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 val result = rewardEngine.processQuestCompletion(quest)
@@ -91,26 +80,26 @@ class QuestViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Manually trigger quest regeneration (e.g., user wants new quests).
-     */
     fun regenerateQuests() {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 val todayStart = getTodayMidnight()
-                val todayEnd = todayStart + 86400000L
-                questDao.deleteQuestsByDate(todayStart, todayEnd)
+                questDao.deleteQuestsByDate(todayStart, todayStart + 86400000L)
                 ensureTodayQuests()
             }
         }
     }
 
-    private fun getTodayMidnight(): Long {
-        return Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
+    fun addWorkPlanItem(item: WorkPlanItem) {
+        viewModelScope.launch { settingsManager.addWorkPlanItem(item) }
     }
+
+    fun removeWorkPlanItem(id: String) {
+        viewModelScope.launch { settingsManager.removeWorkPlanItem(id) }
+    }
+
+    private fun getTodayMidnight(): Long = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
 }

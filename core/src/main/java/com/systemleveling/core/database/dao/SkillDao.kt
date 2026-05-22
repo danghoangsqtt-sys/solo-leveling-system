@@ -36,4 +36,19 @@ interface SkillDao {
 
     @Query("SELECT * FROM skills WHERE isAiGenerated = 1")
     suspend fun getAiGeneratedSkills(): List<SkillEntity>
+
+    @Query("SELECT * FROM skills WHERE parentId IS NULL")
+    fun getParentSkills(): Flow<List<SkillEntity>>
+
+    @Query("SELECT * FROM skills WHERE parentId = :parentId")
+    fun getChildSkills(parentId: String): Flow<List<SkillEntity>>
+
+    @Query("SELECT * FROM skills WHERE parentId IS NULL")
+    suspend fun getParentSkillsSync(): List<SkillEntity>
+
+    @Query("SELECT * FROM skills WHERE parentId = :parentId")
+    suspend fun getChildSkillsSync(parentId: String): List<SkillEntity>
+
+    @Query("DELETE FROM skills")
+    suspend fun deleteAllSkills()
 }

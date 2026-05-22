@@ -23,4 +23,16 @@ interface FinanceDao {
 
     @Query("SELECT SUM(amount) FROM transactions WHERE type = 'EXPENSE'")
     fun getTotalExpense(): Flow<Long?>
+
+    @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type = 'INCOME' AND timestamp >= :start AND timestamp < :end")
+    fun getTodayIncome(start: Long, end: Long): Flow<Long>
+
+    @Query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE type = 'EXPENSE' AND timestamp >= :start AND timestamp < :end")
+    fun getTodayExpense(start: Long, end: Long): Flow<Long>
+
+    @Query("SELECT * FROM transactions WHERE timestamp >= :start AND timestamp < :end ORDER BY timestamp DESC")
+    fun getTransactionsByDateRange(start: Long, end: Long): Flow<List<TransactionEntity>>
+
+    @Query("DELETE FROM transactions WHERE id = :id")
+    suspend fun deleteTransaction(id: String)
 }

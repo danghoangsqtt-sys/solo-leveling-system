@@ -6,66 +6,169 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.systemleveling.core.ai.AiCompleteOnboardingResponse
+import com.systemleveling.core.ai.AiSurveyData
+import com.systemleveling.core.ai.AuraRepository
+import com.systemleveling.core.database.dao.SkillDao
 import com.systemleveling.core.database.dao.UserDao
+import com.systemleveling.core.database.entity.SkillEntity
 import com.systemleveling.core.database.entity.StatEntity
 import com.systemleveling.core.database.entity.UserEntity
+import com.systemleveling.core.settings.SettingsManager
+import com.systemleveling.core.model.SkillLevel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
     private val userDao: UserDao,
-    private val dataStore: DataStore<Preferences>
+    private val skillDao: SkillDao,
+    private val dataStore: DataStore<Preferences>,
+    private val settingsManager: SettingsManager,
+    private val auraRepository: AuraRepository
 ) : ViewModel() {
 
-    fun completeOnboarding(
-        nickname: String,
-        selectedClass: String,
-        surveyStats: StatEntity? = null
-    ) {
+    private val _uiState = MutableStateFlow<OnboardingUiState>(OnboardingUiState.Idle)
+    val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
+
+    private val json = Json { ignoreUnknownKeys = true; isLenient = true }
+
+    fun generateRoadmapAndComplete(nickname: String, goal: String, surveyData: AiSurveyData, overrideApiKey: String = "") {
         viewModelScope.launch {
-            userDao.insertUser(
-                UserEntity(
-                    nickname = nickname.ifBlank { "Shadow Monarch" },
-                    characterClass = selectedClass,
-                    avatarUri = null
-                )
-            )
+            _uiState.value = OnboardingUiState.Loading("Đang phân tích dữ liệu và tạo lộ trình...")
 
-            // If survey computed stats exist, apply class bonus on top
-            // Otherwise fall back to fixed defaults
-            val stats = if (surveyStats != null) {
-                applyClassBonus(surveyStats, selectedClass)
-            } else {
-                when (selectedClass) {
-                    "Warrior" -> StatEntity(str = 20, intStat = 8, agi = 10, vit = 18, wis = 8, cha = 10)
-                    "Mage"    -> StatEntity(str = 8, intStat = 20, agi = 10, vit = 8, wis = 18, cha = 12)
-                    "Ranger"  -> StatEntity(str = 10, intStat = 10, agi = 20, vit = 10, wis = 10, cha = 16)
-                    else      -> StatEntity()
+            try {
+                if (overrideApiKey.isNotBlank()) {
+                    settingsManager.setGeminiApiKey(overrideApiKey)
                 }
-            }
-            userDao.insertStats(stats)
+                val apiKey = settingsManager.geminiApiKey.first()
+                if (apiKey.isBlank()) {
+                    _uiState.value = OnboardingUiState.Error("Nhập Gemini API Key (bắt đầu bằng AIzaSy...) để khởi tạo.")
+                    return@launch
+                }
 
-            val isOnboardedKey = booleanPreferencesKey("isOnboarded")
-            dataStore.edit { settings -> settings[isOnboardedKey] = true }
+                val result = auraRepository.generateCompleteOnboarding(apiKey, surveyData, goal)
+                result.fold(
+                    onSuccess = { jsonStr ->
+                        val cleanJson = jsonStr.trim().removePrefix("```json").removeSuffix("```").trim()
+                        val roadmapData = json.decodeFromString<AiCompleteOnboardingResponse>(cleanJson)
+                        _uiState.value = OnboardingUiState.Result(roadmapData)
+                    },
+                    onFailure = { error ->
+                        _uiState.value = OnboardingUiState.Error(error.message ?: "Lỗi hệ thống")
+                    }
+                )
+            } catch (e: Exception) {
+                _uiState.value = OnboardingUiState.Error("Lỗi kết nối AI: ${e.localizedMessage}")
+            }
         }
     }
 
-    private fun applyClassBonus(base: StatEntity, selectedClass: String): StatEntity =
-        when (selectedClass) {
-            "Warrior" -> base.copy(
-                str = (base.str + 10).coerceAtMost(100),
-                vit = (base.vit + 8).coerceAtMost(100)
-            )
-            "Mage" -> base.copy(
-                intStat = (base.intStat + 10).coerceAtMost(100),
-                wis = (base.wis + 8).coerceAtMost(100)
-            )
-            "Ranger" -> base.copy(
-                agi = (base.agi + 10).coerceAtMost(100),
-                cha = (base.cha + 8).coerceAtMost(100)
-            )
-            else -> base
+    fun resetToIdle() {
+        _uiState.value = OnboardingUiState.Idle
+    }
+
+    fun acceptAndComplete(nickname: String, goal: String, selectedClassName: String, data: AiCompleteOnboardingResponse) {
+        viewModelScope.launch {
+            saveDataAndComplete(nickname, goal, selectedClassName, data)
         }
+    }
+
+    private suspend fun saveDataAndComplete(nickname: String, goal: String, selectedClassName: String, data: AiCompleteOnboardingResponse) {
+        // Save User
+        userDao.insertUser(
+            UserEntity(
+                nickname = nickname.ifBlank { "Shadow Monarch" },
+                characterClass = selectedClassName,
+                avatarUri = null
+            )
+        )
+
+        // Save Stats
+        userDao.insertStats(
+            StatEntity(
+                str = data.stats.str,
+                intStat = data.stats.intStat,
+                agi = data.stats.agi,
+                vit = data.stats.vit,
+                wis = data.stats.wis,
+                cha = data.stats.cha
+            )
+        )
+
+        // Save Skills — group AI nodes by category into parent+child hierarchy
+        val selectedJobClass = data.suggestedClasses.find { it.className == selectedClassName }
+        val roadmapToUse = selectedJobClass?.roadmap ?: emptyList()
+
+        // Clear any previous skills (re-onboarding or mock data)
+        skillDao.deleteAllSkills()
+
+        val allSkillEntities = mutableListOf<SkillEntity>()
+
+        // Group nodes by category → each category becomes a parent skill
+        val grouped = roadmapToUse.groupBy { it.category }
+        grouped.forEach { (categoryName, nodes) ->
+            val parentId = UUID.randomUUID().toString()
+            val parentIconEmoji = nodes.firstOrNull()?.iconEmoji ?: "⭐"
+
+            // Parent skill: represents the entire skill branch
+            allSkillEntities.add(
+                SkillEntity(
+                    id = parentId,
+                    name = categoryName,
+                    description = "Nhánh kỹ năng: $categoryName",
+                    level = SkillLevel.NOVICE,
+                    currentSp = 0,
+                    parentId = null,
+                    iconId = parentIconEmoji,
+                    category = "parent",
+                    goalDescription = goal,
+                    isAiGenerated = true
+                )
+            )
+
+            // Child skills: individual skill nodes under this category
+            nodes.forEachIndexed { index, node ->
+                allSkillEntities.add(
+                    SkillEntity(
+                        id = UUID.randomUUID().toString(),
+                        name = node.name,
+                        description = node.description,
+                        level = SkillLevel.NOVICE,
+                        currentSp = 0,
+                        parentId = parentId,
+                        iconId = node.iconEmoji,
+                        category = node.category,
+                        goalDescription = goal,
+                        isAiGenerated = true,
+                        yPos = (node.tier - 1) * 200f,
+                        xPos = index * 250f
+                    )
+                )
+            }
+        }
+
+        skillDao.insertSkills(allSkillEntities)
+
+        // Mark complete
+        val isOnboardedKey = booleanPreferencesKey("isOnboarded")
+        dataStore.edit { settings -> settings[isOnboardedKey] = true }
+        
+        _uiState.value = OnboardingUiState.Success
+    }
+}
+
+sealed class OnboardingUiState {
+    object Idle : OnboardingUiState()
+    data class Loading(val message: String) : OnboardingUiState()
+    data class Result(val data: AiCompleteOnboardingResponse) : OnboardingUiState()
+    data class Error(val message: String) : OnboardingUiState()
+    object Success : OnboardingUiState()
 }

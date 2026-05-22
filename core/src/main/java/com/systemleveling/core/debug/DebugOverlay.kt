@@ -27,7 +27,7 @@ private val timeFmt = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
  * Toggle visibility with shake or long-press on a debug button.
  */
 @Composable
-fun DebugOverlay(modifier: Modifier = Modifier) {
+fun DebugOverlay(modifier: Modifier = Modifier, onResetOnboarding: (() -> Unit)? = null) {
     if (!DebugLogger.isEnabled) return
 
     val logs by DebugLogger.logs.collectAsState()
@@ -70,6 +70,21 @@ fun DebugOverlay(modifier: Modifier = Modifier) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     StatChip("DB", dbCount.toString(), Color(0xFF2ED573))
                     lastApi?.let { StatChip("API", it.take(20), Color(0xFFFFD700)) }
+                }
+
+                if (onResetOnboarding != null) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "↺ RESET ONBOARDING",
+                        color = Color(0xFFFFAB40),
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(Color(0x22FFAB40))
+                            .clickable { onResetOnboarding() }
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    )
                 }
 
                 Spacer(Modifier.height(6.dp))

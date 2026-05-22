@@ -7,6 +7,9 @@ import com.systemleveling.core.database.entity.QuestEntity
 import com.systemleveling.core.model.QuestRank
 import com.systemleveling.core.model.QuestStatus
 import com.systemleveling.core.model.QuestType
+import com.systemleveling.core.model.RewardConstants
+import com.systemleveling.core.model.WorkPlanItem
+import com.systemleveling.core.settings.SettingsManager
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
@@ -16,125 +19,181 @@ import kotlinx.serialization.json.Json
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Orchestrates daily quest generation:
- * 1. Gathers user data (profile, skills, history, calendar)
- * 2. Builds a prompt for the Gemini API
- * 3. Parses the AI response into QuestEntity objects
- * 4. Inserts generated quests into the database
+ * Orchestrates daily quest generation using a priority-aware AI prompt.
  *
- * Quests are spread across the day with specific time windows,
- * respecting human biological cycles (eat, drink, sleep, stand up).
+ * Priority algorithm (Eisenhower Matrix):
+ *   CRITICAL (urgent+important) → multiple small sub-quests, placed first in the day
+ *   HIGH (important)            → 1-2 focused quests during peak hours
+ *   NORMAL (routine)            → interleaved between urgent quests
+ *   LOW (optional)              → late afternoon, skippable
+ *
+ * Rewards are calibrated against RewardConstants to prevent power creep.
+ * SP rewards reference actual child skill IDs from the DB.
  */
 @Singleton
 class AiQuestGeneratorService @Inject constructor(
     private val geminiApiService: GeminiApiService,
     private val userDao: UserDao,
     private val questDao: QuestDao,
-    private val skillDao: SkillDao
+    private val skillDao: SkillDao,
+    private val settingsManager: SettingsManager
 ) {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
-    /**
-     * Generate daily quests for today. Called at 00:00 or on first app open.
-     * @param apiKey Gemini API key from BuildConfig
-     * @param dayStart timestamp of today's midnight
-     */
     suspend fun generateDailyQuests(apiKey: String, dayStart: Long): List<QuestEntity> {
-        // Check if quests already exist for today
-        val dayEnd = dayStart + 86400000L // +24h
+        val dayEnd = dayStart + 86400000L
         val existingCount = questDao.getQuestCountByDate(dayStart, dayEnd)
-        if (existingCount > 0) return emptyList() // Already generated
+        if (existingCount > 0) return emptyList()
 
         return try {
-            // Build prompt from user data
-            val prompt = buildQuestPrompt(dayStart)
+            val workPlan = settingsManager.workPlanItems.first()
+            val prompt = buildQuestPrompt(dayStart, workPlan)
             val aiResponse = geminiApiService.generateContent(prompt, apiKey)
             val quests = parseAiQuests(aiResponse, dayStart)
 
             if (quests.isNotEmpty()) {
-                // Inject health reminders between AI quests
-                val fullQuestList = injectHealthReminders(quests, dayStart)
-                questDao.insertQuests(fullQuestList)
-                fullQuestList
+                val fullList = injectHealthReminders(quests, dayStart)
+                questDao.insertQuests(fullList)
+                fullList
             } else {
-                // Fallback to template quests
-                val fallbackQuests = generateFallbackQuests(dayStart)
-                questDao.insertQuests(fallbackQuests)
-                fallbackQuests
+                val fallback = generateFallbackQuests(dayStart)
+                questDao.insertQuests(fallback)
+                fallback
             }
-        } catch (e: Exception) {
-            // API error — use fallback
-            val fallbackQuests = generateFallbackQuests(dayStart)
-            questDao.insertQuests(fallbackQuests)
-            fallbackQuests
+        } catch (_: Exception) {
+            val fallback = generateFallbackQuests(dayStart)
+            questDao.insertQuests(fallback)
+            fallback
         }
     }
 
-    private suspend fun buildQuestPrompt(dayStart: Long): String {
+    private suspend fun buildQuestPrompt(dayStart: Long, workPlan: List<WorkPlanItem>): String {
         val user = userDao.getUser().first()
         val stats = userDao.getStats().first()
-        val skills = skillDao.getAllSkillsSync()
+        val weeklyPlan = settingsManager.weeklyPlanItems.first()
+        val monthlyPlan = settingsManager.monthlyPlanItems.first()
+
+        // Pass only child skills (parentId != null) so AI can reference real skill IDs
+        val childSkills = skillDao.getAllSkillsSync().filter { it.parentId != null }
+        val parentSkills = skillDao.getAllSkillsSync().filter { it.parentId == null }
 
         val calendar = Calendar.getInstance().apply { timeInMillis = dayStart }
-        val dayOfWeek = SimpleDateFormat("EEEE", Locale.ENGLISH).format(calendar.time)
+        val dayOfWeek = SimpleDateFormat("EEEE", Locale("vi")).format(calendar.time)
         val dateStr = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(calendar.time)
 
-        val skillsJson = skills.joinToString(",\n") { skill ->
-            """{"name":"${skill.name}","level":"${skill.level.title}","sp":${skill.currentSp}}"""
+        // Format skill map for AI with IDs
+        val skillsBlock = if (parentSkills.isEmpty()) "[]" else parentSkills.joinToString("\n") { parent ->
+            val children = childSkills.filter { it.parentId == parent.id }
+            val childBlock = children.joinToString(", ") { c ->
+                """{"id":"${c.id}","name":"${c.name}","level":"${c.level.title}","sp":${c.currentSp},"maxSp":${c.level.maxSp},"category":"${c.category}"}"""
+            }
+            """Branch "${parent.name}": [$childBlock]"""
         }
 
+        // Work plan with priority scores
+        val workPlanBlock = if (workPlan.isEmpty()) {
+            "Không có kế hoạch đặc biệt. Tạo quests dựa trên skill branches và thói quen phát triển."
+        } else {
+            workPlan.sortedByDescending { it.workPriority.score }.joinToString("\n") { item ->
+                "- [${item.priority}] \"${item.title}\"" +
+                (if (item.deadline.isNotBlank()) " | Deadline: ${item.deadline}" else "") +
+                " | ~${item.estimatedMinutes}min" +
+                (if (item.note.isNotBlank()) " | Note: ${item.note}" else "")
+            }
+        }
+
+        val hasCritical = workPlan.any { it.workPriority.score >= 100 }
+        val hasHigh = workPlan.any { it.workPriority.score >= 75 }
+
+        val weeklyBlock = if (weeklyPlan.isEmpty()) "Chưa có kế hoạch tuần." else
+            weeklyPlan.joinToString("\n") { "- [${it.priority}] ${it.title}${if (it.deadline.isNotBlank()) " (deadline: ${it.deadline})" else ""}" }
+        val monthlyBlock = if (monthlyPlan.isEmpty()) "Chưa có kế hoạch tháng." else
+            monthlyPlan.joinToString("\n") { "- [${it.priority}] ${it.title}" }
+
         return """
-You are the AI System of a Solo Leveling-style personal development app.
-Generate 6-8 quests for the user's day. IMPORTANT RULES:
+Bạn là AI Hệ Thống của ứng dụng Solo Leveling — một game nhập vai phát triển bản thân thực tế.
+Nhiệm vụ của bạn: Tạo lịch quest CÁ NHÂN HÓA cho ngày $dayOfWeek, $dateStr.
 
-1. Quests MUST be spread across the day from wake-up (06:00) to bedtime (22:00)
-2. Each quest MUST have a specific timeStart and timeEnd forming a clear deadline
-3. Include health-conscious quests respecting human biological cycles:
-   - Morning hydration (06:00-06:15)
-   - At least 1 fitness/exercise quest
-   - Meal reminders are handled separately — do NOT include them
-   - Evening reflection/journal (21:00-21:30)
-4. Mix quest difficulties: mostly D-C rank, with 1-2 B rank and maybe 1 A rank
-5. Align quests with user's skills and goals
-6. Quest titles should be motivating, short, RPG-flavored
-7. Descriptions should be specific and actionable (in Vietnamese)
+════════════ HỒ SƠ NGƯỜI CHƠI ════════════
+Nghề nghiệp: ${user?.characterClass ?: "Warrior"} | Cấp: ${user?.level ?: 1} | Streak: ${user?.streak ?: 0} ngày
+Debt Points: ${user?.debtPoints ?: 0}
+Stats: STR=${stats?.str ?: 10}, INT=${stats?.intStat ?: 10}, AGI=${stats?.agi ?: 10}, VIT=${stats?.vit ?: 10}, WIS=${stats?.wis ?: 10}, CHA=${stats?.cha ?: 10}
 
-USER PROFILE:
-- Class: ${user?.characterClass ?: "Warrior"}
-- Level: ${user?.level ?: 1}
-- Streak: ${user?.streak ?: 0} days
-- Debt Points: ${user?.debtPoints ?: 0}
-- Stats: STR=${stats?.str ?: 10}, INT=${stats?.intStat ?: 10}, AGI=${stats?.agi ?: 10}, VIT=${stats?.vit ?: 10}, WIS=${stats?.wis ?: 10}, CHA=${stats?.cha ?: 10}
+════════════ CÂY KỸ NĂNG (SKILL TREE) ════════════
+$skillsBlock
 
-SKILLS:
-[$skillsJson]
+════════════ KẾ HOẠCH HÔM NAY ════════════
+$workPlanBlock
 
-CONTEXT:
-- Day: $dayOfWeek $dateStr
-- Wake time: 06:00
-- Sleep time: 22:00
+════════════ MỤC TIÊU TUẦN ════════════
+$weeklyBlock
 
-Respond with ONLY a JSON array of quest objects. Each object must have:
+════════════ MỤC TIÊU THÁNG ════════════
+$monthlyBlock
+
+════════════ THUẬT TOÁN ƯU TIÊN ════════════
+Phân loại mọi công việc theo ma trận Eisenhower (Urgent × Important):
+
+CRITICAL [score 95-100] = Gấp + Quan trọng:
+  → Chia thành 3-5 sub-quests nhỏ (20-45 min mỗi cái), đặt VÀO ĐẦU ngày (06:00-12:00)
+  → Đặt rank B hoặc A, có deadline rõ ràng trong description
+  → Subtasks phải CỤ THỂ và HÀNH ĐỘNG được ngay (không chung chung)
+
+HIGH [score 75-94] = Quan trọng, không gấp:
+  → 1-2 quest tập trung trong giờ đỉnh cao (09:00-12:00 hoặc 14:00-17:00)
+  → Rank C hoặc B
+
+NORMAL [score 40-74] = Thường xuyên, routine:
+  → Đan xen với CRITICAL/HIGH: sau mỗi 2 quest gấp, chen 1 quest bình thường
+  → Giúp người chơi "thở" và không bị burn out
+  → Rank D hoặc C
+
+LOW [score 0-39] = Tùy chọn, không gấp:
+  → Cuối chiều (17:00-20:00)
+  → Rank E hoặc D
+
+NGUYÊN TẮC ĐAN XEN:
+${if (hasCritical) "⚠️ Có CRITICAL tasks → Ưu tiên đặt vào slot sáng, chia nhỏ tối đa." else ""}
+${if (hasHigh) "⚡ Có HIGH tasks → Đặt vào peak focus window 09:00-12:00." else ""}
+- Sau mỗi 90 phút làm việc gấp, thêm 1 quest nhẹ (health/meditation) để recover
+- Luôn kết thúc ngày với 1 quest review/journal (21:00-21:30)
+
+════════════ BẢNG THƯỞNG CÂN BẰNG ════════════
+${RewardConstants.toPromptTable()}
+
+QUAN TRỌNG — Điểm thưởng phải CÂN BẰNG:
+- KHÔNG thưởng quá nhiều: người chơi phát triển nhanh quá sẽ mất động lực vì cảm thấy "dễ quá"
+- skillPointRewards: PHẢI dùng đúng child skill ID từ SKILL TREE ở trên, chỉ link skill phù hợp với nội dung quest
+- statPointRewards: phân phối đúng stats phù hợp với category quest, không chia nhỏ < 1 điểm/stat
+
+════════════ YÊU CẦU OUTPUT ════════════
+Trả về MỘT JSON array duy nhất. KHÔNG có markdown (không có ```json).
+Mỗi quest object CẦN ĐỦ các field sau:
+
 {
-  "title": "string",
-  "description": "string (Vietnamese)",
+  "title": "string ngắn gọn, style RPG",
+  "description": "string tiếng Việt, CỤ THỂ và HÀNH ĐỘNG — mô tả rõ cần làm gì",
   "type": "DAILY",
   "rank": "E|D|C|B|A|S",
   "category": "fitness|health|study|reading|tech|coding|language|meditation|journal|finance|career|social|creative",
   "timeStart": "HH:mm",
   "timeEnd": "HH:mm",
   "durationMinutes": number,
-  "expReward": number (20-800 based on rank),
-  "goldReward": number (5-200 based on rank),
-  "subtasks": ["step1", "step2"],
-  "skillPointRewards": {"skillId": spAmount} or {},
-  "penaltyDebtPoints": 1
+  "expReward": number (theo bảng thưởng),
+  "goldReward": number (theo bảng thưởng),
+  "subtasks": ["bước cụ thể 1", "bước cụ thể 2"],
+  "skillPointRewards": {"<child_skill_id_thực>": sp_amount},
+  "statPointRewards": {"STR"|"INT"|"AGI"|"VIT"|"WIS"|"CHA": point},
+  "penaltyDebtPoints": 1,
+  "priorityScore": number (0-100, theo thứ tự ưu tiên)
 }
+
+Tổng số quest: 6-10 (không tính health reminders — sẽ inject sau).
+Thời gian: từ 06:00 đến 22:00. Không trùng lặp time slot.
         """.trimIndent()
     }
 
@@ -153,156 +212,102 @@ Respond with ONLY a JSON array of quest objects. Each object must have:
                     timeStart = dto.timeStart,
                     timeEnd = dto.timeEnd,
                     durationMinutes = dto.durationMinutes ?: 30,
-                    expReward = dto.expReward.coerceIn(10, 2000),
-                    goldReward = dto.goldReward.coerceIn(5, 500),
+                    expReward = dto.expReward.coerceIn(10, 1200),
+                    goldReward = dto.goldReward.coerceIn(3, 500),
                     status = QuestStatus.PENDING,
-                    subtasks = json.encodeToString(ListSerializer(String.serializer()), dto.subtasks ?: emptyList()),
-                    skillPointRewards = json.encodeToString(MapSerializer(String.serializer(), Int.serializer()), dto.skillPointRewards ?: emptyMap()),
+                    subtasks = json.encodeToString(
+                        ListSerializer(String.serializer()), dto.subtasks ?: emptyList()
+                    ),
+                    skillPointRewards = json.encodeToString(
+                        MapSerializer(String.serializer(), Int.serializer()),
+                        dto.skillPointRewards ?: emptyMap()
+                    ),
+                    statPointRewards = json.encodeToString(
+                        MapSerializer(String.serializer(), Int.serializer()),
+                        dto.statPointRewards ?: emptyMap()
+                    ),
                     penaltyDebtPoints = dto.penaltyDebtPoints ?: 1,
                     relatedSkillIds = "[]",
-                    isHealthReminder = false
+                    isHealthReminder = false,
+                    priorityScore = dto.priorityScore?.coerceIn(0, 100) ?: 50
                 )
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             emptyList()
         }
     }
 
-    /**
-     * Inject health reminders (water, stand up) between AI-generated quests.
-     */
     private fun injectHealthReminders(quests: List<QuestEntity>, dayStart: Long): List<QuestEntity> {
         val result = quests.toMutableList()
         val dateId = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(dayStart)
 
-        // Water reminders every 2 hours from 08:00 to 20:00
-        val waterHours = listOf("08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00")
-        waterHours.forEachIndexed { index, time ->
-            result.add(QuestEntity(
-                id = "H-$dateId-W${index + 1}",
-                title = "💧 Hydration Check",
-                description = "Uống 1 cốc nước (250ml) — Duy trì VIT stat!",
-                type = QuestType.DAILY,
-                rank = QuestRank.E,
-                category = "health",
-                date = dayStart,
-                timeStart = time,
-                timeEnd = time.let {
-                    val h = it.substringBefore(":").toInt()
-                    val m = it.substringAfter(":").toInt() + 10
-                    String.format("%02d:%02d", h, m)
-                },
-                durationMinutes = 5,
-                expReward = 15,
-                goldReward = 5,
-                status = QuestStatus.PENDING,
-                penaltyDebtPoints = 0, // No penalty for water reminders
-                isHealthReminder = true
-            ))
-        }
+        listOf("08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00")
+            .forEachIndexed { i, time ->
+                result.add(QuestEntity(
+                    id = "H-$dateId-W${i + 1}",
+                    title = "💧 Hydration Check",
+                    description = "Uống 1 cốc nước (250ml) — Duy trì VIT stat!",
+                    type = QuestType.DAILY, rank = QuestRank.E, category = "health",
+                    date = dayStart, timeStart = time,
+                    timeEnd = time.let {
+                        val h = it.substringBefore(":").toInt()
+                        "${String.format("%02d", h)}:${String.format("%02d", it.substringAfter(":").toInt() + 10)}"
+                    },
+                    durationMinutes = 5, expReward = 12, goldReward = 3,
+                    status = QuestStatus.PENDING, penaltyDebtPoints = 0, isHealthReminder = true,
+                    statPointRewards = "{}", skillPointRewards = "{}", priorityScore = 30
+                ))
+            }
 
-        // Stand up reminders (if sitting for long stretches)
-        val standUpTimes = listOf("10:30", "14:30", "17:00")
-        standUpTimes.forEachIndexed { index, time ->
+        listOf("10:30", "14:30", "17:00").forEachIndexed { i, time ->
             result.add(QuestEntity(
-                id = "H-$dateId-S${index + 1}",
+                id = "H-$dateId-S${i + 1}",
                 title = "🚶 Đứng Dậy & Vận Động",
                 description = "Đứng dậy, đi lại 5 phút, giãn cơ. Cơ thể cần vận động sau khi ngồi lâu!",
-                type = QuestType.DAILY,
-                rank = QuestRank.E,
-                category = "health",
-                date = dayStart,
-                timeStart = time,
+                type = QuestType.DAILY, rank = QuestRank.E, category = "health",
+                date = dayStart, timeStart = time,
                 timeEnd = time.let {
                     val h = it.substringBefore(":").toInt()
-                    val m = it.substringAfter(":").toInt() + 10
-                    String.format("%02d:%02d", h, m)
+                    "${String.format("%02d", h)}:${String.format("%02d", it.substringAfter(":").toInt() + 10)}"
                 },
-                durationMinutes = 5,
-                expReward = 15,
-                goldReward = 5,
-                status = QuestStatus.PENDING,
-                penaltyDebtPoints = 0,
-                isHealthReminder = true
+                durationMinutes = 5, expReward = 12, goldReward = 3,
+                status = QuestStatus.PENDING, penaltyDebtPoints = 0, isHealthReminder = true,
+                statPointRewards = "{\"VIT\":1}", skillPointRewards = "{}", priorityScore = 35
             ))
         }
 
-        // Sort by timeStart
         return result.sortedBy { it.timeStart ?: "99:99" }
     }
 
-    /**
-     * Fallback quest generation when AI API is unavailable.
-     */
     private fun generateFallbackQuests(dayStart: Long): List<QuestEntity> {
         val dateId = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(dayStart)
-        val quests = mutableListOf(
-            QuestEntity(
-                id = "Q-$dateId-001",
-                title = "🌅 Morning Hydration",
-                description = "Uống 500ml nước ngay khi thức dậy",
-                type = QuestType.DAILY, rank = QuestRank.E, category = "health",
-                date = dayStart, timeStart = "06:00", timeEnd = "06:15",
-                durationMinutes = 15, expReward = 20, goldReward = 5,
-                status = QuestStatus.PENDING
-            ),
-            QuestEntity(
-                id = "Q-$dateId-002",
-                title = "⚔️ Morning Warrior Training",
-                description = "Tập luyện thể chất buổi sáng — chạy bộ hoặc tập gym",
-                type = QuestType.DAILY, rank = QuestRank.C, category = "fitness",
-                date = dayStart, timeStart = "06:30", timeEnd = "07:30",
-                durationMinutes = 60, expReward = 150, goldReward = 50,
-                status = QuestStatus.PENDING
-            ),
-            QuestEntity(
-                id = "Q-$dateId-003",
-                title = "📖 Deep Focus: Study Session",
-                description = "Tập trung học tập/làm việc chuyên sâu",
-                type = QuestType.DAILY, rank = QuestRank.B, category = "study",
-                date = dayStart, timeStart = "08:30", timeEnd = "11:00",
-                durationMinutes = 150, expReward = 250, goldReward = 80,
-                status = QuestStatus.PENDING
-            ),
-            QuestEntity(
-                id = "Q-$dateId-004",
-                title = "🍽️ Lunch & Recovery",
-                description = "Ăn trưa đầy đủ dinh dưỡng, nghỉ ngơi 30 phút",
-                type = QuestType.DAILY, rank = QuestRank.E, category = "health",
-                date = dayStart, timeStart = "12:00", timeEnd = "13:00",
-                durationMinutes = 60, expReward = 20, goldReward = 5,
-                status = QuestStatus.PENDING, isHealthReminder = true
-            ),
-            QuestEntity(
-                id = "Q-$dateId-005",
-                title = "💻 Afternoon Code Sprint",
-                description = "Lập trình hoặc thực hành kỹ năng kỹ thuật",
-                type = QuestType.DAILY, rank = QuestRank.C, category = "coding",
-                date = dayStart, timeStart = "14:00", timeEnd = "16:00",
-                durationMinutes = 120, expReward = 180, goldReward = 60,
-                status = QuestStatus.PENDING
-            ),
-            QuestEntity(
-                id = "Q-$dateId-006",
-                title = "📚 Knowledge Seeker",
-                description = "Đọc sách hoặc tài liệu 30 phút",
-                type = QuestType.DAILY, rank = QuestRank.D, category = "reading",
-                date = dayStart, timeStart = "17:00", timeEnd = "17:30",
-                durationMinutes = 30, expReward = 60, goldReward = 20,
-                status = QuestStatus.PENDING
-            ),
-            QuestEntity(
-                id = "Q-$dateId-007",
-                title = "🧘 Evening Reflection",
-                description = "Viết nhật ký, đánh giá ngày hôm nay",
-                type = QuestType.DAILY, rank = QuestRank.D, category = "journal",
-                date = dayStart, timeStart = "21:00", timeEnd = "21:30",
-                durationMinutes = 30, expReward = 40, goldReward = 15,
-                status = QuestStatus.PENDING
-            )
+        val quests = listOf(
+            QuestEntity("Q-$dateId-001", "🌅 Morning Hydration", "Uống 500ml nước ngay khi thức dậy. Cơ thể mất nước sau 8 tiếng ngủ.",
+                QuestType.DAILY, QuestRank.E, "health", dayStart, "06:00", "06:15",
+                15, 20, 5, QuestStatus.PENDING, statPointRewards="{}", skillPointRewards="{}", priorityScore = 60),
+            QuestEntity("Q-$dateId-002", "⚔️ Morning Warrior Training", "Tập luyện thể chất buổi sáng: 20 hít đất + 30 squat + 10 phút chạy bộ.",
+                QuestType.DAILY, QuestRank.C, "fitness", dayStart, "06:30", "07:30",
+                60, 120, 40, QuestStatus.PENDING,
+                subtasks = "[\"20 hít đất\",\"30 squat\",\"10 phút chạy bộ\"]",
+                statPointRewards="{\"STR\":1}", skillPointRewards="{}", priorityScore = 70),
+            QuestEntity("Q-$dateId-003", "📖 Deep Focus: Study Session", "Tập trung học tập hoặc nghiên cứu chuyên sâu trong 90 phút, không điện thoại.",
+                QuestType.DAILY, QuestRank.B, "study", dayStart, "08:30", "10:00",
+                90, 200, 70, QuestStatus.PENDING,
+                subtasks = "[\"Tắt thông báo\",\"Đặt timer Pomodoro 25min\",\"Ghi notes\"]",
+                statPointRewards="{\"INT\":2}", skillPointRewards="{}", priorityScore = 80),
+            QuestEntity("Q-$dateId-004", "💻 Afternoon Tech Sprint", "Lập trình hoặc thực hành kỹ thuật 2 tiếng.",
+                QuestType.DAILY, QuestRank.C, "coding", dayStart, "14:00", "16:00",
+                120, 140, 50, QuestStatus.PENDING,
+                statPointRewards="{\"INT\":1}", skillPointRewards="{}", priorityScore = 65),
+            QuestEntity("Q-$dateId-005", "📚 Knowledge Seeker", "Đọc sách hoặc tài liệu 30 phút — ưu tiên sách chuyên ngành.",
+                QuestType.DAILY, QuestRank.D, "reading", dayStart, "17:00", "17:30",
+                30, 50, 18, QuestStatus.PENDING,
+                statPointRewards="{\"WIS\":1}", skillPointRewards="{}", priorityScore = 55),
+            QuestEntity("Q-$dateId-006", "🧘 Evening Reflection", "Viết nhật ký ngắn: 3 điều tốt hôm nay, 1 điều cần cải thiện.",
+                QuestType.DAILY, QuestRank.D, "journal", dayStart, "21:00", "21:30",
+                30, 40, 15, QuestStatus.PENDING,
+                statPointRewards="{\"WIS\":1}", skillPointRewards="{}", priorityScore = 60)
         )
-
-        // Inject health reminders
         return injectHealthReminders(quests, dayStart)
     }
 }
@@ -321,5 +326,7 @@ data class AiQuestDto(
     val goldReward: Int = 20,
     val subtasks: List<String>? = null,
     val skillPointRewards: Map<String, Int>? = null,
-    val penaltyDebtPoints: Int? = 1
+    val statPointRewards: Map<String, Int>? = null,
+    val penaltyDebtPoints: Int? = 1,
+    val priorityScore: Int? = 50
 )
