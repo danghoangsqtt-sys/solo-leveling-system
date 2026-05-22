@@ -66,7 +66,7 @@ object LootTable {
     )
 
     // Item pool definitions — weapons & collectibles feel
-    private data class ItemTemplate(
+    data class ItemTemplate(
         val name: String,
         val description: String,
         val lore: String,
@@ -77,7 +77,7 @@ object LootTable {
         val effectValue: Int?
     )
 
-    private val itemPool = listOf(
+    val allTemplates = listOf(
         // ── COMMON ──
         ItemTemplate("Nước Thánh Nhỏ", "Phục hồi năng lượng cơ bản", "Một lọ nước thánh được tìm thấy tại cổng dungeon tầng 1.", ItemRarity.COMMON, ItemCategory.CONSUMABLE, "🧪", "EXP_BOOST", 30),
         ItemTemplate("Mảnh Sắt Cũ", "Mảnh vỡ từ vũ khí cổ đại", "Dù đã rỉ sét, vẫn toát ra một sức mạnh kỳ lạ...", ItemRarity.COMMON, ItemCategory.COLLECTIBLE, "⚙️", null, null),
@@ -121,7 +121,7 @@ object LootTable {
         if (Random.nextDouble() > dropChance) return null // No drop
 
         val rarity = rollRarity(questRank)
-        val candidates = itemPool.filter { it.rarity == rarity }
+        val candidates = allTemplates.filter { it.rarity == rarity }
         if (candidates.isEmpty()) return null
 
         val template = candidates.random()

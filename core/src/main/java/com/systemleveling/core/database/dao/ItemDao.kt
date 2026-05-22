@@ -13,6 +13,21 @@ interface ItemDao {
     @Query("SELECT * FROM items ORDER BY acquiredDate DESC")
     fun getAllItems(): Flow<List<ItemEntity>>
 
+    @Query("SELECT * FROM items WHERE isStored = 0 ORDER BY acquiredDate DESC")
+    fun getActiveItems(): Flow<List<ItemEntity>>
+
+    @Query("SELECT * FROM items WHERE isStored = 1 ORDER BY acquiredDate DESC")
+    fun getStoredItems(): Flow<List<ItemEntity>>
+
+    @Query("SELECT * FROM items WHERE isStored = 0 AND category = :category ORDER BY acquiredDate DESC")
+    fun getActiveItemsByCategory(category: String): Flow<List<ItemEntity>>
+
+    @Query("SELECT COUNT(*) FROM items WHERE isStored = 0")
+    fun getActiveItemCount(): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM items WHERE isStored = 1")
+    fun getStoredItemCount(): Flow<Int>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertItem(item: ItemEntity)
 
@@ -24,4 +39,7 @@ interface ItemDao {
 
     @Query("DELETE FROM items WHERE id = :itemId")
     suspend fun deleteItem(itemId: String)
+
+    @Query("DELETE FROM items")
+    suspend fun deleteAllItems()
 }

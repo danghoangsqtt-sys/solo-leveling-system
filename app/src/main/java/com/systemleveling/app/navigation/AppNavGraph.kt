@@ -108,6 +108,15 @@ fun AppNavGraph(
             val viewModel: com.systemleveling.feature.inventory.ui.InventoryViewModel = hiltViewModel()
             com.systemleveling.feature.inventory.ui.InventoryScreen(
                 viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onNavigateToCompendium = { navController.navigate("item_compendium") }
+            )
+        }
+
+        composable("item_compendium") {
+            val viewModel: com.systemleveling.feature.inventory.ui.ItemCompendiumViewModel = hiltViewModel()
+            com.systemleveling.feature.inventory.ui.ItemCompendiumScreen(
+                viewModel = viewModel,
                 onBack = { navController.popBackStack() }
             )
         }

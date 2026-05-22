@@ -21,5 +21,7 @@ data class ItemEntity(
     val effectValue: Int? = null, // e.g. 50 for +50 EXP
     val effectTarget: String? = null, // stat name or skill ID for targeted effects
     // Origin tracking
-    val fromQuestId: String? = null
+    val fromQuestId: String? = null,
+    // Storage state — false = active inventory, true = archived/stored
+    val isStored: Boolean = false
 )
