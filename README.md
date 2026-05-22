@@ -1,14 +1,16 @@
-# ⚡ SOLO LEVELING SYSTEM ⚡
-### *Hệ thống thức tỉnh và vượt cấp thành thần trong đời thực*
-
 <div align="center">
+  <img src="images/logo.png" width="160" height="160" alt="Solo Leveling System Logo" style="border-radius: 24px;" />
+  
+  <h1>⚡ SOLO LEVELING SYSTEM ⚡</h1>
+  <p><b>Hệ thống thức tỉnh và vượt cấp thành thần trong đời thực</b></p>
 
-[![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com)
-[![Language](https://img.shields.io/badge/Kotlin-100%25-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org)
-[![UI](https://img.shields.io/badge/Jetpack_Compose-Material_3-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
-[![AI](https://img.shields.io/badge/Gemini_AI-2.0_Flash-F68A0A?style=for-the-badge&logo=google-gemini&logoColor=white)](https://deepmind.google/technologies/gemini/)
-[![Database](https://img.shields.io/badge/Room_DB-v7-0068B7?style=for-the-badge&logo=sqlite&logoColor=white)](https://developer.android.com/training/data-storage/room)
-
+  <p>
+    <a href="https://developer.android.com"><img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Platform" /></a>
+    <a href="https://kotlinlang.org"><img src="https://img.shields.io/badge/Kotlin-100%25-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white" alt="Language" /></a>
+    <a href="https://developer.android.com/jetpack/compose"><img src="https://img.shields.io/badge/Jetpack_Compose-Material_3-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white" alt="UI" /></a>
+    <a href="https://deepmind.google/technologies/gemini/"><img src="https://img.shields.io/badge/Gemini_AI-2.0_Flash-F68A0A?style=for-the-badge&logo=google-gemini&logoColor=white" alt="AI" /></a>
+    <a href="https://developer.android.com/training/data-storage/room"><img src="https://img.shields.io/badge/Room_DB-v7-0068B7?style=for-the-badge&logo=sqlite&logoColor=white" alt="Database" /></a>
+  </p>
 </div>
 
 ```text
