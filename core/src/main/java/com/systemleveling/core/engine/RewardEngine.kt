@@ -126,7 +126,13 @@ class RewardEngine @Inject constructor(
 
         // ── 4. Loot drop ─────────────────────────────────────────────────────
         var droppedItemInfo: DroppedItemInfo? = null
-        val droppedItem = LootTable.rollDrop(quest.rank, quest.id)
+        val noPriorQuestDrops = itemDao.getQuestDropCount() == 0
+        // First-quest guarantee: always drop on first ever completion
+        val droppedItem = if (noPriorQuestDrops) {
+            LootTable.rollGuaranteedDrop(quest.id)
+        } else {
+            LootTable.rollDrop(quest.rank, quest.id)
+        }
         if (droppedItem != null) {
             itemDao.insertItem(droppedItem)
             questDao.updateQuest(quest.copy(status = QuestStatus.COMPLETED, droppedItemId = droppedItem.id))

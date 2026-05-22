@@ -177,11 +177,13 @@ fun QuestCompleteDialog(
                 }
 
                 // ── Item drop ─────────────────────────────────────────────────
-                result.droppedItem?.let { item ->
-                    Spacer(Modifier.height(14.dp))
-                    Text("─── ITEM DROPPED ───", color = Color.Gray, fontSize = 10.sp, letterSpacing = 1.sp)
+                Spacer(Modifier.height(14.dp))
+                val droppedItem = result.droppedItem
+                if (droppedItem != null) {
+                    val item = droppedItem
+                    Text("─── 🎁 VẬT PHẨM RƠI! ───", color = Color(0xFFFFD700), fontSize = 10.sp, letterSpacing = 1.sp, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(8.dp))
-                    val rarityColor = when (item.rarity) {
+                    val itemRarityColor = when (item.rarity) {
                         ItemRarity.COMMON    -> Color.White
                         ItemRarity.UNCOMMON  -> Color(0xFF40E17E)
                         ItemRarity.RARE      -> Color(0xFF4A9EFF)
@@ -193,21 +195,44 @@ fun QuestCompleteDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(rarityColor.copy(0.12f))
-                            .border(1.dp, rarityColor.copy(0.6f), RoundedCornerShape(12.dp))
+                            .background(itemRarityColor.copy(0.12f))
+                            .border(1.dp, itemRarityColor.copy(0.6f), RoundedCornerShape(12.dp))
                             .padding(12.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(item.iconId, fontSize = 28.sp)
                             Spacer(Modifier.width(12.dp))
                             Column {
-                                Text(item.name, color = rarityColor, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                Text(item.rarity.name, color = rarityColor.copy(0.7f), fontSize = 10.sp)
+                                Text(item.name, color = itemRarityColor, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text(item.rarity.name, color = itemRarityColor.copy(0.7f), fontSize = 10.sp)
                                 if (item.loreDescription.isNotBlank()) {
                                     Text(item.loreDescription, color = Color.Gray, fontSize = 10.sp, maxLines = 2)
                                 }
                             }
                         }
+                    }
+                } else {
+                    Text("─── VẬT PHẨM ───", color = Color.Gray, fontSize = 10.sp, letterSpacing = 1.sp)
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color(0xFF1A1A2E))
+                            .border(1.dp, Color(0xFF2F2F50), RoundedCornerShape(10.dp))
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("🎲", fontSize = 14.sp)
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "Lần này không có vật phẩm rơi",
+                            color = Color(0xFF555577),
+                            fontSize = 12.sp
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text("→ Tiếp tục chiến đấu!", color = Color(0xFF4A9EFF), fontSize = 11.sp)
                     }
                 }
 

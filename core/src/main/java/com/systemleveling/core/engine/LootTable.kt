@@ -14,14 +14,14 @@ import kotlin.random.Random
  */
 object LootTable {
 
-    // Drop chance by quest rank (0.0 to 1.0)
+    // Drop chance by quest rank (0.0 to 1.0) — tuned for rewarding feel
     private val dropRates = mapOf(
-        QuestRank.E to 0.10,
-        QuestRank.D to 0.20,
-        QuestRank.C to 0.30,
-        QuestRank.B to 0.45,
-        QuestRank.A to 0.60,
-        QuestRank.S to 0.80
+        QuestRank.E to 0.40,
+        QuestRank.D to 0.55,
+        QuestRank.C to 0.65,
+        QuestRank.B to 0.75,
+        QuestRank.A to 0.85,
+        QuestRank.S to 0.95
     )
 
     // Rarity distribution by quest rank (cumulative weights)
@@ -125,6 +125,24 @@ object LootTable {
         if (candidates.isEmpty()) return null
 
         val template = candidates.random()
+        return ItemEntity(
+            id = UUID.randomUUID().toString(),
+            name = template.name,
+            description = template.description,
+            loreDescription = template.lore,
+            rarity = template.rarity,
+            category = template.category,
+            quantity = 1,
+            iconId = template.icon,
+            effectType = template.effectType,
+            effectValue = template.effectValue,
+            fromQuestId = questId
+        )
+    }
+
+    /** Always returns a COMMON item — used for first-quest guarantee. */
+    fun rollGuaranteedDrop(questId: String): ItemEntity {
+        val template = allTemplates.filter { it.rarity == ItemRarity.COMMON }.random()
         return ItemEntity(
             id = UUID.randomUUID().toString(),
             name = template.name,

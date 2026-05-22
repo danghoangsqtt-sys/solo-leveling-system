@@ -28,6 +28,9 @@ interface ItemDao {
     @Query("SELECT COUNT(*) FROM items WHERE isStored = 1")
     fun getStoredItemCount(): Flow<Int>
 
+    @Query("SELECT COUNT(*) FROM items WHERE fromQuestId IS NOT NULL")
+    suspend fun getQuestDropCount(): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertItem(item: ItemEntity)
 
