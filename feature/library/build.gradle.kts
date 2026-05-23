@@ -49,4 +49,7 @@ dependencies {
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+
+    // Room (needed for withTransaction in ViewModel)
+    implementation(libs.androidx.room.ktx)
 }

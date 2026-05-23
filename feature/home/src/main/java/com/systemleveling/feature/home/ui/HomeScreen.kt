@@ -1115,7 +1115,7 @@ private fun MotivationalQuoteCard() {
     val infiniteTransition = rememberInfiniteTransition(label = "quote_glow")
     val borderGlow by infiniteTransition.animateFloat(
         0.25f, 0.55f,
-        infiniteRepeatable(tween(2400, EaseInOutSine), RepeatMode.Reverse), "qg"
+        infiniteRepeatable(tween(2400, easing = EaseInOutSine), RepeatMode.Reverse), "qg"
     )
 
     Box(

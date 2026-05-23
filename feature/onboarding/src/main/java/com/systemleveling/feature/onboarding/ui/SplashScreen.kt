@@ -73,31 +73,31 @@ fun SplashScreen(onComplete: () -> Unit) {
 
     val orbScale by infiniteTransition.animateFloat(
         1f, 1.10f,
-        infiniteRepeatable(tween(1500, EaseInOutSine), RepeatMode.Reverse), "orb"
+        infiniteRepeatable(tween(1500, easing = EaseInOutSine), RepeatMode.Reverse), "orb"
     )
     val glowAlpha by infiniteTransition.animateFloat(
         0.35f, 0.85f,
-        infiniteRepeatable(tween(1500, EaseInOutSine), RepeatMode.Reverse), "glow"
+        infiniteRepeatable(tween(1500, easing = EaseInOutSine), RepeatMode.Reverse), "glow"
     )
     val ringRot by infiniteTransition.animateFloat(
         0f, 360f,
-        infiniteRepeatable(tween(5000, LinearEasing)), "ring"
+        infiniteRepeatable(tween(5000, easing = LinearEasing)), "ring"
     )
     val innerRot by infiniteTransition.animateFloat(
         360f, 0f,
-        infiniteRepeatable(tween(3200, LinearEasing)), "inner"
+        infiniteRepeatable(tween(3200, easing = LinearEasing)), "inner"
     )
     val particleProg by infiniteTransition.animateFloat(
         0f, 1f,
-        infiniteRepeatable(tween(4000, LinearEasing)), "particles"
+        infiniteRepeatable(tween(4000, easing = LinearEasing)), "particles"
     )
     val scanY by infiniteTransition.animateFloat(
         -0.05f, 1.05f,
-        infiniteRepeatable(tween(2800, LinearEasing)), "scan"
+        infiniteRepeatable(tween(2800, easing = LinearEasing)), "scan"
     )
     val titleGlow by infiniteTransition.animateFloat(
         0.7f, 1f,
-        infiniteRepeatable(tween(2000, EaseInOutSine), RepeatMode.Reverse), "title"
+        infiniteRepeatable(tween(2000, easing = EaseInOutSine), RepeatMode.Reverse), "title"
     )
 
     val stars = remember {
