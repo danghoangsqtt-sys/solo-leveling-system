@@ -49,6 +49,9 @@ class DailySummaryViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _isBefore22hAndEmpty = MutableStateFlow(false)
+    val isBefore22hAndEmpty: StateFlow<Boolean> = _isBefore22hAndEmpty.asStateFlow()
+
     private val _statChanges = MutableStateFlow<Map<String, Int>>(emptyMap())
     val statChanges: StateFlow<Map<String, Int>> = _statChanges.asStateFlow()
 
@@ -77,22 +80,50 @@ class DailySummaryViewModel @Inject constructor(
         loadExistingTomorrowPlan()
     }
 
+    private fun isBefore22h(): Boolean {
+        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        return hour < 22
+    }
+
     private fun loadTodaySummary() {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 val todayStart = getTodayMidnight()
                 val todayEnd = todayStart + 86400000L
 
-                var existing = dailySummaryDao.getSummaryByDateSync(todayStart, todayEnd)
+                val existing = dailySummaryDao.getSummaryByDateSync(todayStart, todayEnd)
                 if (existing == null) {
+                    if (isBefore22h()) {
+                        _isBefore22hAndEmpty.value = true
+                        _isLoading.value = false
+                        return@withContext
+                    }
                     _isLoading.value = true
-                    existing = dailySummaryService.generateDailySummary(todayStart, todayEnd, "")
+                    val generated = dailySummaryService.generateDailySummary(todayStart, todayEnd, "")
+                    _summary.value = generated
+                    parseJsonFields(generated)
+                } else {
+                    _summary.value = existing
+                    parseJsonFields(existing)
                 }
-
-                _summary.value = existing
-                parseJsonFields(existing)
+                _isBefore22hAndEmpty.value = false
                 _isLoading.value = false
             }
+        }
+    }
+
+    fun generateSummaryEarly() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            withContext(Dispatchers.IO) {
+                val todayStart = getTodayMidnight()
+                val todayEnd = todayStart + 86400000L
+                val generated = dailySummaryService.generateDailySummary(todayStart, todayEnd, "")
+                _summary.value = generated
+                parseJsonFields(generated)
+                _isBefore22hAndEmpty.value = false
+            }
+            _isLoading.value = false
         }
     }
 

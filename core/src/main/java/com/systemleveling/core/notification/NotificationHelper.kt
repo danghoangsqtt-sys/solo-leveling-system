@@ -26,6 +26,8 @@ class NotificationHelper @Inject constructor(
         const val CHANNEL_DAILY_SUMMARY = "daily_summary"
         const val CHANNEL_HEALTH = "health_reminders"
         const val CHANNEL_PENALTY = "penalty_warnings"
+        const val CHANNEL_PRIORITY = "priority_alerts"
+        const val CHANNEL_STUDY = "study_reminders"
 
         const val NOTIFICATION_QUEST_NEW = 1001
         const val NOTIFICATION_QUEST_DEADLINE = 1002
@@ -34,6 +36,13 @@ class NotificationHelper @Inject constructor(
         const val NOTIFICATION_HEALTH_WATER = 3001
         const val NOTIFICATION_HEALTH_STANDUP = 3002
         const val NOTIFICATION_PENALTY = 4001
+
+        const val ACTION_PRIORITY_ALERT = "com.systemleveling.app.PRIORITY_ALERT"
+        const val ACTION_SNOOZE_QUEST = "com.systemleveling.core.SNOOZE_QUEST"
+        const val EXTRA_NOTIF_ID = "extra_notif_id"
+        const val EXTRA_QUEST_TITLE = "extra_quest_title"
+        const val EXTRA_DEADLINE_MS = "extra_deadline_ms"
+        const val EXTRA_MINUTES_LEFT = "extra_minutes_left"
     }
 
     init {
@@ -87,8 +96,33 @@ class NotificationHelper @Inject constructor(
             vibrationPattern = longArrayOf(0, 300, 200, 300, 200, 300) // Triple pulse
         }
 
+        // Priority Alerts — full-screen, alarm-level, forces attention
+        val priorityChannel = NotificationChannel(
+            CHANNEL_PRIORITY,
+            "Nhắc Nhở Ưu Tiên",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Nhắc nhở bắt buộc cho nhiệm vụ sắp hết hạn"
+            enableVibration(true)
+            vibrationPattern = longArrayOf(0, 400, 200, 400, 200, 400, 200, 400) // Urgent quad pulse
+            setShowBadge(true)
+            lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+        }
+
+        // Study Reminders — single alert, focus-mode, no repeat buzz
+        val studyChannel = NotificationChannel(
+            CHANNEL_STUDY,
+            "Nhắc Nhở Học Tập",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Nhắc nhở nhẹ nhàng khi bắt đầu học"
+            enableVibration(true)
+            vibrationPattern = longArrayOf(0, 200, 100, 200) // Gentle double pulse
+            setShowBadge(true)
+        }
+
         manager.createNotificationChannels(
-            listOf(questChannel, summaryChannel, healthChannel, penaltyChannel)
+            listOf(questChannel, summaryChannel, healthChannel, penaltyChannel, priorityChannel, studyChannel)
         )
     }
 
@@ -242,6 +276,115 @@ class NotificationHelper @Inject constructor(
             .build()
         (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
             .notify(NOTIFICATION_QUEST_FOCUS_URGE, notification)
+    }
+
+    /**
+     * Priority alert for non-learning quests: full-screen intent + countdown timer + continuous buzz.
+     * Fires every 15 min via PriorityQuestReminderWorker while deadline is within 60 min.
+     */
+    fun notifyPriorityQuestAlert(
+        title: String,
+        minutesLeft: Int,
+        notifId: Int,
+        deadlineMs: Long
+    ) {
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        // Full-screen intent → PriorityAlertActivity when phone is locked
+        val fullScreenIntent = Intent(ACTION_PRIORITY_ALERT).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra(EXTRA_QUEST_TITLE, title)
+            putExtra(EXTRA_MINUTES_LEFT, minutesLeft)
+            putExtra(EXTRA_DEADLINE_MS, deadlineMs)
+            putExtra(EXTRA_NOTIF_ID, notifId)
+        }
+        val fullScreenPi = PendingIntent.getActivity(
+            context, notifId, fullScreenIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Snooze action → NotificationActionReceiver (cancels for now; worker re-fires in 15 min)
+        val snoozeIntent = Intent(ACTION_SNOOZE_QUEST).apply {
+            setPackage(context.packageName)
+            putExtra(EXTRA_NOTIF_ID, notifId)
+        }
+        val snoozePi = PendingIntent.getBroadcast(
+            context, notifId + 1000, snoozeIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val urgencyText = when {
+            minutesLeft <= 0 -> "⏰ ĐÃ HẾT GIỜ — hoàn thành ngay!"
+            minutesLeft <= 5 -> "🚨 CÒN $minutesLeft PHÚT — TẬP TRUNG NGAY!"
+            minutesLeft <= 15 -> "⚡ Còn $minutesLeft phút — đừng trì hoãn thêm!"
+            else -> "⏳ Còn $minutesLeft phút — bắt đầu ngay để kịp!"
+        }
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_PRIORITY)
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setContentTitle("🔴 BẮT BUỘC: $title")
+            .setContentText(urgencyText)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(urgencyText))
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVibrate(longArrayOf(0, 400, 200, 400, 200, 400, 200, 400))
+            .setAutoCancel(false)
+            .setOngoing(minutesLeft <= 0)
+            .setWhen(deadlineMs)
+            .setUsesChronometer(true)
+            .setChronometerCountDown(true)
+            .setShowWhen(true)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setFullScreenIntent(fullScreenPi, true)
+            .setContentIntent(fullScreenPi)
+            .addAction(android.R.drawable.ic_menu_recent_history, "⏱ Trì Hoãn 10p", snoozePi)
+            .build()
+
+        manager.notify(notifId, notification)
+    }
+
+    /**
+     * Study reminder for learning quests: single gentle alert with countdown.
+     * Uses setOnlyAlertOnce so only the first show vibrates — no repeated disturbance.
+     */
+    fun notifyStudyReminder(
+        title: String,
+        minutesLeft: Int,
+        notifId: Int,
+        deadlineMs: Long
+    ) {
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        val dismissIntent = Intent(ACTION_SNOOZE_QUEST).apply {
+            setPackage(context.packageName)
+            putExtra(EXTRA_NOTIF_ID, notifId)
+        }
+        val dismissPi = PendingIntent.getBroadcast(
+            context, notifId + 2000, dismissIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val text = when {
+            minutesLeft <= 0 -> "📚 Bắt đầu học ngay — kiến thức là sức mạnh!"
+            else -> "📚 Còn $minutesLeft phút • Chuẩn bị và tập trung học tập"
+        }
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_STUDY)
+            .setSmallIcon(android.R.drawable.ic_menu_info_details)
+            .setContentTitle("📚 Học Tập: $title")
+            .setContentText(text)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setAutoCancel(true)
+            .setOnlyAlertOnce(true)
+            .setWhen(deadlineMs)
+            .setUsesChronometer(true)
+            .setChronometerCountDown(true)
+            .setShowWhen(true)
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Đã Hiểu", dismissPi)
+            .build()
+
+        manager.notify(notifId, notification)
     }
 
     /**

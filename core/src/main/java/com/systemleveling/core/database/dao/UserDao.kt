@@ -33,4 +33,7 @@ interface UserDao {
 
     @Query("SELECT promotionTier FROM users WHERE id = 'local_user'")
     fun getPromotionTier(): Flow<Int?>
+
+    @Query("UPDATE users SET profession = :profession, personalDescription = :desc, generatedAvatarBase64 = :base64 WHERE id = 'local_user'")
+    suspend fun updateAvatarProfile(profession: String, desc: String, base64: String?)
 }

@@ -50,12 +50,31 @@ class GeminiApiService @Inject constructor(
         return parseGeminiResponse(responseText)
     }
 
+    suspend fun generateImageBase64(prompt: String, apiKey: String): String? {
+        val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=$apiKey"
+        val requestBody = GeminiRequest(
+            contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = prompt)))),
+            generationConfig = GenerationConfig(responseModalities = listOf("IMAGE", "TEXT"), temperature = 0.9f)
+        )
+        return try {
+            val response = httpClient.post(url) {
+                contentType(ContentType.Application.Json)
+                setBody(json.encodeToString(GeminiRequest.serializer(), requestBody))
+            }
+            val responseText = response.bodyAsText()
+            val geminiResponse = json.decodeFromString(GeminiResponse.serializer(), responseText)
+            geminiResponse.candidates.firstOrNull()?.content?.parts
+                ?.firstOrNull { it.inlineData != null }?.inlineData?.data
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     private fun parseGeminiResponse(responseText: String): String {
         return try {
             val geminiResponse = json.decodeFromString(GeminiResponse.serializer(), responseText)
             geminiResponse.candidates.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: ""
         } catch (e: Exception) {
-            // Fallback: try to extract text manually
             ""
         }
     }
@@ -75,13 +94,21 @@ data class GeminiContent(
 
 @Serializable
 data class GeminiPart(
-    val text: String
+    val text: String? = null,
+    val inlineData: GeminiInlineData? = null
+)
+
+@Serializable
+data class GeminiInlineData(
+    val mimeType: String,
+    val data: String
 )
 
 @Serializable
 data class GenerationConfig(
     val responseMimeType: String? = null,
-    val temperature: Float = 0.7f
+    val temperature: Float = 0.7f,
+    val responseModalities: List<String>? = null
 )
 
 @Serializable

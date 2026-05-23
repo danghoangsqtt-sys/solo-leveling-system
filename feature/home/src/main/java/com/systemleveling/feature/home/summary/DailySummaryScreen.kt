@@ -39,6 +39,7 @@ fun DailySummaryScreen(
 ) {
     val summary by viewModel.summary.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val isBefore22hAndEmpty by viewModel.isBefore22hAndEmpty.collectAsState()
     val statChanges by viewModel.statChanges.collectAsState()
     val skillProgress by viewModel.skillProgress.collectAsState()
     val tomorrowPlan by viewModel.tomorrowPlan.collectAsState()
@@ -61,6 +62,45 @@ fun DailySummaryScreen(
                     Spacer(Modifier.height(16.dp))
                     Text("Đang tạo báo cáo...", color = Color.White)
                 }
+            }
+        } else if (isBefore22hAndEmpty) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "◀ HOME",
+                    color = md_theme_dark_primary,
+                    modifier = Modifier
+                        .clickable { onBack() }
+                        .align(Alignment.Start)
+                        .padding(bottom = 32.dp)
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = "📊 BÁO CÁO CHƯA SẴN SÀNG",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Báo cáo tổng hợp hằng ngày sẽ tự động được tạo sau 22h00.",
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.height(32.dp))
+                Button(
+                    onClick = { viewModel.generateSummaryEarly() },
+                    colors = ButtonDefaults.buttonColors(containerColor = md_theme_dark_primary)
+                ) {
+                    Text("TẠO BÁO CÁO SỚM", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+                Spacer(modifier = Modifier.weight(1f))
             }
         } else {
             LazyColumn(

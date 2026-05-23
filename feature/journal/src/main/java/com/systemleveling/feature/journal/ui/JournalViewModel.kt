@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.systemleveling.core.database.dao.JournalDao
 import com.systemleveling.core.database.entity.JournalEntity
 import com.systemleveling.core.model.Mood
+import com.systemleveling.core.settings.SettingsManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,7 +16,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class JournalViewModel @Inject constructor(
-    private val journalDao: JournalDao
+    private val journalDao: JournalDao,
+    private val settingsManager: SettingsManager
 ) : ViewModel() {
 
     private val _journals = MutableStateFlow<List<JournalEntity>>(emptyList())
@@ -23,9 +25,12 @@ class JournalViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            var hasSeeded = settingsManager.isJournalSeeded()
             journalDao.getAllJournals().collect { dbJournals ->
-                if (dbJournals.isEmpty()) {
+                if (dbJournals.isEmpty() && !hasSeeded) {
                     seedMockData()
+                    settingsManager.markJournalSeeded()
+                    hasSeeded = true
                 } else {
                     _journals.value = dbJournals
                 }

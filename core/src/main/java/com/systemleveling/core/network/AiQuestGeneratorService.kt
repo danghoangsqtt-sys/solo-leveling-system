@@ -51,9 +51,7 @@ class AiQuestGeneratorService @Inject constructor(
 
         return try {
             val workPlan = settingsManager.workPlanItems.first()
-            val prompt = buildQuestPrompt(dayStart, workPlan)
-            val aiResponse = geminiApiService.generateContent(prompt, apiKey)
-            val quests = parseAiQuests(aiResponse, dayStart)
+            val quests = generateLocalQuests(workPlan, dayStart)
 
             if (quests.isNotEmpty()) {
                 val fullList = injectHealthReminders(quests, dayStart)
@@ -68,6 +66,70 @@ class AiQuestGeneratorService @Inject constructor(
             val fallback = generateFallbackQuests(dayStart)
             questDao.insertQuests(fallback)
             fallback
+        }
+    }
+
+    private fun generateLocalQuests(workPlan: List<WorkPlanItem>, dayStart: Long): List<QuestEntity> {
+        if (workPlan.isEmpty()) return emptyList()
+        val dateId = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(dayStart)
+        
+        return workPlan.sortedByDescending { it.workPriority.score }.mapIndexed { index, item ->
+            val rank = when {
+                item.workPriority.score >= 90 -> QuestRank.A
+                item.workPriority.score >= 75 -> QuestRank.B
+                item.workPriority.score >= 50 -> QuestRank.C
+                item.workPriority.score >= 30 -> QuestRank.D
+                else -> QuestRank.E
+            }
+            
+            val lowerTitle = item.title.lowercase()
+            val category = when {
+                lowerTitle.contains("code") || lowerTitle.contains("bug") || lowerTitle.contains("dev") -> "coding"
+                lowerTitle.contains("học") || lowerTitle.contains("đọc") || lowerTitle.contains("nghiên cứu") -> "study"
+                lowerTitle.contains("tập") || lowerTitle.contains("chạy") || lowerTitle.contains("gym") -> "fitness"
+                lowerTitle.contains("ngủ") || lowerTitle.contains("thiền") -> "health"
+                lowerTitle.contains("tiền") || lowerTitle.contains("tài chính") -> "finance"
+                else -> "creative"
+            }
+            
+            val statReward = when (category) {
+                "coding", "study" -> "{\"INT\": 1}"
+                "fitness", "health" -> "{\"STR\": 1, \"VIT\": 1}"
+                "finance" -> "{\"WIS\": 1}"
+                else -> "{\"CHA\": 1}"
+            }
+            
+            val startHour = 8 + (index * 2) // Basic time slot distribution
+            val timeStart = String.format("%02d:00", startHour.coerceAtMost(22))
+            val timeEnd = String.format("%02d:00", (startHour + 1).coerceAtMost(23))
+            
+            val exp = (item.workPriority.score * 2).coerceIn(10, 500)
+            val gold = (item.workPriority.score / 2).coerceIn(5, 100)
+            
+            val subtasksStr = if (item.note.isNotBlank()) "[\"${item.note.replace("\"", "'")}\"]" else "[]"
+            
+            QuestEntity(
+                id = "Q-$dateId-${String.format("%03d", index + 1)}",
+                title = item.title,
+                description = if (item.deadline.isNotBlank()) "Deadline: ${item.deadline}" else "Nhiệm vụ tự động",
+                type = QuestType.DAILY,
+                rank = rank,
+                category = category,
+                date = dayStart,
+                timeStart = timeStart,
+                timeEnd = timeEnd,
+                durationMinutes = item.estimatedMinutes.takeIf { it > 0 } ?: 60,
+                expReward = exp,
+                goldReward = gold,
+                status = QuestStatus.PENDING,
+                subtasks = subtasksStr,
+                skillPointRewards = "{}",
+                statPointRewards = statReward,
+                penaltyDebtPoints = if (rank == QuestRank.A || rank == QuestRank.B) 2 else 1,
+                relatedSkillIds = "[]",
+                isHealthReminder = false,
+                priorityScore = item.workPriority.score
+            )
         }
     }
 

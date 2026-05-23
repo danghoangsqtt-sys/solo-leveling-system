@@ -35,4 +35,7 @@ interface FinanceDao {
 
     @Query("DELETE FROM transactions WHERE id = :id")
     suspend fun deleteTransaction(id: String)
+
+    @Query("DELETE FROM transactions")
+    suspend fun clearAllTransactions()
 }

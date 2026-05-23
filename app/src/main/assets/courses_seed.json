@@ -1,0 +1,390 @@
+[
+  {
+    "id": "1765012078008",
+    "title": "🤖 Điện tử ứng dụng",
+    "type": "folder",
+    "topic": "",
+    "isPinned": true,
+    "children": [
+      {
+        "id": "1763802827335",
+        "title": "ESP32",
+        "type": "folder",
+        "topic": "Điện",
+        "children": [
+          {
+            "id": "1763805200921",
+            "title": "Bai1",
+            "type": "folder",
+            "topic": "Điện tử",
+            "children": [
+              {"id": "1763808033661","title": "B1","type": "file","topic": "Electric","data": {"id": "1763808033661","title": "B1","url": "https://drive.google.com/file/d/1n246QZ9iTwBq0Dq2DAUs3nYnXeYUjy5A/view?usp=drive_link","type": "VIDEO"},"children": []},
+              {"id": "1763808142693","title": "b1","type": "file","topic": "Electric","data": {"id": "1763808142693","title": "b1","url": "https://drive.google.com/file/d/1oOCBPhuS97lMO3_wTaLcuX4bpWQtG9K-/view?usp=drive_link","type": "PDF"},"children": []},
+              {"id": "1763807597521","title": "indexb1.1","type": "file","topic": "Electric","data": {"id": "1763807597521","title": "indexb1.1","url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmia5i32b_indexB1.1.html?alt=media&token=d85916e4-bef4-443b-b2f3-4c6c0869ab76","type": "HTML"},"children": []}
+            ]
+          },
+          {
+            "id": "1763811570295",
+            "title": "Bai2",
+            "type": "folder",
+            "topic": "Electric",
+            "children": [
+              {"id": "1763812608549","title": "bai 2 - tinh nang input - output va ngat ngoai tren esp32","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmia8hdln_BAI_2___TINH_NANG_INPUT___OUTPUT__VA_NGAT_NGOAI_TREN_ESP32.pdf?alt=media&token=675e7614-58db-4372-99ac-b934f680dffe","type": "PDF"},"children": []},
+              {"id": "1763812653570","title": "Bai2_index","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmia8igsd_indexB2.html?alt=media&token=a254fbf8-5f49-4bea-8245-b3dac2285387","type": "HTML"},"children": []},
+              {"id": "1763812689952","title": "Video","type": "file","data": {"url": "https://drive.google.com/file/d/1bubxxzJzIVcTQsBrirmRuzyMaEfXQXbP/view?usp=drive_link","type": "VIDEO"},"children": []}
+            ]
+          },
+          {
+            "id": "1763812755193",
+            "title": "Bai3",
+            "type": "folder",
+            "children": [
+              {"id": "1763812785044","title": "Video3","type": "file","data": {"url": "https://drive.google.com/file/d/1ognHHeV1Nn3nasCT7znQyvj4CqYXRF5g/view?usp=drive_link","type": "VIDEO"},"children": []},
+              {"id": "1763812893720","title": "bai 3 - giao tiep uart tren esp32","type": "file","data": {"url": "https://drive.google.com/file/d/1jmXsAQ9Fb-Mas-A-3Crq9AnI2GSNUXuH/view?usp=drive_link","type": "PDF"},"children": []},
+              {"id": "1763812944717","title": "indexb3","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmia8op6r_indexB3.html?alt=media&token=9faefa61-f9f0-42d9-b99c-62a0e77a0b79","type": "HTML"},"children": []}
+            ]
+          },
+          {
+            "id": "1763813301812",
+            "title": "Bai4",
+            "type": "folder",
+            "children": [
+              {"id": "1763813479489","title": "indexb4","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmia904ps_indexB4.html?alt=media&token=96ba2940-df93-48df-86dd-cb23b0b293f4","type": "HTML"},"children": []},
+              {"id": "1763813564800","title": "buoi 4 - bo dem thoi gian va ngat timer esp32","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmia91vrd_BUOI_4___BO_DEM_THOI_GIAN_VA_NGAT_TIMER_ESP32__1_.pdf?alt=media&token=6a617aa9-873c-4753-81e1-9717ab488fbf","type": "PDF"},"children": []},
+              {"id": "1763813602424","title": "LT_bai4","type": "file","data": {"url": "https://drive.google.com/file/d/1sVdrVmsYwo8UKMU9DDVxL-MCl-X5oVxz/view?usp=drive_link","type": "VIDEO"},"children": []},
+              {"id": "1763813625701","title": "TH_bai4","type": "file","data": {"url": "https://drive.google.com/file/d/1W27vKdE-faPUShWSFNQXdad9hCELOT4p/view?usp=drive_link","type": "VIDEO"},"children": []}
+            ]
+          },
+          {
+            "id": "1763813655610",
+            "title": "Bai5",
+            "type": "folder",
+            "children": [
+              {"id": "1763813671965","title": "bai5","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmia94aby_bai5.html?alt=media&token=1b82a70e-1f09-43dc-b4fd-331d5bc056f9","type": "HTML"},"children": []},
+              {"id": "1763813744790","title": "bai 5 - giao tiep i2c va cach su dung man hinh lcd va oled","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmia95r9a_BAI_5___GIAO_TIEP_I2C_VA_CACH_SU_DUNG_MAN_HINH_LCD_VA_OLED__1_.pdf?alt=media&token=fba4fc6c-c059-45fc-a089-2aef7264a4a7","type": "PDF"},"children": []},
+              {"id": "1763813804397","title": "LT_bai5","type": "file","data": {"url": "https://drive.google.com/file/d/1bweOhm2TAexjw5XjhBaBwfvB_RNEdUUq/view?usp=drive_link","type": "VIDEO"},"children": []}
+            ]
+          },
+          {
+            "id": "1763814159619",
+            "title": "Bai6",
+            "type": "folder",
+            "children": [
+              {"id": "1763814232979","title": "LT_BAI6","type": "file","data": {"url": "https://drive.google.com/file/d/1W2XXZo-d15jYyEZS_KUM7X7vpOdxj97u/view?usp=drive_link","type": "VIDEO"},"children": []},
+              {"id": "1763814381658","title": "bai 6 - thiet lap chuc nang wifi tren esp32","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmia9je51_BAI_6___THIET_LAP_CHUC_NANG_WIFI_TREN_ESP32.pdf?alt=media&token=2d652dbd-308e-4e17-8bb6-dbb2a4f36af1","type": "PDF"},"children": []},
+              {"id": "1763816913498","title": "index_6","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmiab1rn1_index_6.html?alt=media&token=7df854b0-342d-4f50-8a26-b13481085e6f","type": "HTML"},"children": []}
+            ]
+          },
+          {
+            "id": "1763816983532",
+            "title": "Bai7",
+            "type": "folder",
+            "children": [
+              {"id": "1763817041011","title": "LT_bai7","type": "file","data": {"url": "https://drive.google.com/file/d/1t2hZbFdima-6NatElZFIh2wSLcr2ASn8/view?usp=drive_link","type": "VIDEO"},"children": []},
+              {"id": "1763817469679","title": "bai 7 - webserver co ban tren esp32","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmiabdkuq_BAI_7___WEBSERVER_CO_BAN_TREN_ESP32.pdf?alt=media&token=8094d2f6-af16-4928-af91-ab53d7f355a2","type": "PDF"},"children": []},
+              {"id": "1763817506432","title": "index_7","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmiabeh5u_index_7.html?alt=media&token=d06a6795-27fc-45ba-9686-2dff25119561","type": "HTML"},"children": []}
+            ]
+          },
+          {
+            "id": "1763817540544",
+            "title": "Bai8",
+            "type": "folder",
+            "children": [
+              {"id": "1763817672356","title": "bai 8 - lenh javascript","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmiabhy8p_BAI_8___LENH_JAVASCRIPT.pdf?alt=media&token=328f54de-259a-4a5b-a938-fd7649c77ac3","type": "PDF"},"children": []},
+              {"id": "1763817694190","title": "bai 8 - cai dat cau hinh wifi qua webserver","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmiabie3q_BAI_8___CAI_DAT_CAU_HINH_WIFI_QUA_WEBSERVER.pdf?alt=media&token=ae2471d5-83b9-428a-8859-2a9161893380","type": "PDF"},"children": []},
+              {"id": "1763817959299","title": "index8","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmiabo6o0_index8.html?alt=media&token=95454c06-830b-490f-912c-b9ed400f3f9c","type": "HTML"},"children": []},
+              {"id": "1763818035163","title": "LT_p1","type": "file","data": {"url": "https://drive.google.com/file/d/1fGOLwwMNqx2QtvkY7ZgbKbZIMLUrgAYO/view?usp=drive_link","type": "VIDEO"},"children": []}
+            ]
+          },
+          {
+            "id": "1763818285934",
+            "title": "Bai9",
+            "type": "folder",
+            "children": [
+              {"id": "1763818449410","title": "LT_9","type": "file","data": {"url": "https://drive.google.com/file/d/17eFJdoJQd-39hcpWEtvklOupoJvZ5l1z/view?usp=drive_link","type": "VIDEO"},"children": []},
+              {"id": "1763818827029","title": "Code mẫu blynk","type": "file","data": {"url": "https://youtu.be/rfJUuWgTw5E","type": "VIDEO"},"children": []},
+              {"id": "1763820464553","title": "TH_B9","type": "file","data": {"url": "https://drive.google.com/file/d/1bXNDST2RSOb4EnDQ57obQzQKB5X0227s/view?usp=drive_link","type": "VIDEO"},"children": []},
+              {"id": "1763818665799","title": "bai 9 - dieu khien thi bi qua blynk iot","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmiac37qo_BAI_9___DIEU_KHIEN_THI_BI_QUA_BLYNK_IOT.pdf?alt=media&token=a7e44064-4d48-4c97-bca7-0312ed6f9cc1","type": "PDF"},"children": []},
+              {"id": "1763818681306","title": "index_9","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmiac3nx9_Index_9.html?alt=media&token=af003779-238a-446a-a148-3eee33b7b105","type": "HTML"},"children": []}
+            ]
+          },
+          {
+            "id": "1763989704139",
+            "title": "Bai10",
+            "type": "folder",
+            "children": [
+              {"id": "1763989727218","title": "Bai10","type": "file","data": {"url": "https://drive.google.com/file/d/1kQ_SNQu8D76szD938uXW5ctlHiJKl8c0/view?usp=drive_link","type": "PDF"},"children": []},
+              {"id": "1763989749111","title": "index_10","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmid5y86q_index_10.html?alt=media&token=f9a39852-adc9-44e3-a7ae-412a3710f294","type": "HTML"},"children": []},
+              {"id": "1764222138164","title": "video bai 10","type": "file","data": {"url": "https://drive.google.com/file/d/1Pstm5KwjvMN_76SHTCJBigiCnbojpvdf/view?usp=drive_link","type": "VIDEO"},"children": []}
+            ]
+          },
+          {
+            "id": "1764222159532",
+            "title": "Bai11",
+            "type": "folder",
+            "children": [
+              {"id": "1764222287061","title": "index_11","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmih0ebqd_index__1.html?alt=media&token=fae2d812-5198-4a00-9194-8d8402ed158e","type": "HTML"},"children": []},
+              {"id": "1764222333287","title": "Bai11_LT (video)","type": "file","data": {"url": "https://drive.google.com/file/d/1Bu58mipNtY-ISrcB4o9LDJztPmyWQCj2/view?usp=drive_link","type": "VIDEO"},"children": []},
+              {"id": "1764222371494","title": "Bai11_LT (pdf)","type": "file","data": {"url": "https://drive.google.com/file/d/1EGPW1Tz8-WVyDTRPZATsT0pifFU2YcG6/view?usp=drive_link","type": "PDF"},"children": []}
+            ]
+          },
+          {
+            "id": "1764385849266",
+            "title": "Bai12",
+            "type": "folder",
+            "children": [
+              {"id": "1764385877739","title": "video_LT","type": "file","data": {"url": "https://drive.google.com/file/d/1SdEi1ABuMqp_UOpQrbAt4tPcrdlAVd-c/view?usp=drive_link","type": "VIDEO"},"children": []},
+              {"id": "1764385905950","title": "Bai12_LT","type": "file","data": {"url": "https://drive.google.com/file/d/1KFN3kS9On5Qgawh8lC8hszE05n3ypJJ2/view?usp=drive_link","type": "PDF"},"children": []},
+              {"id": "1764385923108","title": "index_12","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmijptlo2_index_12.html?alt=media&token=ebaec547-07ca-414d-95a0-2b3a1861be3b","type": "HTML"},"children": []}
+            ]
+          }
+        ]
+      },
+      {
+        "id": "1763884484348",
+        "title": "Xiaozhi",
+        "type": "folder",
+        "topic": "tutorial",
+        "children": [
+          {"id": "1763884509415","title": "Build source code for Xiaozhi","type": "file","data": {"url": "https://www.youtube.com/watch?v=g7Lh-LpxElU","type": "VIDEO"},"children": []},
+          {"id": "1764082021230","title": "xiazho điều khiển thiết bị","type": "file","data": {"url": "https://www.youtube.com/watch?v=ug8_Ump4mPg","type": "VIDEO"},"children": []}
+        ]
+      },
+      {
+        "id": "1763912676906",
+        "title": "N8N",
+        "type": "folder",
+        "children": [
+          {"id": "1763912717544","title": "Gioi thieu","type": "file","data": {"url": "https://drive.google.com/file/d/17F8uaw6gG8SFr48iCOWkusYx-hAq77D9/view?usp=drive_link","type": "VIDEO"},"children": []},
+          {
+            "id": "1763912775131",
+            "title": "1. Gioi thieu Automation",
+            "type": "folder",
+            "children": [
+              {"id": "1763912817531","title": "1.Chao mung","type": "file","data": {"url": "https://drive.google.com/file/d/1eFPNslSnQYxzs61qyOweh51JETkwIKyZ/view?usp=drive_link","type": "VIDEO"},"children": []},
+              {"id": "1763912846734","title": "2. Tim hieu ve Automation","type": "file","data": {"url": "https://drive.google.com/file/d/1EV1b8V_qj3D5Kkgw2zmgZQ60cKAqNr32/view?usp=drive_link","type": "VIDEO"},"children": []},
+              {"id": "1763912873795","title": "3. AI and Automation","type": "file","data": {"url": "https://drive.google.com/file/d/1NbBOgrTeeIBuTPEFW1jtRZd-t7i_Ms0C/view?usp=drive_link","type": "VIDEO"},"children": []},
+              {"id": "1763912902031","title": "4.Low-code, No-code","type": "file","data": {"url": "https://drive.google.com/file/d/1dlLh-75vjiEkTSRETDitfJG_lsPUBGcB/view?usp=drive_link","type": "VIDEO"},"children": []},
+              {"id": "1763912928618","title": "5.Gioi thieu n8n","type": "file","data": {"url": "https://drive.google.com/file/d/1v25a4BgiFgW-iOQfoqXuOqcU4U5uxM6G/view?usp=drive_link","type": "VIDEO"},"children": []},
+              {"id": "1763912959528","title": "6.Tong ket","type": "file","data": {"url": "https://drive.google.com/file/d/1eo8jdcoGRYKnyRRZvjqVJV-QIMwQChtj/view?usp=drive_link","type": "VIDEO"},"children": []}
+            ]
+          },
+          {
+            "id": "1763912986577",
+            "title": "2. Tao tai khoan",
+            "type": "folder",
+            "children": [
+              {"id": "1763913008220","title": "1.Gioi thieu","type": "file","data": {"url": "https://drive.google.com/file/d/1oaS2r1znyJw3AtHn36P_GZnZ9bB2bFKe/view?usp=drive_link","type": "VIDEO"},"children": []},
+              {"id": "1763913040589","title": "2. Tao tk n8n tren Cloud","type": "file","data": {"url": "https://drive.google.com/file/d/1OAVB7RhT5h4qQLwkOnvBFgToBo2xX7Lj/view?usp=drive_link","type": "VIDEO"},"children": []},
+              {"id": "1763913610589","title": "3. Cai dat self-host VPS Ubuntu","type": "file","data": {"url": "https://drive.google.com/file/d/16N9KUBD865u0ACphAiI_5oQRrfpqIrQH/view?usp=drive_link","type": "VIDEO"},"children": []},
+              {"id": "1763913661424","title": "4. Thuc hanh cai dat Ubuntu","type": "file","data": {"url": "https://drive.google.com/file/d/11ZvbTykQKokNw72JPaisgjlzvv9IugUv/view?usp=drive_link","type": "VIDEO"},"children": []},
+              {"id": "1763913692531","title": "noi dung thuc hanh","type": "file","data": {"url": "https://drive.google.com/file/d/1sC5unw3Cclep7PipmjnFxRYni-YI911U/view?usp=drive_link","type": "PDF"},"children": []},
+              {"id": "1763914359622","title": "5. Cai dat n8n self-host Docker","type": "file","data": {"url": "https://drive.google.com/file/d/1YiWgcoF9PqUqTFZQ2BTG4hPmSiA-H1qz/view?usp=drive_link","type": "VIDEO"},"children": []},
+              {"id": "1763914398432","title": "6. Workflows, credentials, trigger","type": "file","data": {"url": "https://drive.google.com/file/d/1_qTUhY8zPSozXIc931_nRgbwkzQfxEHx/view?usp=drive_link","type": "VIDEO"},"children": []},
+              {"id": "1763914424866","title": "7. JSON, Binary data","type": "file","data": {"url": "https://drive.google.com/file/d/1fO-9fze1kUPEsMkXyh-xo7hNhbRhcnZV/view?usp=drive_link","type": "VIDEO"},"children": []},
+              {"id": "1763914452860","title": "8. Import - Export workflow","type": "file","data": {"url": "https://drive.google.com/file/d/1KsWIDkoYzSMITjkVAdryXYV4xvjoSCfP/view?usp=drive_link","type": "VIDEO"},"children": []},
+              {"id": "1763914466293","title": "Tong ket","type": "file","data": {"url": "https://drive.google.com/file/d/1uWonWjbhA3jrAtyYBpNLR4Pg4RdEB5ON/view?usp=drive_link","type": "VIDEO"},"children": []}
+            ]
+          },
+          {"id": "1763915017645","title": "3. Nodes in n8n","type": "folder","children": []}
+        ]
+      }
+    ]
+  },
+  {
+    "id": "1774537057044",
+    "title": "🥸 CAMEL ENGLISH",
+    "type": "folder",
+    "topic": "ENGLISH",
+    "children": [
+      {"id": "1774541452278","title": "Link nộp bài tập","type": "file","topic": "English","data": {"url": "https://drive.google.com/drive/folders/1PFtP0uNy2IOyj9yXOt0mcDX7zD0E-3nT?usp=sharing","type": "HTML"},"children": []},
+      {
+        "id": "1774537092262",
+        "title": "Buổi 1: IPA",
+        "type": "folder",
+        "topic": "English",
+        "children": [
+          {"id": "1774537118613","title": "1. IPA","type": "file","data": {"url": "https://drive.google.com/file/d/1UtohK6epJxjSSbDI1ENPpWYo_chGWCyE/view?usp=sharing","type": "VIDEO"},"children": []},
+          {"id": "1774540233000","title": "2.IPA_05.3.26","type": "file","data": {"url": "https://onedrive.live.com/?qt=allmyphotos&id=AF70CB7008424D1F%21s957f3c7beddb4e94b19a79304eea7dbe","type": "VIDEO"},"children": []},
+          {"id": "1774541650231","title": "3. IPA_Tennis_Racket","type": "file","data": {"url": "https://drive.google.com/file/d/1T_zqeM3wAf-vZYQKYAPicwyUgixB-R9W/view?usp=sharing","type": "PDF"},"children": []}
+        ]
+      },
+      {
+        "id": "1774541712254",
+        "title": "Buổi 2: 12/03",
+        "type": "folder",
+        "children": [
+          {"id": "1774541748823","title": "1.video_12.03","type": "file","data": {"url": "https://1drv.ms/v/c/af70cb7008424d1f/IQDpnocSBLFESqLl_DCcLsONAbMf130ca-zMECfXmubd0-w","type": "VIDEO"},"children": []},
+          {"id": "1774542117213","title": "Test1_Passage_1","type": "file","data": {"url": "https://drive.google.com/file/d/1PB2BTH40N_3PHKnqYempzTLdnXIKG1N8/view?usp=drive_link","type": "PDF"},"children": []},
+          {"id": "1774542215117","title": "Answer_sheet","type": "file","data": {"url": "https://docs.google.com/spreadsheets/d/18zAxrNOLX0X0yOqNSlycxDu17Tqoc0MR/edit?usp=drive_link","type": "PDF"},"children": []},
+          {"id": "1774542531558","title": "Result_Reading","type": "file","data": {"url": "https://drive.google.com/file/d/1cva6gXVnjPvD3ZDxxVXsFKY2RQjGLqyy/view?usp=sharing","type": "VIDEO"},"children": []},
+          {"id": "1774543254574","title": "Video_Passage_Reading","type": "file","data": {"url": "https://drive.google.com/file/d/1JAo0nFsysnJhljI63Z4FJBrp14_j-N-h/view?usp=sharing","type": "VIDEO"},"children": []}
+        ]
+      },
+      {
+        "id": "1774543631973",
+        "title": "Buổi 3: 14/3",
+        "type": "folder",
+        "children": [
+          {"id": "1774543569225","title": "Phân tích Test2_Passage2","type": "file","data": {"url": "https://drive.google.com/file/d/1RJ3n_Q5eJxvtaNtMQ0LWwIXHNOP8PB44/view?usp=drive_link","type": "PDF"},"children": []},
+          {"id": "1774543478373","title": "Test2_Passage2","type": "file","data": {"url": "https://drive.google.com/file/d/1hFoq7MqYoL3_U6Z0jyuf4BSO5mnpvCGK/view?usp=drive_link","type": "PDF"},"children": []},
+          {"id": "1774541922580","title": "2.video_14/3","type": "file","data": {"url": "https://1drv.ms/v/c/a1f50e6b248986b2/IQBkLUuhyH2pT48ea9ic1uosAWBiRysESU_L6VJpgX8xoNw","type": "VIDEO"},"children": []}
+        ]
+      },
+      {
+        "id": "1774748172916",
+        "title": "4.Buoi 4",
+        "type": "folder",
+        "children": [
+          {"id": "1774748191047","title": "Video hướng dẫn giải","type": "file","data": {"url": "https://drive.google.com/file/d/1DtkYl8nMflLYEImYFcL3fX7NWqBKzKoh/view?usp=sharing","type": "VIDEO"},"children": []}
+        ]
+      },
+      {
+        "id": "1775292380189",
+        "title": "5.Buoi5",
+        "type": "folder",
+        "children": [
+          {"id": "1775292413504","title": "1. Reading1","type": "file","data": {"url": "https://drive.google.com/file/d/1LXLez6npSx2LMtiR8ND2fBy8qlxfED9z/view?usp=drive_link","type": "PDF"},"children": []},
+          {"id": "1775292491086","title": "tài liệu (Gemini)","type": "file","data": {"url": "https://gemini.google.com/share/d8448a12ab15","type": "HTML"},"children": []},
+          {"id": "1775297296485","title": "Health and Fitness Guide (PDF)","type": "file","data": {"url": "https://docs.google.com/document/d/1plxN_ultLV_67AA4nsP77rcSCLpnwXYPiE6AW_ilKjw/edit?usp=sharing","type": "PDF"},"children": []},
+          {"id": "1775297464375","title": "Health and Fitness Guide (HTML)","type": "file","data": {"url": "https://gemini.google.com/share/b28e544fb532","type": "HTML"},"children": []}
+        ]
+      },
+      {
+        "id": "1776940421874",
+        "title": "buổi 9",
+        "type": "folder",
+        "children": [
+          {"id": "1776940445395","title": "bài giảng","type": "file","data": {"url": "https://1drv.ms/v/c/af70cb7008424d1f/IQCUn47CdJz2QacWy828e8ZzAbDv6FeHOiFc-Im1gGQNlaI?e=056YQh","type": "VIDEO"},"children": []}
+        ]
+      }
+    ]
+  },
+  {
+    "id": "1774918465606",
+    "title": "🤖 AI VIỆT NGUYỄN",
+    "type": "folder",
+    "children": [
+      {
+        "id": "1774918650654",
+        "title": "😶‍🌫️ Toán AI",
+        "type": "folder",
+        "children": [
+          {"id": "1774918718759","title": "Toán AI_Unit1","type": "file","data": {"url": "https://drive.google.com/file/d/1RvFKriawZ3C3U947DdSMFYabdMkqi3jj/view?usp=drive_link","type": "PDF"},"children": []},
+          {"id": "1774918786888","title": "Toán AI_Unit2","type": "file","data": {"url": "https://drive.google.com/file/d/10WZx22GWIU7JpewETmL-nkQ7d5-8NlGq/view?usp=drive_link","type": "PDF"},"children": []},
+          {
+            "id": "1774918923030",
+            "title": "Video Lesson",
+            "type": "folder",
+            "children": [
+              {"id": "1774918902782","title": "Math AI lesson01","type": "file","data": {"url": "https://youtu.be/eJbI1F7yiGo","type": "VIDEO"},"children": []},
+              {"id": "1774918969566","title": "Math AI Lesson 2","type": "file","data": {"url": "https://www.youtube.com/watch?v=C9zHLmghFQM","type": "VIDEO"},"children": []},
+              {"id": "1774919073878","title": "Math AI Lesson 3","type": "file","data": {"url": "https://youtu.be/Y7j2E9bPCYg","type": "VIDEO"},"children": []},
+              {"id": "1774919099791","title": "Math AI Lesson 4","type": "file","data": {"url": "https://youtu.be/dGrcMVwpICE","type": "VIDEO"},"children": []},
+              {"id": "1774919122399","title": "Math AI Lesson 5","type": "file","data": {"url": "https://youtu.be/2Evbk_yXYrE","type": "VIDEO"},"children": []},
+              {"id": "1774919148159","title": "Math AI Lesson 6","type": "file","data": {"url": "https://youtu.be/wtjW4jaP3ew","type": "VIDEO"},"children": []},
+              {"id": "1774919166910","title": "Math AI Lesson 7","type": "file","data": {"url": "https://youtu.be/-f8e5BjPStg","type": "VIDEO"},"children": []},
+              {"id": "1774919843349","title": "Math AI Lesson 8","type": "file","data": {"url": "https://youtu.be/w1yg8vW02GI","type": "VIDEO"},"children": []},
+              {"id": "1774919893565","title": "Math AI Lesson 9","type": "file","data": {"url": "https://youtu.be/OmlJZHtVkQo","type": "VIDEO"},"children": []},
+              {"id": "1774919911375","title": "Math AI Lesson 10","type": "file","data": {"url": "https://youtu.be/0VrTLtG6qrs","type": "VIDEO"},"children": []},
+              {"id": "1774920195445","title": "Math AI Lesson 11","type": "file","data": {"url": "https://youtu.be/n9pO10jQSB0","type": "VIDEO"},"children": []},
+              {"id": "1774920223220","title": "Math AI Lesson 11 (P2)","type": "file","data": {"url": "https://youtu.be/GcxE9ySU8PY","type": "VIDEO"},"children": []},
+              {"id": "1774920239637","title": "Math AI Lesson 12","type": "file","data": {"url": "https://youtu.be/TMDjLcgUMTQ","type": "VIDEO"},"children": []},
+              {"id": "1774920257164","title": "Math AI Lesson 13","type": "file","data": {"url": "https://youtu.be/vZEzKTgI0H8","type": "VIDEO"},"children": []},
+              {"id": "1774920273261","title": "Math AI Lesson 14","type": "file","data": {"url": "https://youtu.be/4oQzoWxz0xU","type": "VIDEO"},"children": []},
+              {"id": "1774920291581","title": "Math AI Lesson 15","type": "file","data": {"url": "https://youtu.be/dYJ7KZvnh90","type": "VIDEO"},"children": []}
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {"id": "1775814814860","title": "🤖 English Teaching","type": "folder","children": []},
+  {"id": "1764909167499","title": "tai-lieu-kinh-doanh","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmisdck2g_tai_lieu_kinh_doanh.html?alt=media&token=3886a738-8e0b-4fec-bb6d-b66a80e4b89f","type": "HTML"},"children": []},
+  {
+    "id": "1764085734984",
+    "title": "ASIM_ENGLISH",
+    "type": "folder",
+    "children": [
+      {
+        "id": "1764085754848",
+        "title": "TL_ASIM_TERM",
+        "type": "folder",
+        "children": [
+          {"id": "1764085840102","title": "asimedu-word building","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmier5si8_ASimEdu_Word_Building.html?alt=media&token=0315551b-3450-4a8a-b840-d7a133f7c4a7","type": "HTML"},"children": []},
+          {"id": "1764085859854","title": "asimedu-module2","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmier67vb_ASimEdu_module2.html?alt=media&token=043e5ee7-6c91-43b7-b100-625edd0cb2ab","type": "HTML"},"children": []},
+          {"id": "1764085870125","title": "asimedu-module3","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmier6g3w_ASimEdu_module3.html?alt=media&token=811cc1a2-791f-445d-af5e-c7c3acb952e3","type": "HTML"},"children": []},
+          {"id": "1764085881559","title": "asimedu-module4","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmier6p8m_ASimEdu_module4.html?alt=media&token=8afd53ab-62c9-41cf-a963-a45b32cb1a88","type": "HTML"},"children": []},
+          {"id": "1764086465694","title": "test1_asim","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmierj73r_test1_ASIM.html?alt=media&token=a1c190f4-f672-4dfe-91ee-bde0634fca2a","type": "HTML"},"children": []},
+          {"id": "1764087175466","title": "test2","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmieryf4p_test2.html?alt=media&token=feecbd76-c92d-4634-ad52-54d374f51797","type": "HTML"},"children": []},
+          {"id": "1764087194140","title": "test3","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmierytv6_test3.html?alt=media&token=8ffbb3a9-a785-44fa-98b3-de9d66b29da0","type": "HTML"},"children": []},
+          {"id": "1764087209794","title": "test4","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmierz5ui_test4.html?alt=media&token=95eb7289-a6fb-42be-b048-80a1cefaffff","type": "HTML"},"children": []}
+        ]
+      },
+      {
+        "id": "1764087521622",
+        "title": "Prefix - Suffix",
+        "type": "folder",
+        "children": [
+          {"id": "1764087617085","title": "part1","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmies7vvy_part1.html?alt=media&token=885db1f4-66aa-49a9-bf39-6633bcb3fd00","type": "HTML"},"children": []},
+          {"id": "1764087627779","title": "part2","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmies84hx_part2.html?alt=media&token=631937b7-befb-4092-882d-948704ce11e7","type": "HTML"},"children": []},
+          {"id": "1764087645944","title": "part3","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmies8idd_part3.html?alt=media&token=e38af080-f993-485a-b08b-176c88644efd","type": "HTML"},"children": []},
+          {"id": "1764087661405","title": "part4","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmies8u0g_part4.html?alt=media&token=1cb39782-9ec7-4fe3-98e0-d007f28a1ab7","type": "HTML"},"children": []},
+          {"id": "1764087690470","title": "part5","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmies9h00_part5.html?alt=media&token=f1985cbb-ae49-4397-972f-03c2327e5bb5","type": "HTML"},"children": []}
+        ]
+      },
+      {
+        "id": "1764229911451",
+        "title": "TL Ebook Giang day",
+        "type": "folder",
+        "children": [
+          {"id": "1764229873655","title": "Grade 7 _ebook","type": "file","data": {"url": "https://hoclieu.vn/kho-hoc-lieu/7","type": "HTML"},"children": []},
+          {"id": "1764229964451","title": "Grade8 _ebook","type": "file","data": {"url": "https://hoclieu.vn/kho-hoc-lieu/8","type": "HTML"},"children": []},
+          {"id": "1764909203448","title": "phat-am-ed","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmisddc7w_phat_am_ed.html?alt=media&token=19d0fd09-c251-428b-9007-4507dbaeb575","type": "HTML"},"children": []},
+          {"id": "1764909227000","title": "phat-am-es","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmisddtzb_phat_am_es.html?alt=media&token=34bb0970-d67b-4565-8438-1f7713c5817e","type": "HTML"},"children": []},
+          {"id": "1765012123943","title": "in-on-at-english","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmiu2n9tf_in_on_at_english.html?alt=media&token=e6ce2fc6-1b9b-4224-ad8d-f6eae94f372a","type": "HTML"},"children": []},
+          {"id": "1765016802895","title": "44 ipa english","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmiu5fhbj_44_IPA_ENGLISH.pdf?alt=media&token=ffc9bd01-ad26-4187-b9b4-fa6580edb39d","type": "PDF"},"children": []}
+        ]
+      },
+      {
+        "id": "1765042154497",
+        "title": "Listen carefully",
+        "type": "folder",
+        "children": [
+          {"id": "1765042788886","title": "Listen cafully","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmiukwd4i_44_IPA_ENGLISH__1_.pdf?alt=media&token=c4ad1f0f-f2aa-4394-a16e-e0afded7a924","type": "PDF"},"children": []},
+          {"id": "1765042836617","title": "Listen book","type": "file","data": {"url": "https://drive.google.com/file/d/1s5jvH-JxIdkBtwg9AmrhWHmmsKAZfzsb/view?usp=drive_link","type": "PDF"},"children": []}
+        ]
+      }
+    ]
+  },
+  {
+    "id": "1766742601097",
+    "title": "Văn bằng 2",
+    "type": "folder",
+    "topic": "Tiếng Anh",
+    "children": [
+      {"id": "1766742693818","title": "8.9.northstar-reading and writing level 1","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmjmoz2fp_8.9.NorthStar_Reading_and_Writing_level_1.pdf?alt=media&token=d63bcc7b-e00f-40d0-829f-4d8b679b166c","type": "PDF"},"children": []},
+      {"id": "1766742740626","title": "north star listening & speaking1-pg 83-162","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmjmp02p4_NORTH_STAR_LISTENING___SPEAKING1_Pg_83_162.pdf?alt=media&token=190f0ea4-0d81-4d4a-9340-8591220026ef","type": "PDF"},"children": []}
+    ]
+  },
+  {
+    "id": "1770425532956",
+    "title": "AI LEARNING",
+    "type": "folder",
+    "children": [
+      {"id": "1770425510523","title": "essential math for data science_machine learning_deep learning","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmlblm7u0_Essential_Math_for_Data_Science_Machine_Learning_Deep_Learning.pdf?alt=media&token=1dd57951-3c6c-4d97-ab0f-998ea1cc7717","type": "PDF"},"children": []},
+      {"id": "1770425551504","title": "essentialmath_exercises","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmlblns76_EssentialMath_exercises.pdf?alt=media&token=e42d0d71-ac53-4a1e-a972-35f86db7d667","type": "PDF"},"children": []},
+      {"id": "1770425572153","title": "record","type": "file","data": {"url": "https://firebasestorage.googleapis.com/v0/b/e-book-for-me.firebasestorage.app/o/courses%2Fmlblo93a_Record.pdf?alt=media&token=5fb6de37-0d14-40aa-8918-30fa97e296d8","type": "PDF"},"children": []}
+    ]
+  },
+  {
+    "id": "1777978378468",
+    "title": "English",
+    "type": "folder",
+    "children": [
+      {"id": "1777978452581","title": "Công nghệ thông tin cơ bản","type": "file","data": {"url": "https://www.youtube.com/watch?v=6_eWFiFWav8","type": "VIDEO"},"children": []}
+    ]
+  },
+  {"id": "1778126625850","title": "track22_answers","type": "file","data": {"url": "https://sgp.cloud.appwrite.io/v1/storage/buckets/69c4e77300376a0d46fb/files/69fc0f210000208cb901/view?project=698fe17d00005a81c862","type": "DOCX"},"children": []},
+  {"id": "1778126730736","title": "nội dung tập huấn httt_bao_cao","type": "file","data": {"url": "https://sgp.cloud.appwrite.io/v1/storage/buckets/69c4e77300376a0d46fb/files/69fc0f8a0001d0601923/view?project=698fe17d00005a81c862","type": "DOCX"},"children": []}
+]

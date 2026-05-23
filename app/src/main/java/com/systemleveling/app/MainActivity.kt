@@ -1,8 +1,12 @@
 package com.systemleveling.app
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
@@ -20,6 +24,7 @@ import com.systemleveling.app.navigation.AppNavGraph
 import com.systemleveling.core.debug.DebugOverlay
 import com.systemleveling.core.designsystem.theme.SystemLevelingTheme
 import com.systemleveling.core.designsystem.theme.md_theme_dark_background
+import com.systemleveling.core.notification.NotificationHelper
 import com.systemleveling.core.settings.SettingsManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
@@ -29,6 +34,11 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
 
     @Inject lateinit var settingsManager: SettingsManager
+    @Inject lateinit var notificationHelper: NotificationHelper
+
+    private val notifPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* permission granted or denied — channels are already created, worker will fire */ }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Keep splash visible until we know where to navigate
@@ -37,6 +47,16 @@ class MainActivity : ComponentActivity() {
         splashScreen.setKeepOnScreenCondition { !isReady }
 
         super.onCreate(savedInstanceState)
+
+        // Request POST_NOTIFICATIONS permission on Android 13+ (API 33).
+        // Without this, the OS never shows a prompt and all notifications are silently blocked.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
 
         setContent {
             SystemLevelingTheme {

@@ -75,4 +75,20 @@ class AppTypeConverters {
 
     @TypeConverter
     fun toRecurrenceType(name: String): RecurrenceType = RecurrenceType.valueOf(name)
+
+    // --- DebtType ---
+    @TypeConverter
+    fun fromDebtType(type: com.systemleveling.core.database.entity.DebtType): String = type.name
+
+    @TypeConverter
+    fun toDebtType(name: String): com.systemleveling.core.database.entity.DebtType = com.systemleveling.core.database.entity.DebtType.valueOf(name)
+
+    // --- CourseContentType ---
+    @TypeConverter
+    fun fromCourseContentType(type: com.systemleveling.core.model.CourseContentType): String = type.name
+
+    @TypeConverter
+    fun toCourseContentType(name: String): com.systemleveling.core.model.CourseContentType =
+        try { com.systemleveling.core.model.CourseContentType.valueOf(name) }
+        catch (_: Exception) { com.systemleveling.core.model.CourseContentType.GENERAL }
 }

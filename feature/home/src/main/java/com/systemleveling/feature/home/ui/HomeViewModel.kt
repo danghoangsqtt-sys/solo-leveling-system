@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.systemleveling.core.database.dao.FinanceDao
 import com.systemleveling.core.database.dao.QuestDao
 import com.systemleveling.core.database.dao.UserDao
+import com.systemleveling.core.network.AiAvatarGeneratorService
 import com.systemleveling.core.database.entity.StatEntity
 import com.systemleveling.core.database.entity.UserEntity
 import com.systemleveling.core.model.QuestStatus
@@ -31,13 +32,14 @@ data class QuestSummary(val total: Int, val completed: Int)
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    userDao: UserDao,
+    private val userDao: UserDao,
     questDao: QuestDao,
     financeDao: FinanceDao,
     private val settingsManager: SettingsManager,
     private val cloudSyncManager: CloudSyncManager,
     private val otaUpdateManager: OtaUpdateManager,
-    private val buildInfo: AppBuildInfo
+    private val buildInfo: AppBuildInfo,
+    private val aiAvatarGeneratorService: AiAvatarGeneratorService
 ) : ViewModel() {
 
     private val todayStart: Long = Calendar.getInstance().apply {
@@ -54,6 +56,12 @@ class HomeViewModel @Inject constructor(
 
     private val _otaDownloading = MutableStateFlow(false)
     val otaDownloading: StateFlow<Boolean> = _otaDownloading.asStateFlow()
+
+    private val _isGeneratingAvatar = MutableStateFlow(false)
+    val isGeneratingAvatar: StateFlow<Boolean> = _isGeneratingAvatar.asStateFlow()
+
+    private val _avatarError = MutableStateFlow<String?>(null)
+    val avatarError: StateFlow<String?> = _avatarError.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -166,4 +174,22 @@ class HomeViewModel @Inject constructor(
             settingsManager.setSupabaseConfig(url, anonKey)
         }
     }
+
+    fun generateAndSaveAvatar(profession: String, description: String) {
+        viewModelScope.launch {
+            _isGeneratingAvatar.value = true
+            _avatarError.value = null
+            val tier = userDao.getUserSync()?.promotionTier ?: 0
+            val base64 = aiAvatarGeneratorService.generateAvatar(profession, description, tier)
+            if (base64 != null) {
+                userDao.updateAvatarProfile(profession.trim(), description.trim(), base64)
+            } else {
+                _avatarError.value = "Không thể tạo ảnh. Kiểm tra API key hoặc thử lại."
+                userDao.updateAvatarProfile(profession.trim(), description.trim(), null)
+            }
+            _isGeneratingAvatar.value = false
+        }
+    }
+
+    fun clearAvatarError() { _avatarError.value = null }
 }

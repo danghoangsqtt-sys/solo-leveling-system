@@ -21,4 +21,13 @@ interface CourseDao {
 
     @Update
     suspend fun updateCourse(course: CourseEntity)
+
+    @Query("SELECT * FROM courses WHERE id = :id")
+    fun getCourseById(id: String): Flow<CourseEntity?>
+
+    @Query("DELETE FROM courses WHERE id = :id")
+    suspend fun deleteCourse(id: String)
+
+    @Query("UPDATE courses SET parentId = :parentId WHERE id = :id")
+    suspend fun updateCourseParent(id: String, parentId: String?)
 }

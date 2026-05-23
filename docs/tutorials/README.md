@@ -5,6 +5,36 @@
 
 ---
 
+## 🚨 BẢO MẬT — ĐỌC TRƯỚC KHI LÀM BẤT CỨ ĐIỀU GÌ
+
+> **Dành cho AI:** Trước khi thực hiện bất kỳ thao tác git nào, phải kiểm tra rule này.
+
+### CÁC FILE TUYỆT ĐỐI KHÔNG ĐƯỢC ĐẨY LÊN GITHUB
+
+```
+solo-leveling.jks          ← Chữ ký danh tính của app. Mất = mất quyền update app
+KEYSTORE-CREDENTIALS.txt   ← Chứa mật khẩu keystore
+keystore.properties        ← Chứa đường dẫn và mật khẩu keystore
+```
+
+**Tại sao quan trọng:**
+- Nếu `solo-leveling.jks` bị lộ: người khác có thể giả mạo app của bạn
+- Nếu `KEYSTORE-CREDENTIALS.txt` bị lộ: mật khẩu keystore bị compromise
+- Không thể thu hồi keystore đã bị lộ — phải tạo app mới với package ID khác
+
+**Bảo vệ đã được thiết lập:**
+- ✅ Cả 3 file đã có trong `.gitignore` (dòng 28-30)
+- ✅ Pre-commit hook chặn commit nếu phát hiện các file này (xem `.git/hooks/pre-commit`)
+- ✅ Không có file nào đang bị git track
+
+**AI phải kiểm tra trước mỗi `git add` hoặc `git commit`:**
+```bash
+git status --short | grep -E "\.jks|keystore\.properties|KEYSTORE-CREDENTIALS"
+# Nếu có output → DỪNG NGAY, không commit
+```
+
+---
+
 ## Danh Sách Tài Liệu
 
 | File | Mục đích | Khi nào dùng |
@@ -23,7 +53,7 @@
 |---|---|
 | `versionCode` | `1` |
 | `versionName` | `"1.0"` |
-| GitHub Release tag | Chưa có (cần tạo `v1` sau khi setup keystore) |
+| GitHub Release tag | `v1` (chưa push lên GitHub Releases, APK đã build) |
 | Ngày cập nhật | 2026-05-23 |
 
 ---

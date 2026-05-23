@@ -141,6 +141,17 @@ fun AppNavGraph(
             val viewModel: com.systemleveling.feature.library.ui.LibraryViewModel = hiltViewModel()
             com.systemleveling.feature.library.ui.LibraryScreen(
                 viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onNavigateToCourse = { courseId ->
+                    navController.navigate("course_detail/$courseId")
+                }
+            )
+        }
+
+        composable("course_detail/{courseId}") {
+            val viewModel: com.systemleveling.feature.library.ui.CourseDetailViewModel = hiltViewModel()
+            com.systemleveling.feature.library.ui.CourseDetailScreen(
+                viewModel = viewModel,
                 onBack = { navController.popBackStack() }
             )
         }

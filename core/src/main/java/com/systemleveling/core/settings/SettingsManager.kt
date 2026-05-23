@@ -32,6 +32,9 @@ class SettingsManager @Inject constructor(
         private val SUPABASE_URL = stringPreferencesKey("supabase_url")
         private val SUPABASE_ANON_KEY = stringPreferencesKey("supabase_anon_key")
         private val IS_ONBOARDED = booleanPreferencesKey("isOnboarded")
+        private val IS_JOURNAL_SEEDED = booleanPreferencesKey("is_journal_seeded")
+        private val IS_LIBRARY_SEEDED = booleanPreferencesKey("is_library_seeded")
+        private val APPWRITE_API_KEY = stringPreferencesKey("appwrite_api_key")
     }
 
     // ── Onboarding state ─────────────────────────────────────────────────────
@@ -42,6 +45,22 @@ class SettingsManager @Inject constructor(
 
     suspend fun setOnboarded(value: Boolean) {
         dataStore.edit { prefs -> prefs[IS_ONBOARDED] = value }
+    }
+
+    // ── One-time seed flags ──────────────────────────────────────────────────
+
+    suspend fun isJournalSeeded(): Boolean = dataStore.data.first()[IS_JOURNAL_SEEDED] ?: false
+    suspend fun markJournalSeeded() { dataStore.edit { prefs -> prefs[IS_JOURNAL_SEEDED] = true } }
+
+    suspend fun isLibrarySeeded(): Boolean = dataStore.data.first()[IS_LIBRARY_SEEDED] ?: false
+    suspend fun markLibrarySeeded() { dataStore.edit { prefs -> prefs[IS_LIBRARY_SEEDED] = true } }
+
+    // ── Appwrite sync ────────────────────────────────────────────────────────
+
+    val appwriteApiKey: Flow<String> = dataStore.data.map { prefs -> prefs[APPWRITE_API_KEY] ?: "" }
+
+    suspend fun setAppwriteApiKey(key: String) {
+        dataStore.edit { prefs -> prefs[APPWRITE_API_KEY] = key.trim() }
     }
 
     val geminiApiKey: Flow<String> = dataStore.data.map { prefs ->

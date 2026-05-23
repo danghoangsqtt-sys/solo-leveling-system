@@ -8,6 +8,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.systemleveling.core.worker.DailyQuestWorker
 import com.systemleveling.core.worker.EndOfDayWorker
+import com.systemleveling.core.worker.PriorityQuestReminderWorker
 import com.systemleveling.core.worker.QuestReminderWorker
 import dagger.hilt.android.HiltAndroidApp
 import java.util.Calendar
@@ -68,6 +69,18 @@ class SystemLevelingApp : Application(), Configuration.Provider {
             QuestReminderWorker.WORK_NAME,
             ExistingPeriodicWorkPolicy.KEEP,
             reminderRequest
+        )
+
+        // Priority Reminder — runs every 15 minutes, fires heads-up/full-screen alerts
+        // for quests whose deadline is within 60 min (continuous for tasks, once for study)
+        val priorityReminderRequest = PeriodicWorkRequestBuilder<PriorityQuestReminderWorker>(
+            15, TimeUnit.MINUTES
+        ).build()
+
+        workManager.enqueueUniquePeriodicWork(
+            PriorityQuestReminderWorker.WORK_NAME,
+            ExistingPeriodicWorkPolicy.KEEP,
+            priorityReminderRequest
         )
     }
 

@@ -16,5 +16,8 @@ data class UserEntity(
     val streak: Int = 0,
     val debtPoints: Int = 0,
     val promotionTier: Int = 0,
-    val statCap: Int = 100
+    val statCap: Int = 100,
+    val profession: String = "",
+    val personalDescription: String = "",
+    val generatedAvatarBase64: String? = null
 )
