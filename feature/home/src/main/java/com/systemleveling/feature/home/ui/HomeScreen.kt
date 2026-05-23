@@ -163,6 +163,14 @@ fun HomeScreen(
         }
 
         if (showProfileDialog) {
+            // Auto-close on successful generation (isGeneratingAvatar goes false with no error)
+            val prevGenerating = remember { mutableStateOf(false) }
+            LaunchedEffect(isGeneratingAvatar) {
+                if (prevGenerating.value && !isGeneratingAvatar && avatarError == null) {
+                    showProfileDialog = false
+                }
+                prevGenerating.value = isGeneratingAvatar
+            }
             ProfileSetupDialog(
                 currentProfession = user?.profession ?: "",
                 currentDescription = user?.personalDescription ?: "",
@@ -171,7 +179,7 @@ fun HomeScreen(
                 onDismiss = { showProfileDialog = false; viewModel.clearAvatarError() },
                 onGenerate = { prof, desc ->
                     viewModel.generateAndSaveAvatar(prof, desc)
-                    showProfileDialog = false
+                    // Dialog stays open to show spinner + error; auto-closes on success
                 }
             )
         }

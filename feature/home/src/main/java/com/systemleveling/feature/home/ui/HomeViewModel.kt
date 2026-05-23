@@ -179,15 +179,16 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             _isGeneratingAvatar.value = true
             _avatarError.value = null
-            val tier = userDao.getUserSync()?.promotionTier ?: 0
-            val base64 = aiAvatarGeneratorService.generateAvatar(profession, description, tier)
-            if (base64 != null) {
+            try {
+                val tier = userDao.getUserSync()?.promotionTier ?: 0
+                val base64 = aiAvatarGeneratorService.generateAvatar(profession, description, tier)
                 userDao.updateAvatarProfile(profession.trim(), description.trim(), base64)
-            } else {
-                _avatarError.value = "Không thể tạo ảnh. Kiểm tra API key hoặc thử lại."
+            } catch (e: Exception) {
+                _avatarError.value = e.message ?: "Không thể tạo ảnh. Kiểm tra API key và thử lại."
                 userDao.updateAvatarProfile(profession.trim(), description.trim(), null)
+            } finally {
+                _isGeneratingAvatar.value = false
             }
-            _isGeneratingAvatar.value = false
         }
     }
 

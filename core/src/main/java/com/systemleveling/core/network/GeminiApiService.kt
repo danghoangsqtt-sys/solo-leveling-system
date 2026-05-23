@@ -52,22 +52,23 @@ class GeminiApiService @Inject constructor(
 
     suspend fun generateImageBase64(prompt: String, apiKey: String): String? {
         val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=$apiKey"
-        val requestBody = GeminiRequest(
+        val requestBody = GeminiImageRequest(
             contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = prompt)))),
-            generationConfig = GenerationConfig(responseModalities = listOf("IMAGE", "TEXT"), temperature = 0.9f)
+            generationConfig = ImageGenerationConfig(responseModalities = listOf("IMAGE", "TEXT"), temperature = 0.9f)
         )
-        return try {
-            val response = httpClient.post(url) {
-                contentType(ContentType.Application.Json)
-                setBody(json.encodeToString(GeminiRequest.serializer(), requestBody))
-            }
-            val responseText = response.bodyAsText()
-            val geminiResponse = json.decodeFromString(GeminiResponse.serializer(), responseText)
-            geminiResponse.candidates.firstOrNull()?.content?.parts
-                ?.firstOrNull { it.inlineData != null }?.inlineData?.data
-        } catch (_: Exception) {
-            null
+        val response = httpClient.post(url) {
+            contentType(ContentType.Application.Json)
+            setBody(json.encodeToString(GeminiImageRequest.serializer(), requestBody))
         }
+        val responseText = response.bodyAsText()
+        // Surface API-level errors (wrong key, quota, model unavailable)
+        if (response.status.value !in 200..299) {
+            val errorSnippet = responseText.take(300)
+            throw Exception("HTTP ${response.status.value}: $errorSnippet")
+        }
+        val geminiResponse = json.decodeFromString(GeminiResponse.serializer(), responseText)
+        return geminiResponse.candidates.firstOrNull()?.content?.parts
+            ?.firstOrNull { it.inlineData != null }?.inlineData?.data
     }
 
     private fun parseGeminiResponse(responseText: String): String {
@@ -84,6 +85,18 @@ class GeminiApiService @Inject constructor(
 data class GeminiRequest(
     val contents: List<GeminiContent>,
     val generationConfig: GenerationConfig? = null
+)
+
+@Serializable
+data class GeminiImageRequest(
+    val contents: List<GeminiContent>,
+    val generationConfig: ImageGenerationConfig? = null
+)
+
+@Serializable
+data class ImageGenerationConfig(
+    val responseModalities: List<String>,
+    val temperature: Float = 0.9f
 )
 
 @Serializable

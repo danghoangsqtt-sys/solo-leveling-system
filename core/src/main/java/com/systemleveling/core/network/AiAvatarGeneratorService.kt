@@ -10,9 +10,11 @@ class AiAvatarGeneratorService @Inject constructor(
     private val geminiApiService: GeminiApiService,
     private val settingsManager: SettingsManager
 ) {
-    suspend fun generateAvatar(profession: String, description: String, promotionTier: Int): String? {
+    // Returns base64 string on success, throws Exception with message on failure
+    suspend fun generateAvatar(profession: String, description: String, promotionTier: Int): String {
         val apiKey = settingsManager.geminiApiKey.first()
-        if (apiKey.isBlank()) return null
+        if (apiKey.isBlank()) throw Exception("Chưa thiết lập API Key. Vào ⚙️ Cài đặt để nhập Gemini API Key.")
+
 
         val tierTraits = when (promotionTier) {
             0    -> "glowing blue sapphire energy aura, piercing blue eyes, determined expression"
@@ -63,5 +65,6 @@ class AiAvatarGeneratorService @Inject constructor(
         """.trimIndent()
 
         return geminiApiService.generateImageBase64(prompt, apiKey)
+            ?: throw Exception("API không trả về hình ảnh. Model có thể không khả dụng hoặc đã hết quota.")
     }
 }

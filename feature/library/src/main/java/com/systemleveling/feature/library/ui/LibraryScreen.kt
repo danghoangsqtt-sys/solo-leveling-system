@@ -73,6 +73,7 @@ fun LibraryScreen(
     val isSelectMode by viewModel.isSelectMode.collectAsState()
 
     var showAddDialog by remember { mutableStateOf(false) }
+    var showAddFolderDialog by remember { mutableStateOf(false) }
     var showSyncDialog by remember { mutableStateOf(false) }
     var showGroupDialog by remember { mutableStateOf(false) }
     var showMoveDialog by remember { mutableStateOf(false) }
@@ -91,6 +92,15 @@ fun LibraryScreen(
             onConfirm = { title, author, desc, url, type, category ->
                 viewModel.addCourse(title, author, desc, url, type, category)
                 showAddDialog = false
+            }
+        )
+    }
+    if (showAddFolderDialog) {
+        AddFolderDialog(
+            onDismiss = { showAddFolderDialog = false },
+            onConfirm = { name ->
+                viewModel.createFolder(name)
+                showAddFolderDialog = false
             }
         )
     }
@@ -189,6 +199,18 @@ fun LibraryScreen(
                         Text("⟳", color = md_theme_dark_primary, fontSize = 11.sp)
                 }
                 Spacer(Modifier.width(6.dp))
+                Box(
+                    Modifier
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(Color(0xFF1A2A1A))
+                        .border(0.5.dp, Color(0xFF40A060).copy(0.5f), RoundedCornerShape(5.dp))
+                        .clickable { showAddFolderDialog = true }
+                        .padding(horizontal = 7.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("📁+", fontSize = 11.sp)
+                }
+                Spacer(Modifier.width(4.dp))
                 Box(
                     Modifier.size(26.dp).clip(CircleShape).background(md_theme_dark_primary)
                         .clickable { showAddDialog = true },
@@ -610,6 +632,43 @@ private fun rarityColor(rarity: ItemRarity): Color = when (rarity) {
     ItemRarity.EPIC      -> Color(0xFFE040FB)
     ItemRarity.LEGENDARY -> Color(0xFFFFAB40)
     ItemRarity.MYTHIC    -> Color(0xFFFF5252)
+}
+
+// ── Add Folder Dialog ─────────────────────────────────────────────────────────
+@Composable
+private fun AddFolderDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (name: String) -> Unit
+) {
+    var folderName by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF1E1E2F),
+        title = { Text("📁 Tạo thư mục mới", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Tạo thư mục rỗng để gom khóa học và tài liệu vào.", color = Color.LightGray, fontSize = 12.sp)
+                OutlinedTextField(
+                    value = folderName,
+                    onValueChange = { folderName = it },
+                    label = { Text("Tên thư mục *", color = Color.Gray) },
+                    placeholder = { Text("VD: ESP32, Python cơ bản, Toán cao cấp...", color = Color.DarkGray, fontSize = 11.sp) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = outlinedColors()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { if (folderName.isNotBlank()) onConfirm(folderName.trim()) },
+                enabled = folderName.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(containerColor = md_theme_dark_primary)
+            ) { Text("TẠO", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("HỦY", color = Color.Gray, fontSize = 12.sp) } }
+    )
 }
 
 // ── Add Course Dialog ─────────────────────────────────────────────────────────

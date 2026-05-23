@@ -156,6 +156,27 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
+    // Create an empty folder (no children required)
+    fun createFolder(folderName: String) {
+        viewModelScope.launch {
+            val folderId = UUID.randomUUID().toString()
+            courseDao.insertCourse(
+                CourseEntity(
+                    id = folderId,
+                    title = folderName.trim(),
+                    author = "Thư mục",
+                    description = "",
+                    totalModules = 0,
+                    rewardExp = 0L,
+                    rarity = ItemRarity.UNCOMMON,
+                    contentType = CourseContentType.GENERAL,
+                    category = ""
+                )
+            )
+            expandedFolderIds.value = expandedFolderIds.value + folderId
+        }
+    }
+
     // Remove a child course from its folder (promote to top-level)
     fun ungroupCourse(course: CourseEntity) {
         viewModelScope.launch {
