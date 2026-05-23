@@ -1,6 +1,7 @@
 package com.systemleveling.core.network
 
 import io.ktor.client.HttpClient
+import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
@@ -27,7 +28,7 @@ class GeminiApiService @Inject constructor(
      * Send a prompt to Gemini and get text response.
      */
     suspend fun generateContent(prompt: String, apiKey: String): String {
-        val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$apiKey"
+        val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
 
         val requestBody = GeminiRequest(
             contents = listOf(
@@ -43,21 +44,27 @@ class GeminiApiService @Inject constructor(
 
         val response = httpClient.post(url) {
             contentType(ContentType.Application.Json)
+            header("x-goog-api-key", apiKey)
             setBody(json.encodeToString(GeminiRequest.serializer(), requestBody))
         }
 
         val responseText = response.bodyAsText()
+        if (response.status.value !in 200..299) {
+            val errorSnippet = responseText.take(300)
+            throw Exception("HTTP ${response.status.value}: $errorSnippet")
+        }
         return parseGeminiResponse(responseText)
     }
 
     suspend fun generateImageBase64(prompt: String, apiKey: String): String? {
-        val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=$apiKey"
+        val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent"
         val requestBody = GeminiImageRequest(
             contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = prompt)))),
             generationConfig = ImageGenerationConfig(responseModalities = listOf("IMAGE", "TEXT"), temperature = 0.9f)
         )
         val response = httpClient.post(url) {
             contentType(ContentType.Application.Json)
+            header("x-goog-api-key", apiKey)
             setBody(json.encodeToString(GeminiImageRequest.serializer(), requestBody))
         }
         val responseText = response.bodyAsText()
@@ -76,6 +83,7 @@ class GeminiApiService @Inject constructor(
             val geminiResponse = json.decodeFromString(GeminiResponse.serializer(), responseText)
             geminiResponse.candidates.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: ""
         } catch (e: Exception) {
+            android.util.Log.w("GeminiApiService", "Response parse failed: ${e.message}")
             ""
         }
     }

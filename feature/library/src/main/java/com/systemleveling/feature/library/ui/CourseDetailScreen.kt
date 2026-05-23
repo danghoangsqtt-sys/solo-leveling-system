@@ -13,6 +13,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -106,6 +107,7 @@ private fun LessonListPane(
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var lessonToEdit by remember { mutableStateOf<LessonEntity?>(null) }
 
     if (showAddDialog) {
         AddLessonDialog(
@@ -113,6 +115,17 @@ private fun LessonListPane(
             onConfirm = { title, url, type, notes ->
                 viewModel.addLesson(title, url, type, notes)
                 showAddDialog = false
+            }
+        )
+    }
+
+    lessonToEdit?.let { lesson ->
+        EditLessonDialog(
+            lesson = lesson,
+            onDismiss = { lessonToEdit = null },
+            onConfirm = { title, url, type, notes ->
+                viewModel.editLesson(lesson, title, url, type, notes)
+                lessonToEdit = null
             }
         )
     }
@@ -192,13 +205,16 @@ private fun LessonListPane(
             }
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(lessons, key = { it.id }) { lesson ->
+                itemsIndexed(lessons, key = { _, it -> it.id }) { idx, lesson ->
                     LessonItem(
                         lesson = lesson,
                         isSelected = selectedLesson?.id == lesson.id,
                         onOpen = { viewModel.openLesson(lesson) },
                         onToggle = { viewModel.toggleLesson(lesson) },
-                        onDelete = { viewModel.deleteLesson(lesson) }
+                        onDelete = { viewModel.deleteLesson(lesson) },
+                        onEdit = { lessonToEdit = lesson },
+                        onMoveUp = if (idx > 0) ({ viewModel.moveLessonUp(lesson) }) else null,
+                        onMoveDown = if (idx < lessons.size - 1) ({ viewModel.moveLessonDown(lesson) }) else null
                     )
                 }
             }
@@ -262,70 +278,117 @@ private fun LessonItem(
     isSelected: Boolean,
     onOpen: () -> Unit,
     onToggle: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onEdit: () -> Unit,
+    onMoveUp: (() -> Unit)?,
+    onMoveDown: (() -> Unit)?
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
     val typeColor = contentTypeColor(lesson.contentType)
     val hasContent = lesson.contentUrl.isNotBlank()
 
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
             .background(if (isSelected) Color(0xFF1A2A1A) else Color(0xFF121222))
             .border(1.dp, if (isSelected) md_theme_dark_primary.copy(0.6f) else Color(0xFF2A2A3E), RoundedCornerShape(10.dp))
-            .clickable(enabled = hasContent) { onOpen() }
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
     ) {
-        // Completion checkbox
-        Checkbox(
-            checked = lesson.isCompleted,
-            onCheckedChange = { onToggle() },
-            colors = CheckboxDefaults.colors(
-                checkedColor = typeColor,
-                uncheckedColor = Color.Gray
-            ),
-            modifier = Modifier.size(20.dp)
-        )
-
-        Spacer(modifier = Modifier.width(10.dp))
-
-        Text(lesson.contentType.icon, fontSize = 16.sp)
-        Spacer(modifier = Modifier.width(8.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = lesson.title,
-                color = if (lesson.isCompleted) Color.Gray else Color.White,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium,
-                textDecoration = if (lesson.isCompleted) TextDecoration.LineThrough else TextDecoration.None
-            )
-            if (lesson.notes.isNotBlank()) {
-                Text(lesson.notes, color = Color.DarkGray, fontSize = 10.sp)
-            }
-            if (!hasContent) {
-                Text("Chưa có link", color = Color.DarkGray, fontSize = 10.sp)
-            }
-        }
-
-        if (hasContent) {
-            Text("▶", color = typeColor, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 4.dp))
-        }
-
-        // Delete button
-        Box(
+        Row(
             modifier = Modifier
-                .clip(RoundedCornerShape(6.dp))
-                .background(if (confirmDelete) Color(0xFFFF5252).copy(0.2f) else Color.Transparent)
-                .clickable {
-                    if (confirmDelete) { onDelete(); confirmDelete = false }
-                    else confirmDelete = true
-                }
-                .padding(4.dp)
+                .fillMaxWidth()
+                .clickable(enabled = hasContent) { onOpen() }
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(if (confirmDelete) "✓" else "🗑", fontSize = 12.sp, color = if (confirmDelete) Color(0xFFFF5252) else Color.DarkGray)
+            // Completion checkbox
+            Checkbox(
+                checked = lesson.isCompleted,
+                onCheckedChange = { onToggle() },
+                colors = CheckboxDefaults.colors(checkedColor = typeColor, uncheckedColor = Color.Gray),
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(lesson.contentType.icon, fontSize = 16.sp)
+            Spacer(modifier = Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = lesson.title,
+                    color = if (lesson.isCompleted) Color.Gray else Color.White,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    textDecoration = if (lesson.isCompleted) TextDecoration.LineThrough else TextDecoration.None
+                )
+                if (lesson.notes.isNotBlank()) {
+                    Text(lesson.notes, color = Color.DarkGray, fontSize = 10.sp)
+                }
+                if (!hasContent) {
+                    Text("Chưa có link", color = Color.DarkGray, fontSize = 10.sp)
+                }
+            }
+            if (hasContent) {
+                Text("▶", color = typeColor, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 4.dp))
+            }
+        }
+
+        // ── Action toolbar ────────────────────────────────────────────────────
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF0E0E1A))
+                .padding(horizontal = 10.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Reorder up
+            if (onMoveUp != null) {
+                Text(
+                    "↑",
+                    color = Color(0xFF5A5A8A), fontSize = 12.sp,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .clickable { onMoveUp() }
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
+            // Reorder down
+            if (onMoveDown != null) {
+                Text(
+                    "↓",
+                    color = Color(0xFF5A5A8A), fontSize = 12.sp,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .clickable { onMoveDown() }
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            // Edit
+            Text(
+                "✏️",
+                fontSize = 11.sp,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .clickable { onEdit() }
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+            )
+            // Delete
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(if (confirmDelete) Color(0xFFFF5252).copy(0.2f) else Color.Transparent)
+                    .clickable {
+                        if (confirmDelete) { onDelete(); confirmDelete = false }
+                        else confirmDelete = true
+                    }
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+            ) {
+                Text(
+                    if (confirmDelete) "✓ Xóa?" else "🗑",
+                    fontSize = 11.sp,
+                    color = if (confirmDelete) Color(0xFFFF5252) else Color.DarkGray
+                )
+            }
         }
     }
 }
@@ -494,6 +557,70 @@ private fun AddLessonDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("HỦY", color = Color.Gray) }
         }
+    )
+}
+
+// ── Edit Lesson Dialog ────────────────────────────────────────────────────────
+
+@Composable
+private fun EditLessonDialog(
+    lesson: LessonEntity,
+    onDismiss: () -> Unit,
+    onConfirm: (title: String, url: String, type: CourseContentType, notes: String) -> Unit
+) {
+    var title by remember { mutableStateOf(lesson.title) }
+    var url by remember { mutableStateOf(lesson.contentUrl) }
+    var notes by remember { mutableStateOf(lesson.notes) }
+    var selectedType by remember { mutableStateOf(lesson.contentType) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF1E1E2F),
+        title = { Text("Chỉnh sửa bài học", color = Color.White, fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(
+                    value = title, onValueChange = { title = it },
+                    label = { Text("Tên bài học *", color = Color.Gray) },
+                    singleLine = true, modifier = Modifier.fillMaxWidth(), colors = outlinedFieldColors()
+                )
+                OutlinedTextField(
+                    value = url, onValueChange = { url = it },
+                    label = { Text("Link nội dung (URL)", color = Color.Gray) },
+                    singleLine = true, modifier = Modifier.fillMaxWidth(), colors = outlinedFieldColors()
+                )
+                OutlinedTextField(
+                    value = notes, onValueChange = { notes = it },
+                    label = { Text("Ghi chú", color = Color.Gray) },
+                    singleLine = true, modifier = Modifier.fillMaxWidth(), colors = outlinedFieldColors()
+                )
+                Text("Loại nội dung", color = Color.Gray, fontSize = 12.sp)
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    CourseContentType.entries.forEach { type ->
+                        val selected = selectedType == type
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (selected) md_theme_dark_primary.copy(0.25f) else Color(0xFF121222))
+                                .border(1.dp, if (selected) md_theme_dark_primary else Color.Gray, RoundedCornerShape(8.dp))
+                                .clickable { selectedType = type }
+                                .padding(8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(type.icon, fontSize = 18.sp)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { if (title.isNotBlank()) onConfirm(title.trim(), url.trim(), selectedType, notes.trim()) },
+                enabled = title.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(containerColor = md_theme_dark_primary)
+            ) { Text("LƯU", color = Color.Black, fontWeight = FontWeight.Bold) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("HỦY", color = Color.Gray) } }
     )
 }
 

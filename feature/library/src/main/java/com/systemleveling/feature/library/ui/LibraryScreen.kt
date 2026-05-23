@@ -38,7 +38,8 @@ import kotlin.math.roundToInt
 private data class DragState(
     val draggedId: String,
     val ghostY: Float,
-    val dropTargetId: String? = null
+    val dropTargetId: String? = null,
+    val dropIsFolder: Boolean = false   // true = drop into folder, false = combine with course
 )
 
 // ── Depth helper ──────────────────────────────────────────────────────────────
@@ -78,6 +79,7 @@ fun LibraryScreen(
     var showGroupDialog by remember { mutableStateOf(false) }
     var showMoveDialog by remember { mutableStateOf(false) }
     var courseToEdit by remember { mutableStateOf<CourseEntity?>(null) }
+    var pendingGroupPair by remember { mutableStateOf<Pair<String, String>?>(null) }
 
     // Drag & drop state
     var dragState by remember { mutableStateOf<DragState?>(null) }
@@ -143,6 +145,20 @@ fun LibraryScreen(
             onMoveToRoot = { viewModel.moveToFolder(selectedCourseIds, null); showMoveDialog = false }
         )
     }
+    pendingGroupPair?.let { (id1, id2) ->
+        QuickGroupDialog(
+            name1 = courseMap[id1]?.title ?: "Khóa học 1",
+            name2 = courseMap[id2]?.title ?: "Khóa học 2",
+            icon1 = courseMap[id1]?.contentType?.icon ?: "📄",
+            icon2 = courseMap[id2]?.contentType?.icon ?: "📄",
+            onDismiss = { pendingGroupPair = null },
+            onConfirm = { name ->
+                viewModel.groupTwoIntoFolder(id1, id2, name)
+                pendingGroupPair = null
+            }
+        )
+    }
+
     syncMessage?.let { msg ->
         AlertDialog(
             onDismissRequest = { viewModel.clearSyncMessage() },
@@ -285,7 +301,8 @@ fun LibraryScreen(
                         val isFolder = course.id in folderIds
                         val isExpanded = course.id in expandedFolderIds
                         val isSelected = course.id in selectedCourseIds
-                        val isDragTarget = dragState?.dropTargetId == course.id && isFolder
+                        val isDragTarget = dragState?.dropTargetId == course.id && dragState?.dropIsFolder == true
+                        val isCombineTarget = dragState?.dropTargetId == course.id && dragState?.dropIsFolder == false && !isFolder
                         val isBeingDragged = dragState?.draggedId == course.id
 
                         TreeRow(
@@ -296,6 +313,7 @@ fun LibraryScreen(
                             isSelected = isSelected,
                             isSelectMode = isSelectMode,
                             isDragTarget = isDragTarget,
+                            isCombineTarget = isCombineTarget,
                             isBeingDragged = isBeingDragged,
                             onPositioned = { y, h -> rowTopY[course.id] = y; rowHeights[course.id] = h },
                             onClick = {
@@ -317,19 +335,34 @@ fun LibraryScreen(
                             onDragDelta = { dy ->
                                 dragState = dragState?.let { ds ->
                                     val newY = ds.ghostY + dy
-                                    val target = rowTopY.entries
+                                    val folderTarget = rowTopY.entries
                                         .filter { (id, _) -> id in folderIds && id != ds.draggedId }
                                         .firstOrNull { (id, top) ->
                                             val h = rowHeights[id] ?: 0f
                                             newY >= top && newY <= top + h
                                         }?.key
-                                    ds.copy(ghostY = newY, dropTargetId = target)
+                                    val courseTarget = if (folderTarget == null) {
+                                        rowTopY.entries
+                                            .filter { (id, _) -> id !in folderIds && id != ds.draggedId }
+                                            .firstOrNull { (id, top) ->
+                                                val h = rowHeights[id] ?: 0f
+                                                newY >= top && newY <= top + h
+                                            }?.key
+                                    } else null
+                                    ds.copy(
+                                        ghostY = newY,
+                                        dropTargetId = folderTarget ?: courseTarget,
+                                        dropIsFolder = folderTarget != null
+                                    )
                                 }
                             },
                             onDragEnd = {
                                 dragState?.let { ds ->
-                                    if (ds.dropTargetId != null) {
-                                        viewModel.moveToFolder(setOf(ds.draggedId), ds.dropTargetId)
+                                    val tid = ds.dropTargetId
+                                    when {
+                                        tid == null -> {}
+                                        ds.dropIsFolder -> viewModel.moveToFolder(setOf(ds.draggedId), tid)
+                                        else -> pendingGroupPair = Pair(ds.draggedId, tid)
                                     }
                                 }
                                 dragState = null
@@ -365,6 +398,7 @@ private fun TreeRow(
     isSelected: Boolean,
     isSelectMode: Boolean,
     isDragTarget: Boolean,
+    isCombineTarget: Boolean,
     isBeingDragged: Boolean,
     onPositioned: (y: Float, h: Float) -> Unit,
     onClick: () -> Unit,
@@ -383,6 +417,7 @@ private fun TreeRow(
 
     val bgColor = when {
         isDragTarget    -> md_theme_dark_primary.copy(alpha = 0.12f)
+        isCombineTarget -> Color(0xFFFFAB40).copy(alpha = 0.12f)
         isSelected      -> md_theme_dark_primary.copy(alpha = 0.07f)
         isBeingDragged  -> Color(0xFF141424).copy(alpha = 0.5f)
         else            -> Color.Transparent
@@ -393,7 +428,11 @@ private fun TreeRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(bgColor)
-                .then(if (isDragTarget) Modifier.border(0.5.dp, md_theme_dark_primary.copy(0.6f)) else Modifier)
+                .then(when {
+                    isDragTarget -> Modifier.border(0.5.dp, md_theme_dark_primary.copy(0.6f))
+                    isCombineTarget -> Modifier.border(0.5.dp, Color(0xFFFFAB40).copy(0.7f))
+                    else -> Modifier
+                })
                 .onGloballyPositioned { coords ->
                     val pos = coords.positionInRoot()
                     itemTopY = pos.y
@@ -892,6 +931,71 @@ private fun GroupCoursesDialog(
             Button(onClick = { onConfirm(folderName.trim()) }, enabled = folderName.isNotBlank(), colors = ButtonDefaults.buttonColors(containerColor = md_theme_dark_primary)) {
                 Text("TẠO", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
             }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("HỦY", color = Color.Gray, fontSize = 12.sp) } }
+    )
+}
+
+// ── Quick Group Dialog (drag-combine two courses) ─────────────────────────────
+@Composable
+private fun QuickGroupDialog(
+    name1: String,
+    name2: String,
+    icon1: String,
+    icon2: String,
+    onDismiss: () -> Unit,
+    onConfirm: (folderName: String) -> Unit
+) {
+    var folderName by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF1E1E2F),
+        title = { Text("📁 Gom vào thư mục", color = Color.White, fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Gom 2 khóa học vào 1 thư mục mới:", color = Color.LightGray, fontSize = 12.sp)
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(7.dp))
+                        .background(Color(0xFF141424))
+                        .padding(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(icon1, fontSize = 12.sp)
+                    Text(name1, color = Color.White, fontSize = 12.sp, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(7.dp))
+                        .background(Color(0xFF141424))
+                        .padding(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(icon2, fontSize = 12.sp)
+                    Text(name2, color = Color.White, fontSize = 12.sp, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                OutlinedTextField(
+                    value = folderName,
+                    onValueChange = { folderName = it },
+                    label = { Text("Tên thư mục *", color = Color.Gray) },
+                    placeholder = { Text("VD: ESP32, Python...", color = Color.DarkGray, fontSize = 11.sp) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = outlinedColors()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { if (folderName.isNotBlank()) onConfirm(folderName.trim()) },
+                enabled = folderName.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFAB40))
+            ) { Text("GOM", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("HỦY", color = Color.Gray, fontSize = 12.sp) } }
     )

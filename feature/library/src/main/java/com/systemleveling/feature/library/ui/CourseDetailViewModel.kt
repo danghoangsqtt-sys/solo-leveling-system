@@ -3,6 +3,8 @@ package com.systemleveling.feature.library.ui
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.room.withTransaction
+import com.systemleveling.core.database.AppDatabase
 import com.systemleveling.core.database.dao.CourseDao
 import com.systemleveling.core.database.dao.LessonDao
 import com.systemleveling.core.database.entity.CourseEntity
@@ -22,7 +24,8 @@ import javax.inject.Inject
 class CourseDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val courseDao: CourseDao,
-    private val lessonDao: LessonDao
+    private val lessonDao: LessonDao,
+    private val database: AppDatabase
 ) : ViewModel() {
 
     private val courseId: String = checkNotNull(savedStateHandle["courseId"])
@@ -83,16 +86,55 @@ class CourseDetailViewModel @Inject constructor(
         }
     }
 
+    fun editLesson(lesson: LessonEntity, newTitle: String, newUrl: String, newType: CourseContentType, newNotes: String) {
+        viewModelScope.launch {
+            lessonDao.updateLesson(lesson.copy(
+                title = newTitle.trim().ifBlank { lesson.title },
+                contentUrl = newUrl.trim(),
+                contentType = newType,
+                notes = newNotes.trim()
+            ))
+        }
+    }
+
+    fun moveLessonUp(lesson: LessonEntity) {
+        viewModelScope.launch {
+            database.withTransaction {
+                val current = lessonDao.getLessonsForCourseSync(courseId)
+                val idx = current.indexOfFirst { it.id == lesson.id }
+                if (idx <= 0) return@withTransaction
+                val prev = current[idx - 1]
+                lessonDao.updateLesson(lesson.copy(orderIndex = prev.orderIndex))
+                lessonDao.updateLesson(prev.copy(orderIndex = lesson.orderIndex))
+            }
+        }
+    }
+
+    fun moveLessonDown(lesson: LessonEntity) {
+        viewModelScope.launch {
+            database.withTransaction {
+                val current = lessonDao.getLessonsForCourseSync(courseId)
+                val idx = current.indexOfFirst { it.id == lesson.id }
+                if (idx < 0 || idx >= current.size - 1) return@withTransaction
+                val next = current[idx + 1]
+                lessonDao.updateLesson(lesson.copy(orderIndex = next.orderIndex))
+                lessonDao.updateLesson(next.copy(orderIndex = lesson.orderIndex))
+            }
+        }
+    }
+
     private suspend fun syncCourseProgress() {
-        val currentCourse = course.value ?: return
-        val completed = lessonDao.getCompletedCountSync(courseId)
-        val total = lessonDao.getTotalCountSync(courseId)
-        courseDao.updateCourse(
-            currentCourse.copy(
-                completedModules = completed,
-                totalModules = total,
-                isCompleted = total > 0 && completed == total
+        database.withTransaction {
+            val currentCourse = courseDao.getCourseByIdSync(courseId) ?: return@withTransaction
+            val completed = lessonDao.getCompletedCountSync(courseId)
+            val total = lessonDao.getTotalCountSync(courseId)
+            courseDao.updateCourse(
+                currentCourse.copy(
+                    completedModules = completed,
+                    totalModules = total,
+                    isCompleted = total > 0 && completed == total
+                )
             )
-        )
+        }
     }
 }

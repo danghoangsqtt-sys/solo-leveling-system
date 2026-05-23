@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -25,14 +26,16 @@ class ItemCompendiumViewModel @Inject constructor(
     private val itemDao: ItemDao
 ) : ViewModel() {
 
-    val selectedCategory = MutableStateFlow<ItemCategory?>(null)
-    val searchQuery = MutableStateFlow("")
+    private val _selectedCategory = MutableStateFlow<ItemCategory?>(null)
+    val selectedCategory: StateFlow<ItemCategory?> = _selectedCategory.asStateFlow()
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
     private val allItems = itemDao.getAllItems()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val entries: StateFlow<List<CompendiumEntry>> = combine(
-        allItems, selectedCategory, searchQuery
+        allItems, _selectedCategory, _searchQuery
     ) { ownedItems, category, query ->
         val ownedByName = ownedItems.groupBy { it.name }
         LootTable.allTemplates
@@ -57,6 +60,6 @@ class ItemCompendiumViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-    fun setCategory(cat: ItemCategory?) { selectedCategory.value = cat }
-    fun setSearch(q: String) { searchQuery.value = q }
+    fun setCategory(cat: ItemCategory?) { _selectedCategory.value = cat }
+    fun setSearch(q: String) { _searchQuery.value = q }
 }

@@ -35,6 +35,15 @@ class SettingsManager @Inject constructor(
         private val IS_JOURNAL_SEEDED = booleanPreferencesKey("is_journal_seeded")
         private val IS_LIBRARY_SEEDED = booleanPreferencesKey("is_library_seeded")
         private val APPWRITE_API_KEY = stringPreferencesKey("appwrite_api_key")
+        private val APPWRITE_ENDPOINT = stringPreferencesKey("appwrite_endpoint")
+        private val APPWRITE_PROJECT_ID = stringPreferencesKey("appwrite_project_id")
+        private val APPWRITE_DATABASE_ID = stringPreferencesKey("appwrite_database_id")
+        private val APPWRITE_COLLECTION_ID = stringPreferencesKey("appwrite_collection_id")
+
+        const val DEFAULT_APPWRITE_ENDPOINT = "https://sgp.cloud.appwrite.io/v1"
+        const val DEFAULT_APPWRITE_PROJECT_ID = "698fe17d00005a81c862"
+        const val DEFAULT_APPWRITE_DATABASE_ID = "698fe1b90013010bd402"
+        const val DEFAULT_APPWRITE_COLLECTION_ID = "69c4e168003b8a09bff8"
     }
 
     // ── Onboarding state ─────────────────────────────────────────────────────
@@ -61,6 +70,28 @@ class SettingsManager @Inject constructor(
 
     suspend fun setAppwriteApiKey(key: String) {
         dataStore.edit { prefs -> prefs[APPWRITE_API_KEY] = key.trim() }
+    }
+
+    val appwriteEndpoint: Flow<String> = dataStore.data.map { prefs ->
+        prefs[APPWRITE_ENDPOINT] ?: DEFAULT_APPWRITE_ENDPOINT
+    }
+    val appwriteProjectId: Flow<String> = dataStore.data.map { prefs ->
+        prefs[APPWRITE_PROJECT_ID] ?: DEFAULT_APPWRITE_PROJECT_ID
+    }
+    val appwriteDatabaseId: Flow<String> = dataStore.data.map { prefs ->
+        prefs[APPWRITE_DATABASE_ID] ?: DEFAULT_APPWRITE_DATABASE_ID
+    }
+    val appwriteCollectionId: Flow<String> = dataStore.data.map { prefs ->
+        prefs[APPWRITE_COLLECTION_ID] ?: DEFAULT_APPWRITE_COLLECTION_ID
+    }
+
+    suspend fun setAppwriteConfig(endpoint: String, projectId: String, databaseId: String, collectionId: String) {
+        dataStore.edit { prefs ->
+            prefs[APPWRITE_ENDPOINT] = endpoint.trim()
+            prefs[APPWRITE_PROJECT_ID] = projectId.trim()
+            prefs[APPWRITE_DATABASE_ID] = databaseId.trim()
+            prefs[APPWRITE_COLLECTION_ID] = collectionId.trim()
+        }
     }
 
     val geminiApiKey: Flow<String> = dataStore.data.map { prefs ->

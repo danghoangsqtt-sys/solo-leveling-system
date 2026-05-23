@@ -1,5 +1,6 @@
 package com.systemleveling.feature.home.ui
 
+import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -9,10 +10,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -28,6 +31,7 @@ import com.systemleveling.core.database.entity.UserEntity
 import com.systemleveling.core.designsystem.components.GlassCard
 import java.text.NumberFormat
 import java.util.Locale
+import kotlinx.coroutines.delay
 
 // ── Palette ──────────────────────────────────────────────────────────────────
 private val BG           = Color(0xFF121222)
@@ -78,6 +82,7 @@ fun HomeScreen(
     val otaDownloading by viewModel.otaDownloading.collectAsState()
     val isGeneratingAvatar by viewModel.isGeneratingAvatar.collectAsState()
     val avatarError by viewModel.avatarError.collectAsState()
+    val auraGreeting by viewModel.auraGreeting.collectAsState()
 
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showProfileDialog by remember { mutableStateOf(false) }
@@ -116,7 +121,9 @@ fun HomeScreen(
                     isGeneratingAvatar = isGeneratingAvatar,
                     onAvatarClick = { showProfileDialog = true }
                 )
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(14.dp))
+                MotivationalQuoteCard()
+                Spacer(Modifier.height(14.dp))
                 QuestProgressCard(
                     questSummary = questSummary,
                     onNavigateToQuests = onNavigateToQuests
@@ -190,6 +197,14 @@ fun HomeScreen(
                 isDownloading = otaDownloading,
                 onUpdate = { viewModel.downloadAndInstallUpdate() },
                 onDismiss = { viewModel.dismissOtaUpdate() }
+            )
+        }
+
+        auraGreeting?.let { greeting ->
+            AuraGreetingBubble(
+                message = greeting,
+                onDismiss = { viewModel.dismissAuraGreeting() },
+                modifier = Modifier.align(Alignment.BottomCenter)
             )
         }
     }
@@ -1040,6 +1055,200 @@ private fun BottomNavBar(
                     }
                 }
             }
+        }
+    }
+}
+
+// ── Motivational quotes ───────────────────────────────────────────────────────
+
+private data class MotivationalQuote(val text: String, val source: String)
+
+private val MOTIVATIONAL_QUOTES = listOf(
+    MotivationalQuote("Không có con đường nào dẫn đến sự vĩ đại mà không đi qua khổ luyện.", "Hệ Thống"),
+    MotivationalQuote("Kẻ mạnh không phải là người không bao giờ ngã, mà là người biết đứng dậy mỗi lần vấp.", "Triết Lý Hunter"),
+    MotivationalQuote("Đừng so sánh hành trình của bạn với người khác. Bạn đang chiến đấu trận chiến của chính mình.", "Hệ Thống"),
+    MotivationalQuote("Cấp độ không phải là con số — đó là phản ánh của tất cả những gì bạn đã vượt qua.", "Biên Niên Sử Hunter"),
+    MotivationalQuote("Hệ Thống không quan tâm đến cảm xúc. Nó chỉ ghi nhận hành động.", "Hệ Thống"),
+    MotivationalQuote("Sức mạnh thực sự không đến từ thể lực — nó đến từ ý chí không thể bị bẻ gãy.", "Sách Cổ"),
+    MotivationalQuote("Hãy coi mỗi thất bại là kinh nghiệm, không phải bằng chứng của sự yếu đuối.", "Triết Lý Hunter"),
+    MotivationalQuote("Người giỏi nhất không phải là người tài năng nhất — là người không bỏ cuộc.", "Hệ Thống"),
+    MotivationalQuote("Dungeon khó nhất trong cuộc đời bạn chính là bản thân bạn.", "Biên Niên Sử"),
+    MotivationalQuote("Kỷ luật là sự tự do thực sự. Lười biếng mới là nhà tù vô hình.", "Hệ Thống"),
+    MotivationalQuote("Những gì bạn luyện tập trong bóng tối sẽ tỏa sáng dưới ánh đèn sân khấu.", "Triết Lý Hunter"),
+    MotivationalQuote("Ai cũng muốn thành công, nhưng không phải ai cũng dám trả giá.", "Hệ Thống"),
+    MotivationalQuote("Level up không xảy ra trong vùng thoải mái.", "Hệ Thống"),
+    MotivationalQuote("Bắt đầu dù chưa sẵn sàng — sự hoàn hảo là kẻ thù của tiến bộ.", "Sách Cổ"),
+    MotivationalQuote("Kiến thức là vũ khí sắc bén nhất. Hãy mài nó từng ngày.", "Biên Niên Sử Hunter"),
+    MotivationalQuote("Ngày hôm nay bạn chịu đựng điều khó khăn là ngày mai bạn cảm ơn chính mình.", "Hệ Thống"),
+    MotivationalQuote("Thất bại là giáo viên khắc nghiệt nhất và hiệu quả nhất.", "Triết Lý Hunter"),
+    MotivationalQuote("Hệ thống đang ghi nhận từng bước tiến của bạn. Hãy tạo ra điều đáng nhớ.", "Hệ Thống"),
+    MotivationalQuote("Sức mạnh không được tặng — nó được rèn từ mồ hôi, nước mắt và ý chí.", "Sách Cổ"),
+    MotivationalQuote("Một giờ học tập hôm nay = 100 điểm kinh nghiệm. Đừng để ngày trôi qua vô nghĩa.", "Hệ Thống"),
+    MotivationalQuote("Mỗi nhiệm vụ bạn hoàn thành là một bước tiến về phía con người bạn muốn trở thành.", "Biên Niên Sử"),
+    MotivationalQuote("Không ai nhớ người đứng ở hàng dưới. Hãy leo lên và để lại dấu ấn.", "Triết Lý Hunter"),
+    MotivationalQuote("Hôm nay bạn có thể chọn dễ dàng hoặc chọn mạnh mẽ. Chỉ một trong hai.", "Hệ Thống"),
+    MotivationalQuote("Mỗi ngày bạn không tiến lên là ngày bạn đứng yên trong khi thế giới tiến về phía trước.", "Sách Cổ")
+)
+
+@Composable
+private fun MotivationalQuoteCard() {
+    var quoteIndex by remember { mutableStateOf(0) }
+    var visible by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(6_000L)
+            visible = false
+            delay(400L)
+            quoteIndex = (quoteIndex + 1) % MOTIVATIONAL_QUOTES.size
+            visible = true
+        }
+    }
+
+    val quote = MOTIVATIONAL_QUOTES[quoteIndex]
+    val alpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(350),
+        label = "quoteAlpha"
+    )
+
+    val infiniteTransition = rememberInfiniteTransition(label = "quote_glow")
+    val borderGlow by infiniteTransition.animateFloat(
+        0.25f, 0.55f,
+        infiniteRepeatable(tween(2400, EaseInOutSine), RepeatMode.Reverse), "qg"
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                Brush.linearGradient(
+                    listOf(Color(0x1A1E3A5F), Color(0x0F4A1E5F), Color(0x1A1E3A5F))
+                )
+            )
+            .border(
+                BorderStroke(0.5.dp, GOLD.copy(alpha = borderGlow)),
+                RoundedCornerShape(12.dp)
+            )
+            .padding(horizontal = 16.dp, vertical = 14.dp)
+            .alpha(alpha)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text("✦", color = GOLD.copy(0.8f), fontSize = 14.sp,
+                modifier = Modifier.padding(top = 2.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "\"${quote.text}\"",
+                    color = Color(0xFFD4E4FF),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    lineHeight = 20.sp,
+                    textAlign = TextAlign.Start
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = "— ${quote.source}",
+                    color = GOLD.copy(0.65f),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.06f.em
+                )
+            }
+            Text("✦", color = GOLD.copy(0.4f), fontSize = 10.sp,
+                modifier = Modifier.padding(top = 2.dp))
+        }
+    }
+}
+
+// ── Aura NPC greeting bubble ──────────────────────────────────────────────────
+@Composable
+private fun AuraGreetingBubble(
+    message: String,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var visible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        visible = true
+        delay(7_000L)
+        visible = false
+        delay(400L)
+        onDismiss()
+    }
+
+    val slideOffset by animateIntAsState(
+        targetValue = if (visible) 0 else 120,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        label = "slide"
+    )
+    val alpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(350),
+        label = "alpha"
+    )
+
+    Box(
+        modifier = modifier
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 80.dp)
+            .offset(y = slideOffset.dp)
+            .alpha(alpha)
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                Brush.linearGradient(
+                    listOf(Color(0xE6130D2E), Color(0xE61E0A3A))
+                )
+            )
+            .border(1.dp, Color(0xFFB48EFF).copy(0.5f), RoundedCornerShape(16.dp))
+            .clickable { visible = false }
+            .padding(horizontal = 14.dp, vertical = 12.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            // Aura avatar icon
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.radialGradient(
+                            listOf(Color(0xFFB48EFF).copy(0.4f), Color(0xFF6A2FBF).copy(0.2f))
+                        )
+                    )
+                    .border(1.dp, Color(0xFFB48EFF).copy(0.6f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("🌟", fontSize = 18.sp)
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "Aura NPC",
+                    color = Color(0xFFB48EFF),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.06f.em
+                )
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    message,
+                    color = Color(0xFFE0D4FF),
+                    fontSize = 12.sp,
+                    lineHeight = 18.sp
+                )
+            }
+
+            Text("✕", color = Color(0xFFB48EFF).copy(0.4f), fontSize = 10.sp,
+                modifier = Modifier.padding(top = 4.dp))
         }
     }
 }

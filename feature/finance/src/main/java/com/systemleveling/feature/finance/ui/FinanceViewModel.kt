@@ -37,12 +37,14 @@ class FinanceViewModel @Inject constructor(
         .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000), false)
 
     // ── Month-to-month state ────────────────────────────────────────────────
-    val selectedYear = MutableStateFlow(Calendar.getInstance().get(Calendar.YEAR))
-    val selectedMonth = MutableStateFlow(Calendar.getInstance().get(Calendar.MONTH) + 1) // 1-based (1 to 12)
+    private val _selectedYear = MutableStateFlow(Calendar.getInstance().get(Calendar.YEAR))
+    val selectedYear: StateFlow<Int> = _selectedYear.asStateFlow()
+    private val _selectedMonth = MutableStateFlow(Calendar.getInstance().get(Calendar.MONTH) + 1) // 1-based
+    val selectedMonth: StateFlow<Int> = _selectedMonth.asStateFlow()
 
     // ── Monthly Transactions & Totals ───────────────────────────────────────
     val monthlyTransactions: StateFlow<List<TransactionEntity>> = combine(
-        _transactions, selectedYear, selectedMonth
+        _transactions, _selectedYear, _selectedMonth
     ) { txs, year, month ->
         val (start, end) = getStartAndEndOfMonth(year, month)
         txs.filter { it.timestamp in start until end }
@@ -118,16 +120,16 @@ class FinanceViewModel @Inject constructor(
     }
 
     fun changeMonth(offset: Int) {
-        val curYear = selectedYear.value
-        val curMonth = selectedMonth.value
+        val curYear = _selectedYear.value
+        val curMonth = _selectedMonth.value
         val calendar = Calendar.getInstance().apply {
             clear()
             set(Calendar.YEAR, curYear)
             set(Calendar.MONTH, curMonth - 1)
             add(Calendar.MONTH, offset)
         }
-        selectedYear.value = calendar.get(Calendar.YEAR)
-        selectedMonth.value = calendar.get(Calendar.MONTH) + 1
+        _selectedYear.value = calendar.get(Calendar.YEAR)
+        _selectedMonth.value = calendar.get(Calendar.MONTH) + 1
     }
 
     fun addTransaction(amount: Long, type: TransactionType, category: FinanceCategory, note: String) {

@@ -31,10 +31,12 @@ class LibraryViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _allCourses = MutableStateFlow<List<CourseEntity>>(emptyList())
-    val selectedCategory = MutableStateFlow<CourseContentType?>(null)
+    private val _selectedCategory = MutableStateFlow<CourseContentType?>(null)
+    val selectedCategory: StateFlow<CourseContentType?> = _selectedCategory.asStateFlow()
 
     // ── Folder expand / collapse ──────────────────────────────────────────────
-    val expandedFolderIds = MutableStateFlow<Set<String>>(emptySet())
+    private val _expandedFolderIds = MutableStateFlow<Set<String>>(emptySet())
+    val expandedFolderIds: StateFlow<Set<String>> = _expandedFolderIds.asStateFlow()
 
     // Set of course IDs that have at least one child (are "folders")
     val folderIds: StateFlow<Set<String>> = _allCourses
@@ -42,8 +44,9 @@ class LibraryViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
     // ── Multi-select ──────────────────────────────────────────────────────────
-    val selectedCourseIds = MutableStateFlow<Set<String>>(emptySet())
-    val isSelectMode: StateFlow<Boolean> = selectedCourseIds
+    private val _selectedCourseIds = MutableStateFlow<Set<String>>(emptySet())
+    val selectedCourseIds: StateFlow<Set<String>> = _selectedCourseIds.asStateFlow()
+    val isSelectMode: StateFlow<Boolean> = _selectedCourseIds
         .map { it.isNotEmpty() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
@@ -61,7 +64,7 @@ class LibraryViewModel @Inject constructor(
 
     // ── Recursive display list — deep folder nesting ──────────────────────────
     val displayedCourses: StateFlow<List<CourseEntity>> = combine(
-        _allCourses, selectedCategory, expandedFolderIds
+        _allCourses, _selectedCategory, _expandedFolderIds
     ) { all, category, expanded ->
         fun collectVisible(parentId: String?): List<CourseEntity> {
             val children = all.filter { it.parentId == parentId }
@@ -107,13 +110,13 @@ class LibraryViewModel @Inject constructor(
     // ── Category filter ───────────────────────────────────────────────────────
 
     fun setCategory(category: CourseContentType?) {
-        selectedCategory.value = category
+        _selectedCategory.value = category
     }
 
     // ── Folder expand / collapse ──────────────────────────────────────────────
 
     fun toggleFolderExpansion(courseId: String) {
-        expandedFolderIds.value = expandedFolderIds.value.let {
+        _expandedFolderIds.value = _expandedFolderIds.value.let {
             if (courseId in it) it - courseId else it + courseId
         }
     }
@@ -121,19 +124,19 @@ class LibraryViewModel @Inject constructor(
     // ── Multi-select ──────────────────────────────────────────────────────────
 
     fun toggleSelect(courseId: String) {
-        selectedCourseIds.value = selectedCourseIds.value.let {
+        _selectedCourseIds.value = _selectedCourseIds.value.let {
             if (courseId in it) it - courseId else it + courseId
         }
     }
 
     fun clearSelection() {
-        selectedCourseIds.value = emptySet()
+        _selectedCourseIds.value = emptySet()
     }
 
     // ── Group selected courses into a folder ──────────────────────────────────
 
     fun groupSelectedIntoFolder(folderName: String) {
-        val ids = selectedCourseIds.value.toList()
+        val ids = _selectedCourseIds.value.toList()
         if (ids.isEmpty()) return
         viewModelScope.launch {
             val folderId = UUID.randomUUID().toString()
@@ -152,7 +155,30 @@ class LibraryViewModel @Inject constructor(
             )
             ids.forEach { id -> courseDao.updateCourseParent(id, folderId) }
             clearSelection()
-            expandedFolderIds.value = expandedFolderIds.value + folderId
+            _expandedFolderIds.value = _expandedFolderIds.value + folderId
+        }
+    }
+
+    // Combine two courses by dragging one onto the other — creates a new folder containing both
+    fun groupTwoIntoFolder(id1: String, id2: String, folderName: String) {
+        viewModelScope.launch {
+            val folderId = UUID.randomUUID().toString()
+            courseDao.insertCourse(
+                CourseEntity(
+                    id = folderId,
+                    title = folderName.trim(),
+                    author = "Thư mục",
+                    description = "2 khóa học",
+                    totalModules = 2,
+                    rewardExp = 0L,
+                    rarity = ItemRarity.UNCOMMON,
+                    contentType = CourseContentType.GENERAL,
+                    category = ""
+                )
+            )
+            courseDao.updateCourseParent(id1, folderId)
+            courseDao.updateCourseParent(id2, folderId)
+            _expandedFolderIds.value = _expandedFolderIds.value + folderId
         }
     }
 
@@ -173,7 +199,7 @@ class LibraryViewModel @Inject constructor(
                     category = ""
                 )
             )
-            expandedFolderIds.value = expandedFolderIds.value + folderId
+            _expandedFolderIds.value = _expandedFolderIds.value + folderId
         }
     }
 
@@ -292,7 +318,7 @@ class LibraryViewModel @Inject constructor(
             val result = appwriteSyncService.syncCourses(apiKey)
             _syncMessage.value = result.fold(
                 onSuccess = { count -> "Đồng bộ thành công: $count mục đã được import." },
-                onFailure = { e -> "Lỗi đồng bộ: ${e.message}" }
+                onFailure = { e -> "Lỗi đồng bộ: ${e.message ?: "Lỗi không xác định"}" }
             )
             _isSyncing.value = false
         }
@@ -305,7 +331,7 @@ class LibraryViewModel @Inject constructor(
             val result = appwriteSyncService.syncFromNodeArray(jsonArray)
             _syncMessage.value = result.fold(
                 onSuccess = { count -> "Import thành công: $count mục đã được thêm vào thư viện." },
-                onFailure = { e -> "Lỗi import: ${e.message}" }
+                onFailure = { e -> "Lỗi import: ${e.message ?: "Lỗi không xác định"}" }
             )
             _isSyncing.value = false
         }

@@ -2,17 +2,14 @@ package com.systemleveling.core.ai
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.engine.android.Android
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.delay
-import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -40,16 +37,9 @@ Giới hạn câu trả lời: 2-4 câu ngắn gọn.
 """.trimIndent()
 
 @Singleton
-class AuraService @Inject constructor() {
-
-    private val client = HttpClient(Android) {
-        install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-                isLenient = true
-            })
-        }
-    }
+class AuraService @Inject constructor(
+    private val client: HttpClient
+) {
 
     suspend fun chat(
         apiKey: String,
@@ -59,7 +49,7 @@ class AuraService @Inject constructor() {
         if (apiKey.isBlank()) return Result.failure(IllegalArgumentException("API key chưa được cài đặt"))
 
         // Build Gemini contents — role: "user" | "model"
-        val contents = (history + ChatMessage(MessageRole.USER, userMessage))
+        val contents = (history.takeLast(20) + ChatMessage(MessageRole.USER, userMessage))
             .map { msg ->
                 GeminiContent(
                     role = if (msg.role == MessageRole.USER) "user" else "model",
@@ -68,8 +58,9 @@ class AuraService @Inject constructor() {
             }
 
         return try {
-            val response: HttpResponse = client.post("$GEMINI_BASE_URL?key=$apiKey") {
+            val response: HttpResponse = client.post(GEMINI_BASE_URL) {
                 contentType(ContentType.Application.Json)
+                header("x-goog-api-key", apiKey)
                 setBody(
                     GeminiRequest(
                         systemInstruction = GeminiSystemInstruction(
@@ -269,8 +260,9 @@ class AuraService @Inject constructor() {
         var lastError: Exception = Exception("Không rõ lỗi")
         repeat(3) { attempt ->
             try {
-                val response: HttpResponse = client.post("$GEMINI_BASE_URL?key=$apiKey") {
+                val response: HttpResponse = client.post(GEMINI_BASE_URL) {
                     contentType(ContentType.Application.Json)
+                    header("x-goog-api-key", apiKey)
                     setBody(request)
                 }
                 when {

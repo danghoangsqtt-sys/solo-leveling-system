@@ -9,7 +9,9 @@ import com.systemleveling.core.database.entity.CourseEntity
 import com.systemleveling.core.database.entity.LessonEntity
 import com.systemleveling.core.model.CourseContentType
 import com.systemleveling.core.model.ItemRarity
+import com.systemleveling.core.settings.SettingsManager
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.first
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -28,14 +30,11 @@ class AppwriteSyncService @Inject constructor(
     private val httpClient: HttpClient,
     private val json: Json,
     private val courseDao: CourseDao,
-    private val lessonDao: LessonDao
+    private val lessonDao: LessonDao,
+    private val settingsManager: SettingsManager
 ) {
     companion object {
         private const val TAG = "AppwriteSync"
-        private const val ENDPOINT = "https://sgp.cloud.appwrite.io/v1"
-        private const val PROJECT_ID = "698fe17d00005a81c862"
-        private const val DATABASE_ID = "698fe1b90013010bd402"
-        private const val MODULES_COLLECTION = "69c4e168003b8a09bff8"
     }
 
     private val lenientJson = Json { ignoreUnknownKeys = true; isLenient = true; coerceInputValues = true }
@@ -47,50 +46,72 @@ class AppwriteSyncService @Inject constructor(
      */
     suspend fun syncCourses(apiKey: String): Result<Int> {
         return try {
-            val url = "$ENDPOINT/databases/$DATABASE_ID/collections/$MODULES_COLLECTION/documents?limit=100"
-            Log.d(TAG, "Fetching from Appwrite: $url")
-
-            val response = httpClient.get(url) {
-                headers {
-                    append("X-Appwrite-Project", PROJECT_ID)
-                    append("X-Appwrite-Key", apiKey)
-                    append("Content-Type", "application/json")
-                }
-            }
-
-            if (response.status != HttpStatusCode.OK) {
-                val errorBody = response.bodyAsText()
-                Log.e(TAG, "Appwrite error ${response.status}: $errorBody")
-                return Result.failure(Exception("Lỗi Appwrite: ${response.status} — $errorBody"))
-            }
-
-            val raw = response.bodyAsText()
-            val docsResponse = lenientJson.decodeFromString<AppwriteDocumentsResponse>(raw)
-            Log.d(TAG, "Fetched ${docsResponse.total} documents")
-
+            val endpoint = settingsManager.appwriteEndpoint.first()
+            val projectId = settingsManager.appwriteProjectId.first()
+            val databaseId = settingsManager.appwriteDatabaseId.first()
+            val collectionId = settingsManager.appwriteCollectionId.first()
             var importedCount = 0
+            var offset = 0
+            val limit = 100
+            var hasMore = true
 
-            docsResponse.documents
-                .filter { it.moduleType == "course_tree" && it.data.isNotBlank() }
-                .forEach { doc ->
-                    try {
-                        val tree = lenientJson.decodeFromString<CourseNodeDto>(doc.data)
-                        importedCount += importNode(tree, parentCourseId = null, depth = 0)
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to parse doc ${doc.id}: ${e.message}")
+            while (hasMore) {
+                val url = "$endpoint/databases/$databaseId/collections/$collectionId/documents?queries[]=limit($limit)&queries[]=offset($offset)"
+                Log.d(TAG, "Fetching from Appwrite: $url")
+
+                val response = httpClient.get(url) {
+                    headers {
+                        append("X-Appwrite-Project", projectId)
+                        append("X-Appwrite-Key", apiKey)
+                        append("Content-Type", "application/json")
                     }
                 }
 
-            // Nếu không tìm thấy course_tree, thử parse tất cả documents có data
-            if (importedCount == 0) {
-                docsResponse.documents
-                    .filter { it.data.isNotBlank() }
+                if (response.status != HttpStatusCode.OK) {
+                    val errorBody = response.bodyAsText()
+                    Log.e(TAG, "Appwrite error ${response.status}: $errorBody")
+                    return Result.failure(Exception("Lỗi Appwrite: ${response.status} — $errorBody"))
+                }
+
+                val raw = response.bodyAsText()
+                val docsResponse = lenientJson.decodeFromString<AppwriteDocumentsResponse>(raw)
+                val batchDocs = docsResponse.documents
+                Log.d(TAG, "Fetched ${batchDocs.size} documents at offset $offset")
+
+                if (batchDocs.size < limit) {
+                    hasMore = false
+                }
+                if (batchDocs.isEmpty()) {
+                    break
+                }
+
+                var batchImportedCount = 0
+
+                batchDocs
+                    .filter { it.moduleType == "course_tree" && it.data.isNotBlank() }
                     .forEach { doc ->
                         try {
                             val tree = lenientJson.decodeFromString<CourseNodeDto>(doc.data)
-                            importedCount += importNode(tree, parentCourseId = null, depth = 0)
-                        } catch (_: Exception) { }
+                            batchImportedCount += importNode(tree, parentCourseId = null, depth = 0)
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to parse doc ${doc.id}: ${e.message}")
+                        }
                     }
+
+                // Nếu không tìm thấy course_tree, thử parse tất cả documents có data
+                if (batchImportedCount == 0) {
+                    batchDocs
+                        .filter { it.data.isNotBlank() }
+                        .forEach { doc ->
+                            try {
+                                val tree = lenientJson.decodeFromString<CourseNodeDto>(doc.data)
+                                batchImportedCount += importNode(tree, parentCourseId = null, depth = 0)
+                            } catch (_: Exception) { }
+                        }
+                }
+                
+                importedCount += batchImportedCount
+                offset += limit
             }
 
             Log.d(TAG, "Import done: $importedCount courses/lessons")
@@ -149,7 +170,8 @@ class AppwriteSyncService @Inject constructor(
     private suspend fun importNode(
         node: CourseNodeDto,
         parentCourseId: String?,
-        depth: Int
+        depth: Int,
+        orderIndex: Int = -1
     ): Int {
         var count = 0
 
@@ -179,9 +201,15 @@ class AppwriteSyncService @Inject constructor(
                 courseDao.insertCourse(course)
                 count++
 
+                var currentLessonCount = 0
                 // Import con
                 node.children.forEach { child ->
-                    count += importNode(child, courseId, depth + 1)
+                    if (child.type == "file") {
+                        count += importNode(child, courseId, depth + 1, currentLessonCount)
+                        currentLessonCount++
+                    } else {
+                        count += importNode(child, courseId, depth + 1)
+                    }
                 }
             }
 
@@ -207,7 +235,7 @@ class AppwriteSyncService @Inject constructor(
                 } else {
                     // File trong folder → tạo Lesson
                     val lessonData = node.data
-                    val currentLessonCount = lessonDao.getTotalCountSync(parentCourseId)
+                    val actualOrderIndex = if (orderIndex >= 0) orderIndex else lessonDao.getTotalCountSync(parentCourseId)
                     lessonDao.insertLesson(
                         LessonEntity(
                             id = node.id.ifBlank { java.util.UUID.randomUUID().toString() },
@@ -215,7 +243,7 @@ class AppwriteSyncService @Inject constructor(
                             title = node.title,
                             contentUrl = lessonData?.url ?: "",
                             contentType = mapContentType(lessonData?.type),
-                            orderIndex = currentLessonCount,
+                            orderIndex = actualOrderIndex,
                             notes = node.notes ?: ""
                         )
                     )

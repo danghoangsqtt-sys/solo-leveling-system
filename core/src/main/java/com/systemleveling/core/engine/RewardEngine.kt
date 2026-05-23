@@ -1,5 +1,6 @@
 package com.systemleveling.core.engine
 
+import com.systemleveling.core.database.AppDatabase
 import com.systemleveling.core.database.dao.ItemDao
 import com.systemleveling.core.database.dao.QuestDao
 import com.systemleveling.core.database.dao.SkillDao
@@ -11,6 +12,7 @@ import com.systemleveling.core.model.QuestStatus
 import com.systemleveling.core.model.RewardResult
 import com.systemleveling.core.model.SkillLevel
 import com.systemleveling.core.model.SkillLevelUpInfo
+import androidx.room.withTransaction
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
@@ -34,7 +36,8 @@ class RewardEngine @Inject constructor(
     private val userDao: UserDao,
     private val skillDao: SkillDao,
     private val itemDao: ItemDao,
-    private val questDao: QuestDao
+    private val questDao: QuestDao,
+    private val database: AppDatabase
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -45,6 +48,14 @@ class RewardEngine @Inject constructor(
             )
         val stats = userDao.getStats().first()
             ?: com.systemleveling.core.database.entity.StatEntity(id = "local_stats")
+        val noPriorQuestDrops = itemDao.getQuestDropCount() == 0
+        val droppedItem = if (noPriorQuestDrops) {
+            LootTable.rollGuaranteedDrop(quest.id)
+        } else {
+            LootTable.rollDrop(quest.rank, quest.id)
+        }
+
+        return database.withTransaction {
 
         // ── 1. Stat gains ────────────────────────────────────────────────────
         val statChanges = mutableMapOf<String, Int>()
@@ -132,17 +143,10 @@ class RewardEngine @Inject constructor(
                     ))
                 }
             }
-        } catch (_: Exception) { /* malformed JSON, skip SP */ }
+        } catch (e: Exception) { android.util.Log.w("RewardEngine", "skillPointRewards parse failed: ${e.message}") }
 
         // ── 4. Loot drop ─────────────────────────────────────────────────────
         var droppedItemInfo: DroppedItemInfo? = null
-        val noPriorQuestDrops = itemDao.getQuestDropCount() == 0
-        // First-quest guarantee: always drop on first ever completion
-        val droppedItem = if (noPriorQuestDrops) {
-            LootTable.rollGuaranteedDrop(quest.id)
-        } else {
-            LootTable.rollDrop(quest.rank, quest.id)
-        }
         if (droppedItem != null) {
             itemDao.insertItem(droppedItem)
             questDao.updateQuest(quest.copy(status = QuestStatus.COMPLETED, droppedItemId = droppedItem.id))
@@ -155,7 +159,7 @@ class RewardEngine @Inject constructor(
             questDao.updateQuest(quest.copy(status = QuestStatus.COMPLETED))
         }
 
-        return RewardResult(
+        RewardResult(
             questTitle = quest.title,
             questRank = quest.rank,
             expGained = quest.expReward,
@@ -167,6 +171,7 @@ class RewardEngine @Inject constructor(
             newLevel = if (leveledUp) newLevel else null,
             skillLeveledUp = skillLevelUps
         )
+        }  // end withTransaction
     }
 
     private fun parseStatRewards(raw: String): Map<String, Int> {
@@ -174,6 +179,6 @@ class RewardEngine @Inject constructor(
         return try {
             json.decodeFromString(MapSerializer(String.serializer(), Int.serializer()), raw)
                 .filter { (_, v) -> v > 0 }
-        } catch (_: Exception) { emptyMap() }
+        } catch (e: Exception) { android.util.Log.w("RewardEngine", "statPointRewards parse failed: ${e.message}"); emptyMap() }
     }
 }

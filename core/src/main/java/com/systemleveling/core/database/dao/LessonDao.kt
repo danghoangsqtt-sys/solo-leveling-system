@@ -13,6 +13,9 @@ interface LessonDao {
     @Query("SELECT * FROM lessons WHERE courseId = :courseId ORDER BY orderIndex ASC, createdAt ASC")
     fun getLessonsForCourse(courseId: String): Flow<List<LessonEntity>>
 
+    @Query("SELECT * FROM lessons WHERE courseId = :courseId ORDER BY orderIndex ASC, createdAt ASC")
+    suspend fun getLessonsForCourseSync(courseId: String): List<LessonEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertLesson(lesson: LessonEntity)
 

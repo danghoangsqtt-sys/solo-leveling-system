@@ -140,8 +140,9 @@ class AiQuestGeneratorService @Inject constructor(
         val monthlyPlan = settingsManager.monthlyPlanItems.first()
 
         // Pass only child skills (parentId != null) so AI can reference real skill IDs
-        val childSkills = skillDao.getAllSkillsSync().filter { it.parentId != null }
-        val parentSkills = skillDao.getAllSkillsSync().filter { it.parentId == null }
+        val allSkills = skillDao.getAllSkillsSync()
+        val childSkills = allSkills.filter { it.parentId != null }
+        val parentSkills = allSkills.filter { it.parentId == null }
 
         val calendar = Calendar.getInstance().apply { timeInMillis = dayStart }
         val dayOfWeek = SimpleDateFormat("EEEE", Locale("vi")).format(calendar.time)

@@ -25,6 +25,9 @@ interface CourseDao {
     @Query("SELECT * FROM courses WHERE id = :id")
     fun getCourseById(id: String): Flow<CourseEntity?>
 
+    @Query("SELECT * FROM courses WHERE id = :id")
+    suspend fun getCourseByIdSync(id: String): CourseEntity?
+
     @Query("DELETE FROM courses WHERE id = :id")
     suspend fun deleteCourse(id: String)
 

@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.systemleveling.core.R
 
 /**
  * Centralized notification helper for all System Leveling notifications.
@@ -131,7 +132,7 @@ class NotificationHelper @Inject constructor(
      */
     fun notifyNewQuests(questCount: Int) {
         val notification = NotificationCompat.Builder(context, CHANNEL_QUEST)
-            .setSmallIcon(android.R.drawable.ic_menu_compass)
+            .setSmallIcon(R.drawable.ic_quest)
             .setContentTitle("⚔️ Nhiệm Vụ Mới!")
             .setContentText("$questCount nhiệm vụ đang chờ bạn hôm nay. Sẵn sàng chiến đấu!")
             .setStyle(NotificationCompat.BigTextStyle()
@@ -170,7 +171,7 @@ class NotificationHelper @Inject constructor(
         } else null
 
         val notification = NotificationCompat.Builder(context, CHANNEL_DAILY_SUMMARY)
-            .setSmallIcon(android.R.drawable.ic_menu_report_image)
+            .setSmallIcon(R.drawable.ic_quest)
             .setContentTitle("$emoji Báo Cáo Ngày — Hạng $grade")
             .setContentText("Hoàn thành ${(completionRate * 100).toInt()}% | +${expEarned}EXP. Xem chi tiết!")
             .setStyle(NotificationCompat.BigTextStyle()
@@ -197,7 +198,7 @@ class NotificationHelper @Inject constructor(
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_HEALTH)
-            .setSmallIcon(android.R.drawable.ic_menu_info_details)
+            .setSmallIcon(R.drawable.ic_health)
             .setContentTitle("💧 Hydration Quest!")
             .setContentText(messages.random())
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -214,7 +215,7 @@ class NotificationHelper @Inject constructor(
      */
     fun notifyStandUpReminder() {
         val notification = NotificationCompat.Builder(context, CHANNEL_HEALTH)
-            .setSmallIcon(android.R.drawable.ic_menu_info_details)
+            .setSmallIcon(R.drawable.ic_health)
             .setContentTitle("🚶 Đứng Dậy & Vận Động!")
             .setContentText("Ngồi quá lâu rồi! Đứng dậy đi lại 5 phút, giãn cơ để duy trì AGI!")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -243,7 +244,7 @@ class NotificationHelper @Inject constructor(
             else -> "\"$questTitle\" — đừng để thất bại vì thiếu tập trung!"
         }
         val notification = NotificationCompat.Builder(context, CHANNEL_QUEST)
-            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setSmallIcon(R.drawable.ic_system_alert)
             .setContentTitle("$urgency QUEST DEADLINE")
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
@@ -267,7 +268,7 @@ class NotificationHelper @Inject constructor(
             "Hệ thống nhắc nhở: $pendingCount nhiệm vụ → hoàn thành ngay để tránh phạt!"
         )
         val notification = NotificationCompat.Builder(context, CHANNEL_QUEST)
-            .setSmallIcon(android.R.drawable.ic_menu_compass)
+            .setSmallIcon(R.drawable.ic_quest)
             .setContentTitle("⚔️ Tập Trung Chiến Đấu!")
             .setContentText(messages.random())
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -321,7 +322,7 @@ class NotificationHelper @Inject constructor(
         }
 
         val notification = NotificationCompat.Builder(context, CHANNEL_PRIORITY)
-            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setSmallIcon(R.drawable.ic_system_alert)
             .setContentTitle("🔴 BẮT BUỘC: $title")
             .setContentText(urgencyText)
             .setStyle(NotificationCompat.BigTextStyle().bigText(urgencyText))
@@ -337,7 +338,7 @@ class NotificationHelper @Inject constructor(
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setFullScreenIntent(fullScreenPi, true)
             .setContentIntent(fullScreenPi)
-            .addAction(android.R.drawable.ic_menu_recent_history, "⏱ Trì Hoãn 10p", snoozePi)
+            .addAction(R.drawable.ic_snooze, "⏱ Trì Hoãn 10p", snoozePi)
             .build()
 
         manager.notify(notifId, notification)
@@ -370,7 +371,7 @@ class NotificationHelper @Inject constructor(
         }
 
         val notification = NotificationCompat.Builder(context, CHANNEL_STUDY)
-            .setSmallIcon(android.R.drawable.ic_menu_info_details)
+            .setSmallIcon(R.drawable.ic_health)
             .setContentTitle("📚 Học Tập: $title")
             .setContentText(text)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -381,7 +382,7 @@ class NotificationHelper @Inject constructor(
             .setUsesChronometer(true)
             .setChronometerCountDown(true)
             .setShowWhen(true)
-            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Đã Hiểu", dismissPi)
+            .addAction(R.drawable.ic_dismiss, "Đã Hiểu", dismissPi)
             .build()
 
         manager.notify(notifId, notification)
@@ -392,7 +393,7 @@ class NotificationHelper @Inject constructor(
      */
     fun notifyPenaltyWarning(debtPoints: Int, failedQuests: Int) {
         val notification = NotificationCompat.Builder(context, CHANNEL_PENALTY)
-            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setSmallIcon(R.drawable.ic_system_alert)
             .setContentTitle("⚠️ Cảnh Báo Penalty!")
             .setContentText("$failedQuests nhiệm vụ thất bại! Tổng nợ: $debtPoints Debt Points")
             .setStyle(NotificationCompat.BigTextStyle()

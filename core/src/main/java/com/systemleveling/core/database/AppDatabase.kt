@@ -34,7 +34,7 @@ import com.systemleveling.core.database.entity.BudgetEntity
 import com.systemleveling.core.database.entity.DebtEntity
 import com.systemleveling.core.database.entity.LessonEntity
 
-@Database(entities = [UserEntity::class, StatEntity::class, QuestEntity::class, SkillEntity::class, ItemEntity::class, TitleEntity::class, TransactionEntity::class, CourseEntity::class, JournalEntity::class, DailySummaryEntity::class, CalendarEventEntity::class, BudgetEntity::class, DebtEntity::class, LessonEntity::class], version = 13, exportSchema = true)
+@Database(entities = [UserEntity::class, StatEntity::class, QuestEntity::class, SkillEntity::class, ItemEntity::class, TitleEntity::class, TransactionEntity::class, CourseEntity::class, JournalEntity::class, DailySummaryEntity::class, CalendarEventEntity::class, BudgetEntity::class, DebtEntity::class, LessonEntity::class], version = 14, exportSchema = true)
 @TypeConverters(AppTypeConverters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
@@ -80,6 +80,29 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** v9→v10: budgets & debts tables */
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS budgets (
+                        category TEXT NOT NULL PRIMARY KEY,
+                        limitAmount INTEGER NOT NULL
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS debts (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        personName TEXT NOT NULL,
+                        amount INTEGER NOT NULL,
+                        type TEXT NOT NULL,
+                        note TEXT NOT NULL DEFAULT '',
+                        isPaid INTEGER NOT NULL DEFAULT 0,
+                        timestamp INTEGER NOT NULL
+                    )
+                """.trimIndent())
+            }
+        }
+
         /** v10→v11: lessons table + new course columns */
         val MIGRATION_10_11 = object : Migration(10, 11) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -119,26 +142,12 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
-        /** v9→v10: budgets & debts tables */
-        val MIGRATION_9_10 = object : Migration(9, 10) {
+        /** v13→v14: performance indices on frequently queried columns */
+        val MIGRATION_13_14 = object : Migration(13, 14) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("""
-                    CREATE TABLE IF NOT EXISTS budgets (
-                        category TEXT NOT NULL PRIMARY KEY,
-                        limitAmount INTEGER NOT NULL
-                    )
-                """.trimIndent())
-                db.execSQL("""
-                    CREATE TABLE IF NOT EXISTS debts (
-                        id TEXT NOT NULL PRIMARY KEY,
-                        personName TEXT NOT NULL,
-                        amount INTEGER NOT NULL,
-                        type TEXT NOT NULL,
-                        note TEXT NOT NULL DEFAULT '',
-                        isPaid INTEGER NOT NULL DEFAULT 0,
-                        timestamp INTEGER NOT NULL
-                    )
-                """.trimIndent())
+                db.execSQL("CREATE INDEX IF NOT EXISTS idx_quests_date ON quests(date)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS idx_transactions_timestamp ON transactions(timestamp)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS idx_lessons_courseId ON lessons(courseId)")
             }
         }
     }

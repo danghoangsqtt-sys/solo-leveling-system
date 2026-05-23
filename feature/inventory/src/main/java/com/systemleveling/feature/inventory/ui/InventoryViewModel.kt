@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -23,8 +24,10 @@ class InventoryViewModel @Inject constructor(
     private val itemDao: ItemDao
 ) : ViewModel() {
 
-    val activeTab = MutableStateFlow(InventoryTab.ACTIVE)
-    val selectedCategory = MutableStateFlow<ItemCategory?>(null)
+    private val _activeTab = MutableStateFlow(InventoryTab.ACTIVE)
+    val activeTab: StateFlow<InventoryTab> = _activeTab.asStateFlow()
+    private val _selectedCategory = MutableStateFlow<ItemCategory?>(null)
+    val selectedCategory: StateFlow<ItemCategory?> = _selectedCategory.asStateFlow()
 
     private val _activeItems = itemDao.getActiveItems()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -33,7 +36,7 @@ class InventoryViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val displayedItems: StateFlow<List<ItemEntity>> = combine(
-        activeTab, selectedCategory, _activeItems, _storedItems
+        _activeTab, _selectedCategory, _activeItems, _storedItems
     ) { tab, category, active, stored ->
         val base = if (tab == InventoryTab.ACTIVE) active else stored
         if (category == null) base else base.filter { it.category == category }
@@ -45,8 +48,8 @@ class InventoryViewModel @Inject constructor(
     val storedCount: StateFlow<Int> = itemDao.getStoredItemCount()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-    fun setTab(tab: InventoryTab) { activeTab.value = tab }
-    fun setCategory(category: ItemCategory?) { selectedCategory.value = category }
+    fun setTab(tab: InventoryTab) { _activeTab.value = tab }
+    fun setCategory(category: ItemCategory?) { _selectedCategory.value = category }
 
     fun useItem(item: ItemEntity) {
         viewModelScope.launch {

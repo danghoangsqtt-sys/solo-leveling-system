@@ -25,10 +25,36 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import javax.inject.Inject
+import kotlin.random.Random
 
 enum class SyncState { Idle, Restoring, Restored, Syncing, Synced, SyncFailed }
 
 data class QuestSummary(val total: Int, val completed: Int)
+
+private val AURA_GREETINGS_MORNING = listOf(
+    "Chào buổi sáng, Hunter! Mặt trời đã mọc — cánh cổng mới đang chờ. Hãy khởi động và chinh phục ngày hôm nay!",
+    "Buổi sáng tốt lành! Mỗi bình minh là một lần hồi sinh. Hệ thống đã ghi nhận sự xuất hiện của bạn.",
+    "Sáng sớm đã thức — đó là sức mạnh mà kẻ yếu không có. Hôm nay bạn sẽ tiến thêm một bước.",
+    "Chào Hunter! Ngày mới, điểm kinh nghiệm mới. Nhiệm vụ hôm nay đang chờ bạn hoàn thành."
+)
+private val AURA_GREETINGS_AFTERNOON = listOf(
+    "Buổi chiều năng động! Đừng để momentum giữa ngày bị phá vỡ. Bạn đang đi đúng hướng.",
+    "Chào buổi chiều, Hunter! Nửa ngày đã qua — nửa còn lại là cơ hội để bứt phá.",
+    "Bạn đang ở giữa hành trình. Đừng dừng lại — mọi bước tiến đều được tính điểm.",
+    "Chiều tốt! Hãy giữ vững tinh thần. Những Hunter vĩ đại không nghỉ ngơi khi mặt trời còn chiếu sáng."
+)
+private val AURA_GREETINGS_EVENING = listOf(
+    "Buổi tối tốt lành! Đây là lúc chuẩn bị cho ngày mai. Ôn lại và lên kế hoạch — bạn sẽ mạnh hơn khi bình minh đến.",
+    "Chào tối, Hunter! Ánh đèn thành phố nhắc nhở: những người giỏi nhất vẫn đang làm việc lúc này.",
+    "Tối rồi — nhưng nhiệm vụ chưa kết thúc. Mỗi phút học tập là điểm kinh nghiệm cộng thêm.",
+    "Chào buổi tối! Hãy kết thúc ngày hôm nay bằng ít nhất một điều có ý nghĩa. Bạn xứng đáng level up."
+)
+private val AURA_GREETINGS_NIGHT = listOf(
+    "Đêm khuya rồi, Hunter. Nhưng sự kiên trì lúc này chính là điều phân biệt bạn với những người bình thường.",
+    "Vẫn còn thức ư? Hệ thống ghi nhận ý chí của bạn. Hãy nghỉ ngơi đủ để ngày mai mạnh hơn.",
+    "Chào đêm khuya! Sức mạnh thực sự được rèn luyện trong bóng tối — khi không ai nhìn, chỉ có bạn và mục tiêu.",
+    "Đêm muộn rồi. Hãy hoàn thành nhiệm vụ cuối cùng và nghỉ ngơi. Ngày mai hệ thống sẽ thưởng xứng đáng."
+)
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -62,6 +88,9 @@ class HomeViewModel @Inject constructor(
 
     private val _avatarError = MutableStateFlow<String?>(null)
     val avatarError: StateFlow<String?> = _avatarError.asStateFlow()
+
+    private val _auraGreeting = MutableStateFlow<String?>(pickAuraGreeting())
+    val auraGreeting: StateFlow<String?> = _auraGreeting.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -193,4 +222,17 @@ class HomeViewModel @Inject constructor(
     }
 
     fun clearAvatarError() { _avatarError.value = null }
+
+    fun dismissAuraGreeting() { _auraGreeting.value = null }
+}
+
+private fun pickAuraGreeting(): String {
+    val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+    val pool = when {
+        hour in 5..11  -> AURA_GREETINGS_MORNING
+        hour in 12..17 -> AURA_GREETINGS_AFTERNOON
+        hour in 18..21 -> AURA_GREETINGS_EVENING
+        else           -> AURA_GREETINGS_NIGHT
+    }
+    return pool[Random.nextInt(pool.size)]
 }
