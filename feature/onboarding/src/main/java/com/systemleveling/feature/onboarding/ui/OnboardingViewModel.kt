@@ -35,6 +35,7 @@ class OnboardingViewModel @Inject constructor(
 
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
+    @Suppress("UNUSED_PARAMETER")
     fun generateRoadmapAndComplete(
         nickname: String,
         goal: String,
@@ -82,17 +83,24 @@ class OnboardingViewModel @Inject constructor(
 
     fun acceptAndComplete(nickname: String, goal: String, selectedClassName: String, data: AiCompleteOnboardingResponse) {
         viewModelScope.launch {
-            saveDataAndComplete(nickname, goal, selectedClassName, data)
+            _uiState.value = OnboardingUiState.Loading("Đang lưu dữ liệu...")
+            try {
+                saveDataAndComplete(nickname, goal, selectedClassName, data)
+            } catch (e: Exception) {
+                _uiState.value = OnboardingUiState.Error("Lưu thất bại: ${e.localizedMessage}")
+            }
         }
     }
 
     private suspend fun saveDataAndComplete(nickname: String, goal: String, selectedClassName: String, data: AiCompleteOnboardingResponse) {
+        val selectedJobClass = data.suggestedClasses.find { it.className == selectedClassName }
+
         // Save User
         userDao.insertUser(
             UserEntity(
                 nickname = nickname.ifBlank { "Shadow Monarch" },
                 characterClass = selectedClassName,
-                avatarUri = null
+                avatarUri = selectedJobClass?.iconEmoji
             )
         )
 
@@ -109,7 +117,6 @@ class OnboardingViewModel @Inject constructor(
         )
 
         // Save Skills — group AI nodes by category into parent+child hierarchy
-        val selectedJobClass = data.suggestedClasses.find { it.className == selectedClassName }
         val roadmapToUse = selectedJobClass?.roadmap ?: emptyList()
 
         // Clear any previous skills (re-onboarding or mock data)

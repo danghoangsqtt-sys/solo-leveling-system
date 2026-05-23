@@ -3,9 +3,11 @@ package com.systemleveling.app.navigation
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.systemleveling.feature.home.advancement.ClassAdvancementScreen
 import com.systemleveling.feature.home.advancement.ClassAdvancementViewModel
 import com.systemleveling.feature.home.npc.NpcChatScreen
@@ -57,7 +59,6 @@ fun AppNavGraph(
                 onNavigateToQuests = { navController.navigate("quests") },
                 onNavigateToSkills = { navController.navigate("skills") },
                 onNavigateToInventory = { navController.navigate("inventory") },
-                onNavigateToTitles = { navController.navigate("titles") },
                 onNavigateToFinance = { navController.navigate("finance") },
                 onNavigateToLibrary = { navController.navigate("library") },
                 onNavigateToJournal = { navController.navigate("journal") },
@@ -148,7 +149,10 @@ fun AppNavGraph(
             )
         }
 
-        composable("course_detail/{courseId}") {
+        composable(
+            route = "course_detail/{courseId}",
+            arguments = listOf(navArgument("courseId") { type = NavType.StringType })
+        ) {
             val viewModel: com.systemleveling.feature.library.ui.CourseDetailViewModel = hiltViewModel()
             com.systemleveling.feature.library.ui.CourseDetailScreen(
                 viewModel = viewModel,

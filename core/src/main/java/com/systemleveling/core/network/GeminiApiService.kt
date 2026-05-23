@@ -57,7 +57,7 @@ class GeminiApiService @Inject constructor(
     }
 
     suspend fun generateImageBase64(prompt: String, apiKey: String): String? {
-        val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent"
+        val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent"
         val requestBody = GeminiImageRequest(
             contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = prompt)))),
             generationConfig = ImageGenerationConfig(responseModalities = listOf("IMAGE", "TEXT"), temperature = 0.9f)
@@ -68,7 +68,6 @@ class GeminiApiService @Inject constructor(
             setBody(json.encodeToString(GeminiImageRequest.serializer(), requestBody))
         }
         val responseText = response.bodyAsText()
-        // Surface API-level errors (wrong key, quota, model unavailable)
         if (response.status.value !in 200..299) {
             val errorSnippet = responseText.take(300)
             throw Exception("HTTP ${response.status.value}: $errorSnippet")
@@ -79,13 +78,9 @@ class GeminiApiService @Inject constructor(
     }
 
     private fun parseGeminiResponse(responseText: String): String {
-        return try {
-            val geminiResponse = json.decodeFromString(GeminiResponse.serializer(), responseText)
-            geminiResponse.candidates.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: ""
-        } catch (e: Exception) {
-            android.util.Log.w("GeminiApiService", "Response parse failed: ${e.message}")
-            ""
-        }
+        val geminiResponse = json.decodeFromString(GeminiResponse.serializer(), responseText)
+        return geminiResponse.candidates.firstOrNull()?.content?.parts?.firstOrNull()?.text
+            ?: throw Exception("Gemini trả về nội dung rỗng — vui lòng thử lại.")
     }
 }
 

@@ -62,12 +62,9 @@ fun QuestListScreen(
         }
     }
 
-    val BG       = Color(0xFF090912)
     val BG_DEEP  = Color(0xFF050508)
     val PRIMARY  = Color(0xFF4A9EFF)
     val GOLD     = Color(0xFFFFD700)
-    val MUTED    = Color(0xFFC0C7D4)
-    val GLASS    = Color(0x1AFFFFFF)
 
     Box(
         modifier = Modifier
@@ -250,7 +247,7 @@ fun QuestListScreen(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(quests) { quest ->
+                items(quests, key = { it.id }) { quest ->
                     QuestTimelineItem(quest = quest) {
                         if (quest.status != QuestStatus.COMPLETED) {
                             viewModel.completeQuest(quest)

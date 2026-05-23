@@ -18,8 +18,13 @@ class AuraRepository @Inject constructor(
     }
 
     suspend fun chat(history: List<ChatMessage>, userMessage: String): Result<String> {
-        val apiKey = settingsManager.geminiApiKey.first()
-        return auraService.chat(apiKey, history, userMessage)
+        return try {
+            val apiKey = settingsManager.geminiApiKey.first()
+            if (apiKey.isBlank()) return Result.failure(Exception("Chưa cài đặt Gemini API Key."))
+            auraService.chat(apiKey, history, userMessage)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     suspend fun analyzeSurvey(apiKey: String, surveyData: AiSurveyData): Result<String> {
@@ -31,5 +36,9 @@ class AuraRepository @Inject constructor(
     }
     suspend fun generateCompleteOnboarding(apiKey: String, surveyData: AiSurveyData, goals: String): Result<String> {
         return auraService.generateCompleteOnboarding(apiKey, surveyData, goals)
+    }
+
+    suspend fun generateProactiveGreeting(apiKey: String, context: AuraPlayerContext): Result<String> {
+        return auraService.generateProactiveGreeting(apiKey, context)
     }
 }

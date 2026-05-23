@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -67,6 +68,13 @@ fun NpcChatScreen(
         if (messages.isNotEmpty()) listState.animateScrollToItem(messages.size - 1)
     }
 
+    // Trigger proactive greeting when screen opens and API key is set
+    LaunchedEffect(apiKey, messages.isEmpty()) {
+        if (apiKey.isNotBlank() && messages.isEmpty()) {
+            viewModel.triggerProactiveGreeting()
+        }
+    }
+
     // Animate model mouth while AI is loading (fake thinking animation)
     LaunchedEffect(isLoading) {
         if (isLoading) {
@@ -106,10 +114,12 @@ fun NpcChatScreen(
                     settings.javaScriptEnabled = true
                     settings.domStorageEnabled = true
                     settings.mediaPlaybackRequiresUserGesture = false
-                    settings.allowFileAccessFromFileURLs = true
-                    settings.allowUniversalAccessFromFileURLs = true
                     @Suppress("DEPRECATION")
-                    settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                    settings.allowFileAccessFromFileURLs = false
+                    @Suppress("DEPRECATION")
+                    settings.allowUniversalAccessFromFileURLs = false
+                    @Suppress("DEPRECATION")
+                    settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
                     webViewClient = WebViewClient()
                     webChromeClient = WebChromeClient()
                     addJavascriptInterface(object : Any() {
@@ -164,7 +174,7 @@ fun NpcChatScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
                 ) {
-                    items(suggestions) { text ->
+                    items(suggestions, key = { it }) { text ->
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(16.dp))
@@ -189,7 +199,7 @@ fun NpcChatScreen(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                     contentPadding = PaddingValues(bottom = 4.dp)
                 ) {
-                    items(messages) { msg -> ChatBubble(msg) }
+                    items(messages, key = { "${it.role}-${it.content.hashCode()}" }) { msg -> ChatBubble(msg) }
                 }
             }
 
@@ -212,7 +222,6 @@ fun NpcChatScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             // ── VOICE RECOGNIZER LAUNCHER ──
-            val context = androidx.compose.ui.platform.LocalContext.current
             val speechLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
                 androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
             ) { result ->
@@ -280,7 +289,7 @@ private fun NpcTopBar(
                 .clickable(onClick = onBack),
             contentAlignment = Alignment.Center
         ) {
-            Icon(Icons.Rounded.ArrowBack, contentDescription = "Back",
+            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back",
                 tint = Color.White, modifier = Modifier.size(20.dp))
         }
 
@@ -460,7 +469,7 @@ private fun ChatInputRow(
                 )
             } else if (isTyping) {
                 Icon(
-                    Icons.Rounded.Send,
+                    Icons.AutoMirrored.Rounded.Send,
                     contentDescription = "Send",
                     tint = Color.White,
                     modifier = Modifier.size(20.dp)

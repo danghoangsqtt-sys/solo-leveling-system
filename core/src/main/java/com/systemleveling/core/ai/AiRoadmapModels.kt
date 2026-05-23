@@ -1,26 +1,27 @@
 package com.systemleveling.core.ai
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 // --- Phase 1: Survey & Profile ---
 
 @Serializable
 data class AiSurveyData(
-    val height: String,
-    val weight: String,
-    val pushUps: String,
-    val lifting: String,
-    val runningPace: String,
-    val studyHours: String,
-    val languageLevel: String,
-    val sleepHours: String,
-    val workStyle: String
+    val height: String = "",
+    val weight: String = "",
+    val pushUps: String = "",
+    val lifting: String = "",
+    val runningPace: String = "",
+    val studyHours: String = "",
+    val languageLevel: String = "",
+    val sleepHours: String = "",
+    val workStyle: String = ""
 )
 
 @Serializable
 data class AiCompleteOnboardingResponse(
-    val stats: AiStats,
-    val suggestedClasses: List<AiJobClass>
+    val stats: AiStats = AiStats(),
+    val suggestedClasses: List<AiJobClass> = emptyList()
 )
 
 @Serializable
@@ -31,20 +32,20 @@ data class AiProfileResponse(
 
 @Serializable
 data class AiStats(
-    val str: Int, // Sức mạnh (Strength)
-    val intStat: Int, // Trí tuệ (Intelligence)
-    val agi: Int, // Nhanh nhẹn (Agility)
-    val vit: Int, // Thể lực (Vitality)
-    val wis: Int, // Thông thái (Wisdom)
-    val cha: Int // Sức hút (Charisma)
+    val str: Int = 10,
+    @SerialName("int") val intStat: Int = 10,
+    val agi: Int = 10,
+    val vit: Int = 10,
+    val wis: Int = 10,
+    val cha: Int = 10
 )
 
 @Serializable
 data class AiJobClass(
-    val className: String,
-    val description: String,
-    val iconEmoji: String, // Maplestory style vibe emoji
-    val roadmap: List<AiSkillNode> // Kỹ năng riêng của nghề này
+    val className: String = "",
+    val description: String = "",
+    val iconEmoji: String = "⭐",
+    val roadmap: List<AiSkillNode> = emptyList()
 )
 
 // --- Phase 2: Goals & Roadmap ---
@@ -64,9 +65,20 @@ data class AiRoadmapResponse(
 
 @Serializable
 data class AiSkillNode(
-    val name: String,
-    val description: String,
-    val tier: Int,
-    val category: String, // Which goal this belongs to
-    val iconEmoji: String // e.g. 🗡️, 🛡️, 📚, 💻
+    val name: String = "",
+    val description: String = "",
+    val tier: Int = 1,
+    val category: String = "",
+    val iconEmoji: String = "⭐"
+)
+
+// --- Phase 3: Aura Chat Context ---
+
+@Serializable
+data class AuraPlayerContext(
+    val level: Int = 1,
+    val exp: Int = 0,
+    val streak: Int = 0,
+    val pendingQuests: List<String> = emptyList(),
+    val weakSkills: List<String> = emptyList()
 )
