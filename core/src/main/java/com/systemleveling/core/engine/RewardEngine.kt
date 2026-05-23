@@ -113,13 +113,23 @@ class RewardEngine @Inject constructor(
                 if (newSp >= skill.level.maxSp) {
                     val nextLevel = SkillLevel.entries.getOrNull(skill.level.ordinal + 1)
                     if (nextLevel != null) {
-                        skillDao.updateSkill(skill.copy(currentSp = newSp - skill.level.maxSp, level = nextLevel))
+                        skillDao.updateSkill(skill.copy(
+                            currentSp = newSp - skill.level.maxSp,
+                            level = nextLevel,
+                            totalQuestsCompleted = skill.totalQuestsCompleted + 1
+                        ))
                         skillLevelUps.add(SkillLevelUpInfo(skillId, skill.name, skill.level, nextLevel))
                     } else {
-                        skillDao.updateSkill(skill.copy(currentSp = skill.level.maxSp))
+                        skillDao.updateSkill(skill.copy(
+                            currentSp = skill.level.maxSp,
+                            totalQuestsCompleted = skill.totalQuestsCompleted + 1
+                        ))
                     }
                 } else {
-                    skillDao.updateSkill(skill.copy(currentSp = newSp))
+                    skillDao.updateSkill(skill.copy(
+                        currentSp = newSp,
+                        totalQuestsCompleted = skill.totalQuestsCompleted + 1
+                    ))
                 }
             }
         } catch (_: Exception) { /* malformed JSON, skip SP */ }

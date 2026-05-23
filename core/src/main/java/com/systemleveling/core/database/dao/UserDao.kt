@@ -13,11 +13,17 @@ interface UserDao {
     @Query("SELECT * FROM users WHERE id = 'local_user'")
     fun getUser(): Flow<UserEntity?>
 
+    @Query("SELECT * FROM users WHERE id = 'local_user'")
+    suspend fun getUserSync(): UserEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUser(user: UserEntity)
 
     @Query("SELECT * FROM stats WHERE id = 'local_stats'")
     fun getStats(): Flow<StatEntity?>
+
+    @Query("SELECT * FROM stats WHERE id = 'local_stats'")
+    suspend fun getStatsSync(): StatEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertStats(stats: StatEntity)

@@ -8,6 +8,7 @@ import com.systemleveling.core.engine.DailySummaryService
 import com.systemleveling.core.engine.PenaltyEngine
 import com.systemleveling.core.notification.NotificationHelper
 import com.systemleveling.core.settings.SettingsManager
+import com.systemleveling.core.sync.CloudSyncManager
 import kotlinx.coroutines.flow.first
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -28,7 +29,8 @@ class EndOfDayWorker @AssistedInject constructor(
     private val penaltyEngine: PenaltyEngine,
     private val dailySummaryService: DailySummaryService,
     private val notificationHelper: NotificationHelper,
-    private val settingsManager: SettingsManager
+    private val settingsManager: SettingsManager,
+    private val cloudSyncManager: CloudSyncManager
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result {
@@ -51,7 +53,10 @@ class EndOfDayWorker @AssistedInject constructor(
                 todayMidnight, tomorrowMidnight, apiKey
             )
 
-            // 3. Send notification
+            // 3. Push summary history to Supabase backend
+            cloudSyncManager.pushDailyHistory(summary)
+
+            // 4. Send notification
             val grade = when {
                 summary.completionRate >= 0.95 -> "S"
                 summary.completionRate >= 0.85 -> "A"

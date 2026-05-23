@@ -11,8 +11,11 @@ import com.systemleveling.core.model.RewardResult
 import com.systemleveling.core.model.WorkPlanItem
 import com.systemleveling.core.network.AiQuestGeneratorService
 import com.systemleveling.core.settings.SettingsManager
+import com.systemleveling.core.sync.CloudSyncManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -32,7 +35,8 @@ class QuestViewModel @Inject constructor(
     private val userDao: UserDao,
     private val rewardEngine: RewardEngine,
     private val aiQuestGenerator: AiQuestGeneratorService,
-    private val settingsManager: SettingsManager
+    private val settingsManager: SettingsManager,
+    private val cloudSyncManager: CloudSyncManager
 ) : ViewModel() {
 
     val quests: StateFlow<List<QuestEntity>> = questDao.getAllQuests()
@@ -49,6 +53,16 @@ class QuestViewModel @Inject constructor(
 
     private val _isGenerating = MutableStateFlow(false)
     val isGenerating: StateFlow<Boolean> = _isGenerating
+
+    private var pendingPushJob: Job? = null
+
+    private fun schedulePush() {
+        pendingPushJob?.cancel()
+        pendingPushJob = viewModelScope.launch {
+            delay(5_000L)
+            withContext(Dispatchers.IO) { cloudSyncManager.push() }
+        }
+    }
 
     init {
         viewModelScope.launch {
@@ -77,6 +91,7 @@ class QuestViewModel @Inject constructor(
                 val result = rewardEngine.processQuestCompletion(quest)
                 _rewardResult.emit(result)
             }
+            schedulePush()
         }
     }
 

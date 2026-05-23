@@ -63,8 +63,12 @@ fun HomeScreen(
     val questSummary by viewModel.questSummary.collectAsState()
     val isAdvancementReady by viewModel.isAdvancementReady.collectAsState()
     val geminiApiKey by viewModel.geminiApiKey.collectAsState()
+    val supabaseUrl by viewModel.supabaseUrl.collectAsState()
+    val supabaseAnonKey by viewModel.supabaseAnonKey.collectAsState()
     val totalBalance by viewModel.totalBalance.collectAsState()
     val todayExpense by viewModel.todayExpense.collectAsState()
+    val otaUpdateInfo by viewModel.otaUpdateInfo.collectAsState()
+    val otaDownloading by viewModel.otaDownloading.collectAsState()
 
     var showSettingsDialog by remember { mutableStateOf(false) }
 
@@ -131,11 +135,23 @@ fun HomeScreen(
         if (showSettingsDialog) {
             SettingsDialog(
                 currentApiKey = geminiApiKey,
+                currentSupabaseUrl = supabaseUrl,
+                currentSupabaseAnonKey = supabaseAnonKey,
                 onDismiss = { showSettingsDialog = false },
-                onSave = { 
-                    viewModel.saveApiKey(it)
-                    showSettingsDialog = false 
+                onSave = { apiKey, sbUrl, sbKey ->
+                    viewModel.saveApiKey(apiKey)
+                    viewModel.saveSupabaseConfig(sbUrl, sbKey)
+                    showSettingsDialog = false
                 }
+            )
+        }
+
+        otaUpdateInfo?.let { info ->
+            OtaUpdateDialog(
+                info = info,
+                isDownloading = otaDownloading,
+                onUpdate = { viewModel.downloadAndInstallUpdate() },
+                onDismiss = { viewModel.dismissOtaUpdate() }
             )
         }
     }
@@ -210,10 +226,22 @@ private fun TopSystemBar(user: UserEntity?, onSettingsClick: () -> Unit) {
 @Composable
 private fun SettingsDialog(
     currentApiKey: String,
+    currentSupabaseUrl: String,
+    currentSupabaseAnonKey: String,
     onDismiss: () -> Unit,
-    onSave: (String) -> Unit
+    onSave: (apiKey: String, supabaseUrl: String, supabaseAnonKey: String) -> Unit
 ) {
     var apiKey by remember { mutableStateOf(currentApiKey) }
+    var sbUrl by remember { mutableStateOf(currentSupabaseUrl) }
+    var sbKey by remember { mutableStateOf(currentSupabaseAnonKey) }
+
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = Color.White,
+        unfocusedTextColor = TEXT_MUTED,
+        focusedBorderColor = PRIMARY,
+        unfocusedBorderColor = GLASS_BORDER,
+        cursorColor = PRIMARY
+    )
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -222,33 +250,63 @@ private fun SettingsDialog(
             Text("⚙️ System Settings", color = PRIMARY_DIM, fontWeight = FontWeight.Bold)
         },
         text = {
-            Column {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // ── AI Section ──────────────────────────────────────────
+                Text("🤖 AI Configuration", color = PRIMARY_DIM, fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(2.dp))
                 Text("Gemini API Key:", color = Color.White, fontSize = 14.sp)
-                Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = apiKey,
                     onValueChange = { apiKey = it },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = TEXT_MUTED,
-                        focusedBorderColor = PRIMARY,
-                        unfocusedBorderColor = GLASS_BORDER,
-                        cursorColor = PRIMARY
-                    ),
+                    colors = fieldColors,
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    placeholder = { Text("Enter your Gemini API Key", color = TEXT_MUTED) }
+                    placeholder = { Text("AIzaSy...", color = TEXT_MUTED) }
                 )
-                Spacer(Modifier.height(8.dp))
                 Text(
-                    "API Key is stored locally and used for AI Quest Generation, Skill Roadmaps, and Daily Summaries.",
-                    color = TEXT_MUTED,
-                    fontSize = 11.sp
+                    "Used for AI Quest Generation, Skill Roadmaps, and Daily Summaries.",
+                    color = TEXT_MUTED, fontSize = 11.sp
+                )
+
+                Spacer(Modifier.height(4.dp))
+                HorizontalDivider(color = GLASS_BORDER)
+                Spacer(Modifier.height(4.dp))
+
+                // ── Cloud Backup Section ─────────────────────────────────
+                Text("☁️ Cloud Backup (Supabase)", color = PRIMARY_DIM, fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(2.dp))
+                Text("Project URL:", color = Color.White, fontSize = 14.sp)
+                OutlinedTextField(
+                    value = sbUrl,
+                    onValueChange = { sbUrl = it },
+                    colors = fieldColors,
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    placeholder = { Text("https://xxxx.supabase.co", color = TEXT_MUTED) }
+                )
+                Spacer(Modifier.height(4.dp))
+                Text("Anon Key:", color = Color.White, fontSize = 14.sp)
+                OutlinedTextField(
+                    value = sbKey,
+                    onValueChange = { sbKey = it },
+                    colors = fieldColors,
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    placeholder = { Text("eyJ...", color = TEXT_MUTED) }
+                )
+                Text(
+                    "Data syncs to Supabase on quest completion and restores automatically on fresh install.",
+                    color = TEXT_MUTED, fontSize = 11.sp
                 )
             }
         },
         confirmButton = {
-            TextButton(onClick = { onSave(apiKey) }) {
+            TextButton(onClick = { onSave(apiKey, sbUrl, sbKey) }) {
                 Text("Save", color = PRIMARY, fontWeight = FontWeight.Bold)
             }
         },

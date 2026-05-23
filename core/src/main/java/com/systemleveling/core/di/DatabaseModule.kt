@@ -3,6 +3,7 @@ package com.systemleveling.core.di
 import android.content.Context
 import androidx.room.Room
 import com.systemleveling.core.database.AppDatabase
+import com.systemleveling.core.database.dao.CalendarEventDao
 import com.systemleveling.core.database.dao.QuestDao
 import com.systemleveling.core.database.dao.SkillDao
 import com.systemleveling.core.database.dao.UserDao
@@ -25,7 +26,7 @@ object DatabaseModule {
             AppDatabase::class.java,
             "system_leveling.db"
         )
-        .fallbackToDestructiveMigration()
+        .addMigrations(AppDatabase.MIGRATION_7_8, AppDatabase.MIGRATION_8_9)
         .build()
     }
 
@@ -72,5 +73,10 @@ object DatabaseModule {
     @Provides
     fun provideDailySummaryDao(database: AppDatabase): com.systemleveling.core.database.dao.DailySummaryDao {
         return database.dailySummaryDao()
+    }
+
+    @Provides
+    fun provideCalendarEventDao(database: AppDatabase): CalendarEventDao {
+        return database.calendarEventDao()
     }
 }

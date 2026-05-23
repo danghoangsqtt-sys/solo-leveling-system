@@ -1,9 +1,5 @@
 package com.systemleveling.feature.onboarding.ui
 
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.systemleveling.core.ai.AiCompleteOnboardingResponse
@@ -30,7 +26,6 @@ import javax.inject.Inject
 class OnboardingViewModel @Inject constructor(
     private val userDao: UserDao,
     private val skillDao: SkillDao,
-    private val dataStore: DataStore<Preferences>,
     private val settingsManager: SettingsManager,
     private val auraRepository: AuraRepository
 ) : ViewModel() {
@@ -40,13 +35,23 @@ class OnboardingViewModel @Inject constructor(
 
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
-    fun generateRoadmapAndComplete(nickname: String, goal: String, surveyData: AiSurveyData, overrideApiKey: String = "") {
+    fun generateRoadmapAndComplete(
+        nickname: String,
+        goal: String,
+        surveyData: AiSurveyData,
+        overrideApiKey: String = "",
+        supabaseUrl: String = "",
+        supabaseAnonKey: String = ""
+    ) {
         viewModelScope.launch {
             _uiState.value = OnboardingUiState.Loading("Đang phân tích dữ liệu và tạo lộ trình...")
 
             try {
                 if (overrideApiKey.isNotBlank()) {
                     settingsManager.setGeminiApiKey(overrideApiKey)
+                }
+                if (supabaseUrl.isNotBlank() && supabaseAnonKey.isNotBlank()) {
+                    settingsManager.setSupabaseConfig(supabaseUrl, supabaseAnonKey)
                 }
                 val apiKey = settingsManager.geminiApiKey.first()
                 if (apiKey.isBlank()) {
@@ -158,9 +163,8 @@ class OnboardingViewModel @Inject constructor(
         skillDao.insertSkills(allSkillEntities)
 
         // Mark complete
-        val isOnboardedKey = booleanPreferencesKey("isOnboarded")
-        dataStore.edit { settings -> settings[isOnboardedKey] = true }
-        
+        settingsManager.setOnboarded(true)
+
         _uiState.value = OnboardingUiState.Success
     }
 }

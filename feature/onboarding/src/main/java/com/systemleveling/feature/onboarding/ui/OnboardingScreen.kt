@@ -56,6 +56,8 @@ fun OnboardingScreen(
     var nickname by remember { mutableStateOf("") }
     var goals by remember { mutableStateOf(List(3) { GoalItem() }) }
     var apiKey by remember { mutableStateOf("") }
+    var supabaseUrl by remember { mutableStateOf("") }
+    var supabaseAnonKey by remember { mutableStateOf("") }
     var surveyData by remember { mutableStateOf<AiSurveyData?>(null) }
     
     val combinedGoal = remember(goals) {
@@ -115,14 +117,21 @@ fun OnboardingScreen(
                         nickname = nickname,
                         goals = goals,
                         apiKey = apiKey,
+                        supabaseUrl = supabaseUrl,
+                        supabaseAnonKey = supabaseAnonKey,
                         onNicknameChange = { nickname = it },
                         onGoalChange = { index, newGoal ->
                             goals = goals.toMutableList().also { it[index] = newGoal }
                         },
                         onApiKeyChange = { apiKey = it },
+                        onSupabaseUrlChange = { supabaseUrl = it },
+                        onSupabaseAnonKeyChange = { supabaseAnonKey = it },
                         onNext = {
                             surveyData?.let {
-                                viewModel.generateRoadmapAndComplete(nickname, combinedGoal, it, apiKey)
+                                viewModel.generateRoadmapAndComplete(
+                                    nickname, combinedGoal, it, apiKey,
+                                    supabaseUrl, supabaseAnonKey
+                                )
                             }
                         },
                         error = if (state is OnboardingUiState.Error) state.message else null
@@ -177,17 +186,22 @@ fun SetupInfoStep(
     nickname: String,
     goals: List<GoalItem>,
     apiKey: String = "",
+    supabaseUrl: String = "",
+    supabaseAnonKey: String = "",
     onNicknameChange: (String) -> Unit,
     onGoalChange: (Int, GoalItem) -> Unit,
     onApiKeyChange: (String) -> Unit = {},
+    onSupabaseUrlChange: (String) -> Unit = {},
+    onSupabaseAnonKeyChange: (String) -> Unit = {},
     onNext: () -> Unit,
     error: String? = null
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp),
-        verticalArrangement = Arrangement.Center,
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp, vertical = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         SystemLabel(text = "ĐỊNH HƯỚNG PHÁT TRIỂN")
@@ -313,6 +327,76 @@ fun SetupInfoStep(
                         unfocusedBorderColor = if (apiKey.isBlank()) Color(0x55FF5252) else GLASS_BORDER,
                         cursorColor = Color(0xFF00FF87),
                         focusedContainerColor = Color(0x0A00FF87),
+                        unfocusedContainerColor = Color(0x05FFFFFF)
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        // ── Cloud Backup fields (optional) ───────────────────────────────────
+        GlassCard(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("☁️", fontSize = 14.sp)
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        "SUPABASE CLOUD BACKUP",
+                        color = Color(0xFF4A9EFF), fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold, letterSpacing = 0.12f.em
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Text(
+                        "tùy chọn",
+                        color = TEXT_MUTED.copy(0.6f), fontSize = 9.sp
+                    )
+                }
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Lưu dữ liệu lên cloud — tạo project miễn phí tại supabase.com",
+                    color = TEXT_MUTED, fontSize = 10.sp
+                )
+                Spacer(Modifier.height(10.dp))
+
+                Text("Project URL:", color = Color.White.copy(0.8f), fontSize = 12.sp)
+                Spacer(Modifier.height(4.dp))
+                OutlinedTextField(
+                    value = supabaseUrl,
+                    onValueChange = onSupabaseUrlChange,
+                    placeholder = { Text("https://xxxx.supabase.co", color = TEXT_MUTED, fontSize = 12.sp) },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color(0xFF4A9EFF),
+                        unfocusedBorderColor = GLASS_BORDER,
+                        cursorColor = Color(0xFF4A9EFF),
+                        focusedContainerColor = Color(0x0A4A9EFF),
+                        unfocusedContainerColor = Color(0x05FFFFFF)
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(Modifier.height(10.dp))
+
+                Text("Anon Key:", color = Color.White.copy(0.8f), fontSize = 12.sp)
+                Spacer(Modifier.height(4.dp))
+                OutlinedTextField(
+                    value = supabaseAnonKey,
+                    onValueChange = onSupabaseAnonKeyChange,
+                    placeholder = { Text("eyJ...", color = TEXT_MUTED, fontSize = 12.sp) },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color(0xFF4A9EFF),
+                        unfocusedBorderColor = GLASS_BORDER,
+                        cursorColor = Color(0xFF4A9EFF),
+                        focusedContainerColor = Color(0x0A4A9EFF),
                         unfocusedContainerColor = Color(0x05FFFFFF)
                     ),
                     shape = RoundedCornerShape(8.dp),

@@ -2,14 +2,18 @@ package com.systemleveling.core.settings
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.systemleveling.core.model.PlanItem
 import com.systemleveling.core.model.WorkPlanItem
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -24,6 +28,20 @@ class SettingsManager @Inject constructor(
         private val WORK_PLAN_ITEMS = stringPreferencesKey("work_plan_items")
         private val WEEKLY_PLAN_ITEMS = stringPreferencesKey("weekly_plan_items")
         private val MONTHLY_PLAN_ITEMS = stringPreferencesKey("monthly_plan_items")
+        private val DEVICE_UUID = stringPreferencesKey("device_uuid")
+        private val SUPABASE_URL = stringPreferencesKey("supabase_url")
+        private val SUPABASE_ANON_KEY = stringPreferencesKey("supabase_anon_key")
+        private val IS_ONBOARDED = booleanPreferencesKey("isOnboarded")
+    }
+
+    // ── Onboarding state ─────────────────────────────────────────────────────
+
+    val isOnboarded: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[IS_ONBOARDED] ?: false
+    }
+
+    suspend fun setOnboarded(value: Boolean) {
+        dataStore.edit { prefs -> prefs[IS_ONBOARDED] = value }
     }
 
     val geminiApiKey: Flow<String> = dataStore.data.map { prefs ->
@@ -32,6 +50,46 @@ class SettingsManager @Inject constructor(
 
     suspend fun setGeminiApiKey(apiKey: String) {
         dataStore.edit { prefs -> prefs[GEMINI_API_KEY] = apiKey.trim() }
+    }
+
+    // ── Device identity & cloud sync ─────────────────────────────────────────
+
+    suspend fun getOrCreateDeviceId(): String {
+        val existing = dataStore.data.first()[DEVICE_UUID]
+        if (!existing.isNullOrBlank()) return existing
+        val newId = UUID.randomUUID().toString()
+        dataStore.edit { prefs -> prefs[DEVICE_UUID] = newId }
+        return newId
+    }
+
+    val supabaseUrl: Flow<String> = dataStore.data.map { prefs ->
+        prefs[SUPABASE_URL] ?: ""
+    }
+
+    val supabaseAnonKey: Flow<String> = dataStore.data.map { prefs ->
+        prefs[SUPABASE_ANON_KEY] ?: ""
+    }
+
+    suspend fun setSupabaseConfig(url: String, anonKey: String) {
+        dataStore.edit { prefs ->
+            prefs[SUPABASE_URL] = url.trim()
+            prefs[SUPABASE_ANON_KEY] = anonKey.trim()
+        }
+    }
+
+    // ── Generic list helper ──────────────────────────────────────────────────
+
+    private suspend fun <T> appendToListPref(
+        key: Preferences.Key<String>,
+        item: T,
+        listSerializer: KSerializer<List<T>>
+    ) {
+        dataStore.edit { prefs ->
+            val current = try {
+                json.decodeFromString(listSerializer, prefs[key] ?: "[]")
+            } catch (_: Exception) { emptyList() }
+            prefs[key] = json.encodeToString(listSerializer, current + item)
+        }
     }
 
     // ── Daily work plan items ────────────────────────────────────────────────
@@ -43,19 +101,13 @@ class SettingsManager @Inject constructor(
     }
 
     suspend fun saveWorkPlanItems(items: List<WorkPlanItem>) {
-        val encoded = json.encodeToString(ListSerializer(WorkPlanItem.serializer()), items)
-        dataStore.edit { prefs -> prefs[WORK_PLAN_ITEMS] = encoded }
+        dataStore.edit { prefs ->
+            prefs[WORK_PLAN_ITEMS] = json.encodeToString(ListSerializer(WorkPlanItem.serializer()), items)
+        }
     }
 
     suspend fun addWorkPlanItem(item: WorkPlanItem) {
-        dataStore.edit { prefs ->
-            val raw = prefs[WORK_PLAN_ITEMS] ?: "[]"
-            val current = try { json.decodeFromString(ListSerializer(WorkPlanItem.serializer()), raw) }
-                          catch (_: Exception) { emptyList() }
-            prefs[WORK_PLAN_ITEMS] = json.encodeToString(
-                ListSerializer(WorkPlanItem.serializer()), current + item
-            )
-        }
+        appendToListPref(WORK_PLAN_ITEMS, item, ListSerializer(WorkPlanItem.serializer()))
     }
 
     suspend fun removeWorkPlanItem(id: String) {
@@ -83,12 +135,7 @@ class SettingsManager @Inject constructor(
     }
 
     suspend fun addWeeklyPlanItem(item: PlanItem) {
-        dataStore.edit { prefs ->
-            val raw = prefs[WEEKLY_PLAN_ITEMS] ?: "[]"
-            val current = try { json.decodeFromString(ListSerializer(PlanItem.serializer()), raw) }
-                          catch (_: Exception) { emptyList() }
-            prefs[WEEKLY_PLAN_ITEMS] = json.encodeToString(ListSerializer(PlanItem.serializer()), current + item)
-        }
+        appendToListPref(WEEKLY_PLAN_ITEMS, item, ListSerializer(PlanItem.serializer()))
     }
 
     suspend fun removeWeeklyPlanItem(id: String) {
@@ -116,12 +163,7 @@ class SettingsManager @Inject constructor(
     }
 
     suspend fun addMonthlyPlanItem(item: PlanItem) {
-        dataStore.edit { prefs ->
-            val raw = prefs[MONTHLY_PLAN_ITEMS] ?: "[]"
-            val current = try { json.decodeFromString(ListSerializer(PlanItem.serializer()), raw) }
-                          catch (_: Exception) { emptyList() }
-            prefs[MONTHLY_PLAN_ITEMS] = json.encodeToString(ListSerializer(PlanItem.serializer()), current + item)
-        }
+        appendToListPref(MONTHLY_PLAN_ITEMS, item, ListSerializer(PlanItem.serializer()))
     }
 
     suspend fun removeMonthlyPlanItem(id: String) {

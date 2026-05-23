@@ -31,6 +31,9 @@ interface ItemDao {
     @Query("SELECT COUNT(*) FROM items WHERE fromQuestId IS NOT NULL")
     suspend fun getQuestDropCount(): Int
 
+    @Query("SELECT * FROM items ORDER BY acquiredDate DESC")
+    suspend fun getAllItemsSync(): List<ItemEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertItem(item: ItemEntity)
 

@@ -23,3 +23,8 @@ node_modules/
 # ViePilot
 .viepilot/HANDOFF.json
 .viepilot/phases/
+
+# Android Signing
+solo-leveling.jks
+keystore.properties
+KEYSTORE-CREDENTIALS.txt

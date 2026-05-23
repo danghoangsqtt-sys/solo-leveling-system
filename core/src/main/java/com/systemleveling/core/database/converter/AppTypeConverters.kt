@@ -3,8 +3,9 @@ package com.systemleveling.core.database.converter
 import androidx.room.TypeConverter
 import com.systemleveling.core.model.QuestRank
 import com.systemleveling.core.model.QuestStatus
-import com.systemleveling.core.model.SkillLevel
 import com.systemleveling.core.model.QuestType
+import com.systemleveling.core.model.RecurrenceType
+import com.systemleveling.core.model.SkillLevel
 
 class AppTypeConverters {
     @TypeConverter
@@ -67,4 +68,11 @@ class AppTypeConverters {
     fun fromMood(mood: com.systemleveling.core.model.Mood): String {
         return mood.name
     }
+
+    // --- RecurrenceType ---
+    @TypeConverter
+    fun fromRecurrenceType(type: RecurrenceType): String = type.name
+
+    @TypeConverter
+    fun toRecurrenceType(name: String): RecurrenceType = RecurrenceType.valueOf(name)
 }
