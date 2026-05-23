@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
@@ -44,7 +45,8 @@ class CloudSyncManager @Inject constructor(
     }
 
     private fun Long.toDateKey(): String =
-        LocalDate.ofInstant(Instant.ofEpochMilli(this), ZoneId.systemDefault())
+        LocalDateTime.ofInstant(Instant.ofEpochMilli(this), ZoneId.systemDefault())
+            .toLocalDate()
             .format(DATE_FORMATTER)
 
     private fun String.normalizeUrl() = trimEnd('/')
