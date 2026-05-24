@@ -51,7 +51,12 @@ class AiQuestGeneratorService @Inject constructor(
 
         return try {
             val workPlan = settingsManager.workPlanItems.first()
-            val quests = generateLocalQuests(workPlan, dayStart)
+            val wakeTime    = settingsManager.wakeTime.first()
+            val workTime    = settingsManager.workTime.first()
+            val lunchTime   = settingsManager.lunchTime.first()
+            val workoutTime = settingsManager.workoutTime.first()
+            val sleepTime   = settingsManager.sleepTime.first()
+            val quests = generateLocalQuests(workPlan, dayStart, wakeTime, workTime, lunchTime, workoutTime, sleepTime)
 
             if (quests.isNotEmpty()) {
                 val fullList = injectHealthReminders(quests, dayStart)
@@ -69,9 +74,18 @@ class AiQuestGeneratorService @Inject constructor(
         }
     }
 
-    private fun generateLocalQuests(workPlan: List<WorkPlanItem>, dayStart: Long): List<QuestEntity> {
+    private fun generateLocalQuests(
+        workPlan: List<WorkPlanItem>,
+        dayStart: Long,
+        wakeTime: String = "06:00",
+        workTime: String = "08:00 - 17:00",
+        lunchTime: String = "12:00 - 13:00",
+        workoutTime: String = "17:30 - 18:30",
+        sleepTime: String = "23:00"
+    ): List<QuestEntity> {
         if (workPlan.isEmpty()) return emptyList()
         val dateId = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(dayStart)
+        val daySlots = buildDaySlots(wakeTime, workTime, lunchTime, workoutTime, sleepTime)
         
         return workPlan.sortedByDescending { it.workPriority.score }.mapIndexed { index, item ->
             val rank = when {
@@ -108,9 +122,10 @@ class AiQuestGeneratorService @Inject constructor(
                 else -> "{\"CHA\": 1}"
             }
             
-            val startHour = 8 + (index * 2) // Basic time slot distribution
-            val timeStart = String.format("%02d:00", startHour.coerceAtMost(22))
-            val timeEnd = String.format("%02d:00", (startHour + 1).coerceAtMost(23))
+            val (timeStart, timeEnd) = daySlots.getOrElse(index) {
+                String.format("%02d:00", (8 + index * 2).coerceAtMost(22)) to
+                String.format("%02d:00", (9 + index * 2).coerceAtMost(23))
+            }
             
             val exp = (item.workPriority.score * 2).coerceIn(10, 500)
             val gold = (item.workPriority.score / 2).coerceIn(5, 100)
@@ -377,24 +392,24 @@ Thời gian: từ 06:00 đến 22:00. Không trùng lặp time slot.
             "fitness" -> {
                 val lc = title.lowercase()
                 when {
-                    lc.contains("chạy") -> "Chạy bộ theo đúng cự ly và nhịp tim mục tiêu. Ghi lại thời gian và quãng đường."
-                    lc.contains("gym") || lc.contains("tập") -> "Tập gym theo chương trình hôm nay. Ghi số reps, sets, và cân nặng từng bài."
-                    lc.contains("yoga") -> "Thực hiện bài yoga đầy đủ, chú ý hơi thở và giữ tư thế đúng."
-                    lc.contains("bơi") -> "Bơi theo cự ly đặt ra, theo dõi kỹ thuật và thời gian hoàn thành."
-                    lc.contains("squat") -> "Hoàn thành đúng số squat: giữ lưng thẳng, đầu gối không vượt ngón chân."
-                    else -> "Thực hiện bài tập thể chất đầy đủ. Ghi lại số reps/sets/thời gian. Khởi động 5 phút trước, giãn cơ 5 phút sau."
+                    lc.contains("chạy") -> "[$title] Chạy bộ theo đúng cự ly và nhịp tim mục tiêu. Ghi lại thời gian, quãng đường và nhịp tim sau khi hoàn thành."
+                    lc.contains("gym") || lc.contains("tập") -> "[$title] Tập gym theo chương trình hôm nay — ghi số reps, sets và cân nặng từng bài tập. Không bỏ qua khởi động 5 phút."
+                    lc.contains("yoga") -> "[$title] Thực hiện đầy đủ các tư thế yoga — chú ý hơi thở và giữ tư thế đúng ít nhất 30 giây/tư thế."
+                    lc.contains("bơi") -> "[$title] Bơi đúng cự ly đặt ra — ghi lại kỹ thuật, số vòng và thời gian hoàn thành."
+                    lc.contains("squat") -> "[$title] Hoàn thành đúng số squat đặt ra: lưng thẳng, đầu gối không vượt ngón chân, hông xuống thấp hơn đầu gối."
+                    else -> "[$title] Thực hiện đầy đủ bài tập. Khởi động 5 phút → bài tập chính → giãn cơ 5 phút. Ghi lại số reps/sets/thời gian thực hiện."
                 }
             }
-            "study" -> "Học tập tập trung không bị gián đoạn. Đọc tài liệu, ghi chú các điểm mấu chốt, và thực hành bài tập nếu có. Tắt mọi thông báo."
-            "coding" -> "Mở editor, đọc lại code hôm qua 5 phút, sau đó code theo task. Commit code sau mỗi tính năng nhỏ. Kiểm tra output trước khi kết thúc."
-            "language" -> "Luyện ngôn ngữ chủ động: nghe → nhắc lại → ghi từ mới. Không dịch từng chữ — tư duy trực tiếp bằng ngôn ngữ đó."
-            "health" -> "Thực hiện đúng và đều đặn. Cơ thể và tinh thần cần sự nhất quán mỗi ngày."
-            "finance" -> "Mở ứng dụng tài chính, kiểm tra số dư, ghi chép chi tiêu hôm qua nếu chưa ghi. Đặt mục tiêu tiết kiệm cho ngày mai."
-            "meditation" -> "Ngồi yên tĩnh, nhắm mắt, tập trung vào hơi thở. Khi tâm trí phân tán — nhẹ nhàng kéo về hơi thở. Không cần hoàn hảo, chỉ cần kiên trì."
-            "journal" -> "Viết nhật ký thành thật: 3 điều tốt đã xảy ra hôm nay, 1 điều muốn cải thiện, và cảm xúc hiện tại của bạn."
-            "reading" -> "Đọc chủ động — không chỉ đọc mắt. Dừng lại sau mỗi đoạn và tóm tắt bằng lời của mình. Ghi ít nhất 3 ý tưởng áp dụng được."
-            "career" -> "Hoàn thành phần việc được giao với chất lượng cao. Kiểm tra lại kết quả trước khi nộp/báo cáo."
-            else -> "Hoàn thành nhiệm vụ đúng hạn với chất lượng tốt nhất có thể. Đánh dấu hoàn thành khi đã xong thực sự."
+            "study" -> "[$title] Học tập tập trung không bị gián đoạn — đọc tài liệu, ghi chú điểm mấu chốt, thực hành bài tập nếu có. Tắt mọi thông báo trước khi bắt đầu."
+            "coding" -> "[$title] Đọc lại context và yêu cầu 5 phút → bắt đầu code → commit sau mỗi tính năng nhỏ hoàn chỉnh → kiểm tra output và test trước khi kết thúc."
+            "language" -> "[$title] Luyện tập chủ động: nghe → nhắc lại ngay → ghi từ/cụm từ mới vào sổ. Tư duy trực tiếp bằng ngôn ngữ đó, không dịch từng chữ."
+            "health" -> "[$title] Thực hiện đúng và đều đặn — cơ thể và tinh thần cần sự nhất quán mỗi ngày để duy trì VIT stat."
+            "finance" -> "[$title] Mở app tài chính → kiểm tra số dư → ghi chép chi tiêu chưa ghi → đặt mục tiêu tiết kiệm cụ thể cho ngày mai."
+            "meditation" -> "[$title] Ngồi yên tĩnh, lưng thẳng, nhắm mắt. Đặt timer đúng thời gian. Tập trung vào hơi thở — khi tâm trí phân tán, nhẹ nhàng kéo về."
+            "journal" -> "[$title] Viết nhật ký thành thật trong ít nhất 10 phút: 3 điều tốt đã xảy ra hôm nay, 1 điều muốn cải thiện, và mục tiêu cụ thể cho ngày mai."
+            "reading" -> "[$title] Đọc chủ động — dừng lại sau mỗi trang/đoạn và tóm tắt bằng lời của mình. Ghi ít nhất 3 ý tưởng có thể áp dụng ngay."
+            "career" -> "[$title] Hoàn thành đúng yêu cầu, kiểm tra lại kết quả kỹ lưỡng trước khi nộp/báo cáo. Ghi chú những điểm cần cải thiện lần sau."
+            else -> "[$title] Bắt đầu ngay bằng bước nhỏ nhất → duy trì tập trung → đánh dấu hoàn thành khi xong thực sự, không phải khi 'gần xong'."
         }
         val extras = buildList {
             if (note.isNotBlank()) add("Ghi chú: $note")
@@ -416,6 +431,42 @@ Thời gian: từ 06:00 đến 22:00. Không trùng lặp time slot.
         }
         return if (steps.isEmpty()) "[]"
         else "[${steps.joinToString(",") { "\"${it.replace("\"", "'")}\"" }}]"
+    }
+
+    private fun parseHourStart(s: String) =
+        s.trim().split("-").first().trim().substringBefore(":").toIntOrNull() ?: 8
+
+    private fun parseHourEnd(s: String) =
+        s.trim().split("-").last().trim().substringBefore(":").toIntOrNull() ?: 17
+
+    private fun buildDaySlots(
+        wakeTime: String, workTime: String, lunchTime: String,
+        workoutTime: String, sleepTime: String
+    ): List<Pair<String, String>> {
+        val wake = parseHourStart(wakeTime)
+        val workStart = parseHourStart(workTime)
+        val lunchStart = parseHourStart(lunchTime)
+        val lunchEnd = parseHourEnd(lunchTime)
+        val workoutStart = parseHourStart(workoutTime)
+        val workoutEnd = parseHourEnd(workoutTime)
+        val sleep = parseHourStart(sleepTime).coerceAtLeast(20)
+        fun fmt(h: Int) = String.format("%02d:00", h.coerceIn(0, 23))
+        val result = mutableListOf<Pair<String, String>>()
+        // Pre-work: wake → workStart
+        var h = wake
+        while (h + 1 <= workStart && result.size < 3) { result.add(fmt(h) to fmt(h + 1)); h++ }
+        // Morning work: workStart → lunchStart
+        h = workStart
+        while (h + 1 <= lunchStart) { result.add(fmt(h) to fmt(h + 1)); h++ }
+        // Afternoon work: lunchEnd → workoutStart
+        h = lunchEnd
+        while (h + 1 <= workoutStart) { result.add(fmt(h) to fmt(h + 1)); h++ }
+        // Workout slot
+        if (workoutEnd > workoutStart) result.add(fmt(workoutStart) to fmt(workoutEnd))
+        // Evening: workoutEnd → sleep-1
+        h = workoutEnd
+        while (h + 1 <= sleep - 1 && result.size < 16) { result.add(fmt(h) to fmt(h + 1)); h++ }
+        return result.ifEmpty { (0..8).map { i -> fmt(8 + i) to fmt(9 + i) } }
     }
 
     private fun generateFallbackQuests(dayStart: Long): List<QuestEntity> {
