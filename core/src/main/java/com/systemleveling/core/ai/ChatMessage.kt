@@ -32,7 +32,21 @@ data class GeminiContent(
 
 @Serializable
 data class GeminiPart(
-    val text: String
+    val text: String? = null,
+    @SerialName("inline_data") val inlineData: GeminiInlineData? = null
+)
+
+@Serializable
+data class GeminiInlineData(
+    @SerialName("mime_type") val mimeType: String,
+    val data: String
+)
+
+/** Minimal Gemini request without system_instruction — used for audio/multimodal calls. */
+@Serializable
+data class GeminiAudioRequest(
+    val contents: List<GeminiContent>,
+    @SerialName("generationConfig") val generationConfig: GeminiGenerationConfig = GeminiGenerationConfig()
 )
 
 @Serializable

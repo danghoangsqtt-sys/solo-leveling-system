@@ -310,6 +310,88 @@ class AuraService @Inject constructor(
         return Result.failure(lastError)
     }
 
+    suspend fun transcribeAudio(
+        apiKey: String,
+        audioBase64: String,
+        mimeType: String = "audio/m4a"
+    ): Result<String> {
+        if (apiKey.isBlank()) return Result.failure(IllegalArgumentException("API key chưa được cài đặt"))
+        val prompt = "Hãy nhận dạng giọng nói và tạo bản ghi chú đầy đủ từ đoạn âm thanh này. Nếu có nhiều người nói, hãy phân biệt các lượt phát biểu. Giữ nguyên ngôn ngữ gốc."
+        return executeAudioRequest(apiKey, audioBase64, mimeType, prompt)
+    }
+
+    suspend fun translateAudio(
+        apiKey: String,
+        audioBase64: String,
+        targetLanguage: String = "Tiếng Việt",
+        mimeType: String = "audio/m4a"
+    ): Result<String> {
+        if (apiKey.isBlank()) return Result.failure(IllegalArgumentException("API key chưa được cài đặt"))
+        val prompt = """Hãy xử lý đoạn âm thanh này theo 3 bước:
+1. Xác định ngôn ngữ gốc.
+2. Ghi chép nguyên văn (transcript) những gì được nói.
+3. Dịch toàn bộ nội dung sang $targetLanguage.
+
+Trả lời theo định dạng:
+🌐 Ngôn ngữ gốc: [tên ngôn ngữ]
+📝 Nguyên văn:
+[transcript]
+
+🔤 Bản dịch ($targetLanguage):
+[bản dịch]"""
+        return executeAudioRequest(apiKey, audioBase64, mimeType, prompt)
+    }
+
+    private suspend fun executeAudioRequest(
+        apiKey: String,
+        audioBase64: String,
+        mimeType: String,
+        textPrompt: String
+    ): Result<String> {
+        val request = GeminiAudioRequest(
+            contents = listOf(
+                GeminiContent(
+                    role = "user",
+                    parts = listOf(
+                        GeminiPart(inlineData = GeminiInlineData(mimeType = mimeType, data = audioBase64)),
+                        GeminiPart(text = textPrompt)
+                    )
+                )
+            ),
+            generationConfig = GeminiGenerationConfig(maxOutputTokens = 4096, temperature = 0.2)
+        )
+        var lastError: Exception = Exception("Không rõ lỗi")
+        repeat(3) { attempt ->
+            try {
+                val response: HttpResponse = client.post(GEMINI_BASE_URL) {
+                    contentType(ContentType.Application.Json)
+                    header("x-goog-api-key", apiKey)
+                    setBody(request)
+                }
+                when {
+                    response.status == HttpStatusCode.OK -> {
+                        val text = response.body<GeminiResponse>()
+                            .candidates.firstOrNull()?.content?.parts?.firstOrNull()?.text
+                            ?: return Result.failure(Exception("Không nhận được kết quả từ AI"))
+                        return Result.success(text)
+                    }
+                    response.status == HttpStatusCode.TooManyRequests ->
+                        return Result.failure(Exception("Lỗi 429: API Key đã hết hạn mức. Kiểm tra lại Google AI Studio."))
+                    response.status.value == 503 || response.status.value == 529 -> {
+                        lastError = Exception("Máy chủ Gemini quá tải (${response.status.value}).")
+                        if (attempt < 2) delay(2000L * (attempt + 1))
+                    }
+                    else ->
+                        return Result.failure(Exception("Lỗi Gemini API: ${response.status.value} - ${response.body<String>()}"))
+                }
+            } catch (e: Exception) {
+                lastError = e
+                if (attempt < 2) delay(1500L)
+            }
+        }
+        return Result.failure(lastError)
+    }
+
     private suspend fun executeJsonRequest(apiKey: String, systemPrompt: String, userPrompt: String, maxOutputTokens: Int = 1024, temperature: Double = 0.7): Result<String> {
         val request = GeminiRequest(
             systemInstruction = GeminiSystemInstruction(parts = listOf(GeminiPart(systemPrompt))),

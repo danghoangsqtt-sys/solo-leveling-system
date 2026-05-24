@@ -1,5 +1,6 @@
 package com.systemleveling.feature.home.npc
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.systemleveling.core.ai.AuraPlayerContext
@@ -10,6 +11,9 @@ import com.systemleveling.core.database.dao.QuestDao
 import com.systemleveling.core.database.dao.SkillDao
 import com.systemleveling.core.database.dao.UserDao
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -17,12 +21,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.Calendar
 import javax.inject.Inject
+
+enum class RecordMode { CHAT, NOTES, TRANSLATE }
 
 @HiltViewModel
 class NpcChatViewModel @Inject constructor(
     private val auraRepository: AuraRepository,
+    @ApplicationContext private val context: Context,
     private val userDao: UserDao,
     private val questDao: QuestDao,
     private val skillDao: SkillDao
@@ -39,6 +47,29 @@ class NpcChatViewModel @Inject constructor(
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+
+    // ── Audio recording state ─────────────────────────────────────────────────
+
+    private val _isRecording = MutableStateFlow(false)
+    val isRecording: StateFlow<Boolean> = _isRecording.asStateFlow()
+
+    private val _recordingSeconds = MutableStateFlow(0)
+    val recordingSeconds: StateFlow<Int> = _recordingSeconds.asStateFlow()
+
+    private val _recordMode = MutableStateFlow(RecordMode.CHAT)
+    val recordMode: StateFlow<RecordMode> = _recordMode.asStateFlow()
+
+    private val _targetLanguage = MutableStateFlow("Tiếng Việt")
+    val targetLanguage: StateFlow<String> = _targetLanguage.asStateFlow()
+
+    private val _processingAudio = MutableStateFlow(false)
+    val processingAudio: StateFlow<Boolean> = _processingAudio.asStateFlow()
+
+    private val audioManager = AudioRecordingManager(context)
+    private var recordingFile: File? = null
+    private var timerJob: Job? = null
+
+    // ── Chat ──────────────────────────────────────────────────────────────────
 
     fun saveApiKey(key: String) {
         viewModelScope.launch { auraRepository.saveApiKey(key) }
@@ -75,18 +106,14 @@ class NpcChatViewModel @Inject constructor(
 
     fun triggerProactiveGreeting() {
         if (_messages.value.isNotEmpty() || _isLoading.value) return
-        
+
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
             try {
                 val user = userDao.getUser().first()
-                if (user == null) {
-                    _isLoading.value = false
-                    return@launch
-                }
-                
-                // Get today's bounds
+                if (user == null) { _isLoading.value = false; return@launch }
+
                 val calendar = Calendar.getInstance()
                 calendar.set(Calendar.HOUR_OF_DAY, 0)
                 calendar.set(Calendar.MINUTE, 0)
@@ -95,20 +122,19 @@ class NpcChatViewModel @Inject constructor(
                 val dayStart = calendar.timeInMillis
                 calendar.add(Calendar.DAY_OF_YEAR, 1)
                 val dayEnd = calendar.timeInMillis
-                
+
                 val pendingQuests = questDao.getPendingQuestsByDateSync(dayStart, dayEnd)
                 val skills = skillDao.getAllSkillsSync().sortedBy { it.level }.take(3)
-                
-                val context = AuraPlayerContext(
+
+                val ctx = AuraPlayerContext(
                     level = user.level,
                     exp = user.exp,
                     streak = user.streak,
                     pendingQuests = pendingQuests.map { it.title },
                     weakSkills = skills.map { it.name }
                 )
-                
-                val key = apiKey.value
-                val result = auraRepository.generateProactiveGreeting(key, context)
+
+                val result = auraRepository.generateProactiveGreeting(apiKey.value, ctx)
                 result.fold(
                     onSuccess = { reply ->
                         _messages.value = listOf(ChatMessage(MessageRole.ASSISTANT, reply))
@@ -123,5 +149,99 @@ class NpcChatViewModel @Inject constructor(
                 _isLoading.value = false
             }
         }
+    }
+
+    // ── Audio recording ───────────────────────────────────────────────────────
+
+    fun setRecordMode(mode: RecordMode) { _recordMode.value = mode }
+
+    fun setTargetLanguage(lang: String) { _targetLanguage.value = lang }
+
+    fun startRecording() {
+        if (_isRecording.value || _processingAudio.value) return
+        try {
+            recordingFile = audioManager.startRecording()
+            _isRecording.value = true
+            _recordingSeconds.value = 0
+            _error.value = null
+            timerJob = viewModelScope.launch {
+                while (true) {
+                    delay(1000L)
+                    _recordingSeconds.value++
+                    if (_recordingSeconds.value >= AudioRecordingManager.MAX_DURATION_MS / 1000) {
+                        stopAndProcess()
+                        break
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            _isRecording.value = false
+            _error.value = when {
+                e.message?.contains("permission", ignoreCase = true) == true ->
+                    "Cần cấp quyền microphone để ghi âm."
+                else -> "Không thể bắt đầu ghi âm: ${e.message}"
+            }
+        }
+    }
+
+    fun stopAndProcess() {
+        if (!_isRecording.value) return
+        timerJob?.cancel()
+        timerJob = null
+        val file = audioManager.stopRecording()
+        _isRecording.value = false
+        _recordingSeconds.value = 0
+
+        if (file == null || !file.exists() || file.length() == 0L) {
+            _error.value = "Ghi âm thất bại hoặc file trống."
+            return
+        }
+
+        val mode = _recordMode.value
+        val targetLang = _targetLanguage.value
+
+        _processingAudio.value = true
+        _messages.value = (_messages.value + ChatMessage(
+            MessageRole.USER,
+            if (mode == RecordMode.NOTES) "🎙 [Đang xử lý ghi âm...]" else "🌐 [Đang dịch âm thanh...]"
+        )).takeLast(100)
+
+        viewModelScope.launch {
+            val result = if (mode == RecordMode.NOTES) {
+                auraRepository.transcribeAudio(file)
+            } else {
+                auraRepository.translateAudio(file, targetLang)
+            }
+            _messages.value = _messages.value.dropLast(1)
+            result.fold(
+                onSuccess = { text ->
+                    val prefix = if (mode == RecordMode.NOTES)
+                        "📝 **Ghi chú** (${file.name}):\n\n"
+                    else
+                        "🌐 **Kết quả dịch**:\n\n"
+                    _messages.value = (_messages.value + ChatMessage(
+                        MessageRole.ASSISTANT, prefix + text
+                    )).takeLast(100)
+                },
+                onFailure = { e ->
+                    _error.value = e.message ?: "Xử lý âm thanh thất bại"
+                }
+            )
+            _processingAudio.value = false
+        }
+    }
+
+    fun cancelRecording() {
+        if (!_isRecording.value) return
+        timerJob?.cancel()
+        timerJob = null
+        audioManager.cancelRecording()
+        _isRecording.value = false
+        _recordingSeconds.value = 0
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        if (_isRecording.value) audioManager.cancelRecording()
     }
 }

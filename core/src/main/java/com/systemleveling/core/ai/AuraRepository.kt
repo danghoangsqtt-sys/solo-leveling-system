@@ -1,8 +1,10 @@
 package com.systemleveling.core.ai
 
+import android.util.Base64
 import com.systemleveling.core.settings.SettingsManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -40,5 +42,42 @@ class AuraRepository @Inject constructor(
 
     suspend fun generateProactiveGreeting(apiKey: String, context: AuraPlayerContext): Result<String> {
         return auraService.generateProactiveGreeting(apiKey, context)
+    }
+
+    /** Transcribes [audioFile] and saves a .txt companion file. Returns the transcript text. */
+    suspend fun transcribeAudio(audioFile: File): Result<String> {
+        val apiKey = settingsManager.geminiApiKey.first()
+        if (apiKey.isBlank()) return Result.failure(Exception("Chưa cài đặt Gemini API Key."))
+        val base64 = encodeFileToBase64(audioFile)
+            ?: return Result.failure(Exception("Không thể đọc file âm thanh."))
+        return auraService.transcribeAudio(apiKey, base64).also { result ->
+            result.getOrNull()?.let { text ->
+                saveCompanionText(audioFile, text)
+            }
+        }
+    }
+
+    /** Detects language in [audioFile], transcribes, and translates to [targetLanguage]. Saves a .txt companion file. */
+    suspend fun translateAudio(audioFile: File, targetLanguage: String = "Tiếng Việt"): Result<String> {
+        val apiKey = settingsManager.geminiApiKey.first()
+        if (apiKey.isBlank()) return Result.failure(Exception("Chưa cài đặt Gemini API Key."))
+        val base64 = encodeFileToBase64(audioFile)
+            ?: return Result.failure(Exception("Không thể đọc file âm thanh."))
+        return auraService.translateAudio(apiKey, base64, targetLanguage).also { result ->
+            result.getOrNull()?.let { text ->
+                saveCompanionText(audioFile, text)
+            }
+        }
+    }
+
+    private fun encodeFileToBase64(file: File): String? = try {
+        Base64.encodeToString(file.readBytes(), Base64.NO_WRAP)
+    } catch (_: Exception) { null }
+
+    private fun saveCompanionText(audioFile: File, text: String) {
+        try {
+            val txtFile = File(audioFile.parent, audioFile.nameWithoutExtension + ".txt")
+            txtFile.writeText(text)
+        } catch (_: Exception) {}
     }
 }
