@@ -188,6 +188,7 @@ class NpcChatViewModel @Inject constructor(
         if (!_isRecording.value) return
         timerJob?.cancel()
         timerJob = null
+        val durationSec = _recordingSeconds.value
         val file = audioManager.stopRecording()
         _isRecording.value = false
         _recordingSeconds.value = 0
@@ -199,12 +200,15 @@ class NpcChatViewModel @Inject constructor(
 
         val mode = _recordMode.value
         val targetLang = _targetLanguage.value
+        val durationLabel = "%d:%02d".format(durationSec / 60, durationSec % 60)
 
         _processingAudio.value = true
-        _messages.value = (_messages.value + ChatMessage(
-            MessageRole.USER,
-            if (mode == RecordMode.NOTES) "🎙 [Đang xử lý ghi âm...]" else "🌐 [Đang dịch âm thanh...]"
-        )).takeLast(100)
+        val userLabel = when (mode) {
+            RecordMode.NOTES     -> "🎙 Ghi âm [$durationLabel] — đang phân tích..."
+            RecordMode.TRANSLATE -> "🌐 Ghi âm [$durationLabel] — đang dịch sang $targetLang..."
+            RecordMode.CHAT      -> "🎙 [$durationLabel]"
+        }
+        _messages.value = (_messages.value + ChatMessage(MessageRole.USER, userLabel)).takeLast(100)
 
         viewModelScope.launch {
             val result = if (mode == RecordMode.NOTES) {
@@ -213,17 +217,22 @@ class NpcChatViewModel @Inject constructor(
                 auraRepository.translateAudio(file, targetLang)
             }
             _messages.value = _messages.value.dropLast(1)
+            val finalUserLabel = when (mode) {
+                RecordMode.NOTES     -> "🎙 Ghi âm [$durationLabel]"
+                RecordMode.TRANSLATE -> "🌐 Phiên dịch [$durationLabel] → $targetLang"
+                RecordMode.CHAT      -> "🎙 [$durationLabel]"
+            }
             result.fold(
                 onSuccess = { text ->
-                    val prefix = if (mode == RecordMode.NOTES)
-                        "📝 **Ghi chú** (${file.name}):\n\n"
-                    else
-                        "🌐 **Kết quả dịch**:\n\n"
-                    _messages.value = (_messages.value + ChatMessage(
-                        MessageRole.ASSISTANT, prefix + text
-                    )).takeLast(100)
+                    _messages.value = (_messages.value +
+                        ChatMessage(MessageRole.USER, finalUserLabel) +
+                        ChatMessage(MessageRole.ASSISTANT, text)
+                    ).takeLast(100)
                 },
                 onFailure = { e ->
+                    _messages.value = (_messages.value +
+                        ChatMessage(MessageRole.USER, finalUserLabel)
+                    ).takeLast(100)
                     _error.value = e.message ?: "Xử lý âm thanh thất bại"
                 }
             )

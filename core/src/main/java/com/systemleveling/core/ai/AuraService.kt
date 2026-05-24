@@ -316,7 +316,22 @@ class AuraService @Inject constructor(
         mimeType: String = "audio/m4a"
     ): Result<String> {
         if (apiKey.isBlank()) return Result.failure(IllegalArgumentException("API key chưa được cài đặt"))
-        val prompt = "Hãy nhận dạng giọng nói và tạo bản ghi chú đầy đủ từ đoạn âm thanh này. Nếu có nhiều người nói, hãy phân biệt các lượt phát biểu. Giữ nguyên ngôn ngữ gốc."
+        val prompt = """Lắng nghe đoạn âm thanh và thực hiện CHÍNH XÁC các bước sau:
+
+BƯỚC 1 — Xác định ngôn ngữ: Ghi rõ ngôn ngữ (hoặc các ngôn ngữ) được sử dụng.
+Ví dụ: Tiếng Việt | Tiếng Anh (Mỹ) | Tiếng Trung (Quan thoại) | Tiếng Hàn | Tiếng Hindi
+
+BƯỚC 2 — Ghi lại NGUYÊN VĂN: Chép lại đúng từng từ nghe được, không chỉnh sửa.
+- Nếu nhiều người nói, dùng [Người A], [Người B],...
+- Nếu không nghe rõ một đoạn, ghi [không rõ]
+- Giữ nguyên ngôn ngữ gốc
+
+Trả lời theo đúng định dạng này (không thêm bất kỳ nội dung nào khác):
+
+🌐 Ngôn ngữ phát hiện: [ngôn ngữ]
+━━━━━━━━━━━━━━━━━━━━
+📢 Nội dung nghe được:
+[nguyên văn]"""
         return executeAudioRequest(apiKey, audioBase64, mimeType, prompt)
     }
 
@@ -327,17 +342,26 @@ class AuraService @Inject constructor(
         mimeType: String = "audio/m4a"
     ): Result<String> {
         if (apiKey.isBlank()) return Result.failure(IllegalArgumentException("API key chưa được cài đặt"))
-        val prompt = """Hãy xử lý đoạn âm thanh này theo 3 bước:
-1. Xác định ngôn ngữ gốc.
-2. Ghi chép nguyên văn (transcript) những gì được nói.
-3. Dịch toàn bộ nội dung sang $targetLanguage.
+        val prompt = """Lắng nghe đoạn âm thanh và thực hiện CHÍNH XÁC các bước sau:
 
-Trả lời theo định dạng:
-🌐 Ngôn ngữ gốc: [tên ngôn ngữ]
-📝 Nguyên văn:
-[transcript]
+BƯỚC 1 — Xác định ngôn ngữ: Ghi rõ ngôn ngữ được sử dụng.
+Chú ý phân biệt: Tiếng Anh (Mỹ) / Tiếng Anh (Ấn Độ) / Tiếng Trung (Quan thoại/Quảng Đông) / Tiếng Hàn / Tiếng Hindi
 
-🔤 Bản dịch ($targetLanguage):
+BƯỚC 2 — Ghi lại NGUYÊN VĂN: Chép lại đúng từng từ nghe được, giữ nguyên ngôn ngữ gốc.
+- Nếu nhiều người nói, dùng [Người A], [Người B],...
+- Nếu không nghe rõ, ghi [không rõ]
+
+BƯỚC 3 — Dịch sang $targetLanguage: Dịch TOÀN BỘ nguyên văn (kể cả câu đùa, tiếng lóng, thành ngữ).
+- Nếu ngôn ngữ gốc ĐỒNG NHẤT với $targetLanguage, hãy ghi rõ: "(Người nói đang dùng $targetLanguage — không cần dịch)"
+
+Trả lời theo đúng định dạng này:
+
+🌐 Ngôn ngữ: [tên đầy đủ]
+━━━━━━━━━━━━━━━━━━━━
+📢 Họ đang nói gì (nguyên văn):
+[nguyên văn — PHẢI hiển thị, không được bỏ qua]
+━━━━━━━━━━━━━━━━━━━━
+🔤 Dịch sang $targetLanguage:
 [bản dịch]"""
         return executeAudioRequest(apiKey, audioBase64, mimeType, prompt)
     }

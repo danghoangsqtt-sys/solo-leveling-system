@@ -477,9 +477,11 @@ private fun ChatBubble(message: ChatMessage) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
     ) {
+        // Wider bubble for AI results (may contain transcripts + translations)
+        val bubbleWidthFraction = if (isUser) 0.82f else 0.95f
         Box(
             modifier = Modifier
-                .fillMaxWidth(0.82f)
+                .fillMaxWidth(bubbleWidthFraction)
                 .clip(RoundedCornerShape(
                     topStart    = if (isUser) 16.dp else 4.dp,
                     topEnd      = if (isUser) 4.dp  else 16.dp,
