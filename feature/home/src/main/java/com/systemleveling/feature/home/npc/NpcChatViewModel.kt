@@ -87,6 +87,21 @@ class NpcChatViewModel @Inject constructor(
     private var recordingFile: File? = null
     private var timerJob: Job? = null
 
+    // ── Live notes transcription (NOTES mode — SpeechRecognizer, no AI) ─────────
+
+    private val _isNotesTranscribing = MutableStateFlow(false)
+    val isNotesTranscribing: StateFlow<Boolean> = _isNotesTranscribing.asStateFlow()
+
+    /** Completed sentences accumulated during notes session */
+    private val _notesLines = MutableStateFlow<List<String>>(emptyList())
+    val notesLines: StateFlow<List<String>> = _notesLines.asStateFlow()
+
+    /** Current partial utterance (before onResults fires) */
+    private val _notesPartial = MutableStateFlow("")
+    val notesPartial: StateFlow<String> = _notesPartial.asStateFlow()
+
+    private var notesManager: RealtimeTranslationManager? = null
+
     // ── Live translation state (TRANSLATE mode) ───────────────────────────────
 
     private val _isLiveTranslating = MutableStateFlow(false)
@@ -293,6 +308,56 @@ class NpcChatViewModel @Inject constructor(
         _recordingSeconds.value = 0
     }
 
+    // ── Notes transcription (NOTES mode — SpeechRecognizer, zero API cost) ──────
+
+    fun startNotesTranscription() {
+        if (_isNotesTranscribing.value) return
+        val manager = RealtimeTranslationManager(
+            context = context,
+            onPartialResult = { partial -> _notesPartial.value = partial },
+            onSentenceComplete = { sentence ->
+                _notesPartial.value = ""
+                _notesLines.value = _notesLines.value + sentence
+            },
+            onError = { msg -> _error.value = msg }
+        )
+        if (!manager.isAvailable()) {
+            _error.value = "Thiết bị không hỗ trợ nhận dạng giọng nói."
+            return
+        }
+        notesManager = manager
+        _notesLines.value = emptyList()
+        _notesPartial.value = ""
+        _error.value = null
+        _isNotesTranscribing.value = true
+        manager.start("")
+    }
+
+    fun stopNotesTranscription() {
+        notesManager?.stop()
+        notesManager = null
+        _isNotesTranscribing.value = false
+        _notesPartial.value = ""
+
+        val lines = _notesLines.value
+        if (lines.isNotEmpty()) {
+            val content = buildString {
+                append("📝 Ghi chú cuộc họp\n")
+                append("━━━━━━━━━━━━━━━━━━━━\n")
+                lines.forEachIndexed { i, line -> append("${i + 1}. $line\n") }
+            }
+            _messages.value = (_messages.value +
+                ChatMessage(MessageRole.ASSISTANT, content)
+            ).takeLast(100)
+        }
+        _notesLines.value = emptyList()
+    }
+
+    fun clearNotes() {
+        _notesLines.value = emptyList()
+        _notesPartial.value = ""
+    }
+
     // ── Live translation (TRANSLATE mode) ─────────────────────────────────────
 
     fun startLiveTranslation() {
@@ -366,6 +431,7 @@ class NpcChatViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         if (_isRecording.value) audioManager.cancelRecording()
+        notesManager?.stop()
         liveTranslationManager?.stop()
     }
 }

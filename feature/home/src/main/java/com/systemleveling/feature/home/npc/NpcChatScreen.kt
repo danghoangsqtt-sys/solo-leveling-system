@@ -73,6 +73,11 @@ fun NpcChatScreen(
     val targetLanguage   by viewModel.targetLanguage.collectAsState()
     val processingAudio  by viewModel.processingAudio.collectAsState()
 
+    // Notes transcription state (SpeechRecognizer, no API cost)
+    val isNotesTranscribing by viewModel.isNotesTranscribing.collectAsState()
+    val notesLines          by viewModel.notesLines.collectAsState()
+    val notesPartial        by viewModel.notesPartial.collectAsState()
+
     // Live translation state
     val isLiveTranslating by viewModel.isLiveTranslating.collectAsState()
     val liveSegments      by viewModel.liveSegments.collectAsState()
@@ -85,18 +90,24 @@ fun NpcChatScreen(
     var targetLangInput   by remember { mutableStateOf("Tiếng Việt") }
     val listState         = rememberLazyListState()
     val segmentsListState = rememberLazyListState()
+    val notesListState    = rememberLazyListState()
 
-    // pending live vs recording — determines which action to perform after permission grant
-    var pendingLive by remember { mutableStateOf(false) }
+    // which action to perform after RECORD_AUDIO permission granted
+    var pendingLive  by remember { mutableStateOf(false) }
+    var pendingNotes by remember { mutableStateOf(false) }
 
     val recordPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            if (pendingLive) viewModel.startLiveTranslation()
-            else viewModel.startRecording()
+            when {
+                pendingLive  -> viewModel.startLiveTranslation()
+                pendingNotes -> viewModel.startNotesTranscription()
+                else         -> viewModel.startRecording()
+            }
         }
-        pendingLive = false
+        pendingLive  = false
+        pendingNotes = false
     }
 
     val speechLauncher = rememberLauncherForActivityResult(
@@ -118,6 +129,10 @@ fun NpcChatScreen(
         if (liveSegments.isNotEmpty()) {
             segmentsListState.animateScrollToItem(liveSegments.size - 1)
         }
+    }
+
+    LaunchedEffect(notesLines.size) {
+        if (notesLines.isNotEmpty()) notesListState.animateScrollToItem(notesLines.size - 1)
     }
 
     LaunchedEffect(apiKey) {
@@ -199,11 +214,11 @@ fun NpcChatScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(if (isLiveTranslating) 1f else 0.68f)
+                .fillMaxHeight(if (isLiveTranslating || isNotesTranscribing) 1f else 0.68f)
                 .align(Alignment.BottomCenter)
                 .background(
                     Brush.verticalGradient(
-                        colors = if (isLiveTranslating)
+                        colors = if (isLiveTranslating || isNotesTranscribing)
                             listOf(Color(0xCC0D0D1A), BgDeep)
                         else
                             listOf(Color.Transparent, Color(0xCC0D0D1A), BgDeep)
@@ -227,7 +242,17 @@ fun NpcChatScreen(
                 onModeChange   = { viewModel.setRecordMode(it) }
             )
 
-            if (isLiveTranslating) {
+            if (isNotesTranscribing) {
+                // ── LIVE NOTES VIEW ───────────────────────────────────────────
+                NotesStreamingView(
+                    modifier    = Modifier.weight(1f),
+                    lines       = notesLines,
+                    partialText = notesPartial,
+                    listState   = notesListState,
+                    onStop      = { viewModel.stopNotesTranscription() },
+                    onClear     = { viewModel.clearNotes() }
+                )
+            } else if (isLiveTranslating) {
                 // ── LIVE TRANSLATION VIEW ─────────────────────────────────────
                 LiveTranslationView(
                     modifier        = Modifier.weight(1f),
@@ -342,11 +367,8 @@ fun NpcChatScreen(
                         }
                     }
 
-                    recordMode == RecordMode.NOTES -> RecordStartButton(
-                        label = "🎙 Nhấn để ghi chú cuộc họp / học",
-                        hasApiKey = apiKey.isNotBlank(),
-                        onApiKeyClick = { showApiKeyDialog = true },
-                        onRecord = { pendingLive = false; recordPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO) }
+                    recordMode == RecordMode.NOTES -> NotesStartButton(
+                        onStart = { pendingNotes = true; recordPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO) }
                     )
 
                     else -> ChatInputRow(
@@ -543,6 +565,119 @@ private fun PartialTextCard(partial: String) {
     ) {
         Text("🎤  $partial", color = Color.White.copy(alpha = 0.85f),
             fontSize = 13.sp, lineHeight = 18.sp)
+    }
+}
+
+// ── Notes streaming view ──────────────────────────────────────────────────────
+@Composable
+private fun NotesStreamingView(
+    modifier: Modifier,
+    lines: List<String>,
+    partialText: String,
+    listState: androidx.compose.foundation.lazy.LazyListState,
+    onStop: () -> Unit,
+    onClear: () -> Unit
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Header
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                val pulse = rememberInfiniteTransition(label = "npulse")
+                val dotAlpha by pulse.animateFloat(
+                    initialValue = 0.4f, targetValue = 1f,
+                    animationSpec = infiniteRepeatable(tween(700), RepeatMode.Reverse), label = "nd"
+                )
+                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(RecordRed.copy(alpha = dotAlpha)))
+                Text("ĐANG NGHE", color = RecordRed, fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+            }
+            Text("📝 Ghi chú cuộc họp", color = TextMuted, fontSize = 11.sp)
+        }
+
+        // Lines list
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            contentPadding = PaddingValues(bottom = 4.dp)
+        ) {
+            items(lines, key = { it.hashCode() + lines.indexOf(it) }) { line ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(GlassSurface)
+                        .border(1.dp, GlassBorder, RoundedCornerShape(10.dp))
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Text(line, color = Color.White, fontSize = 14.sp, lineHeight = 20.sp)
+                }
+            }
+            if (partialText.isNotBlank()) {
+                item(key = "partial") { PartialTextCard(partialText) }
+            } else if (lines.isEmpty()) {
+                item(key = "ph") {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "Đang lắng nghe...\nBắt đầu nói để thấy ghi chú xuất hiện.",
+                            color = TextMuted, fontSize = 14.sp, textAlign = TextAlign.Center,
+                            lineHeight = 22.sp
+                        )
+                    }
+                }
+            }
+        }
+
+        // Action buttons
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            OutlinedButton(
+                onClick = onClear,
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = TextMuted),
+                border = ButtonDefaults.outlinedButtonBorder.copy(
+                    brush = Brush.linearGradient(listOf(GlassBorder, GlassBorder))
+                )
+            ) {
+                Icon(Icons.Rounded.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Xoá", fontSize = 13.sp)
+            }
+            Button(
+                onClick = onStop,
+                modifier = Modifier.weight(2f),
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = RecordRed.copy(alpha = 0.85f))
+            ) {
+                Icon(Icons.Rounded.Stop, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Dừng & Lưu", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun NotesStartButton(onStart: () -> Unit) {
+    Button(
+        onClick = onStart, modifier = Modifier.fillMaxWidth().height(56.dp),
+        shape = RoundedCornerShape(28.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = RecordRed.copy(alpha = 0.18f))
+    ) {
+        Icon(Icons.Rounded.FiberManualRecord, null, tint = RecordRed, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(10.dp))
+        Text("🎙 Nhấn để ghi chú cuộc họp / học", color = Color.White,
+            fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
     }
 }
 
