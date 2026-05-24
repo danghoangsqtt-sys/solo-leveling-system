@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import com.systemleveling.core.database.entity.SkillEntity
 import kotlinx.coroutines.flow.Flow
@@ -51,4 +52,10 @@ interface SkillDao {
 
     @Query("DELETE FROM skills")
     suspend fun deleteAllSkills()
+
+    @Transaction
+    suspend fun replaceSkills(skills: List<SkillEntity>) {
+        deleteAllSkills()
+        insertSkills(skills)
+    }
 }

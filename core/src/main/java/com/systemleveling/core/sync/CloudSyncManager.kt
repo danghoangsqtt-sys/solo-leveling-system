@@ -1,6 +1,7 @@
 package com.systemleveling.core.sync
 
 import android.util.Log
+import com.systemleveling.core.BuildConfig
 import com.systemleveling.core.database.dao.DailySummaryDao
 import com.systemleveling.core.database.dao.ItemDao
 import com.systemleveling.core.database.dao.SkillDao
@@ -55,19 +56,19 @@ class CloudSyncManager @Inject constructor(
         val supabaseUrl = settingsManager.supabaseUrl.first().trim().normalizeUrl()
         val anonKey = settingsManager.supabaseAnonKey.first().trim()
         if (supabaseUrl.isBlank() || anonKey.isBlank()) {
-            Log.d(TAG, "Supabase not configured — skip push")
+            if (BuildConfig.DEBUG) Log.d(TAG, "Supabase not configured — skip push")
             return false
         }
 
         val user = userDao.getUserSync() ?: run {
-            Log.d(TAG, "No local user — skip push")
+            if (BuildConfig.DEBUG) Log.d(TAG, "No local user — skip push")
             return false
         }
         val stats = userDao.getStatsSync() ?: return false
         val deviceId = settingsManager.getOrCreateDeviceId()
 
         val endpoint = "$supabaseUrl/rest/v1/$TABLE"
-        Log.d(TAG, "push → POST $endpoint (device=$deviceId)")
+        if (BuildConfig.DEBUG) Log.d(TAG, "push → POST $endpoint (device=$deviceId)")
 
         val snapshot = PlayerSnapshot(
             user = user.toSyncData(),
@@ -90,7 +91,7 @@ class CloudSyncManager @Inject constructor(
             }
             val ok = response.status.value in 200..299
             if (ok) {
-                Log.d(TAG, "push ✓ ${response.status}")
+                if (BuildConfig.DEBUG) Log.d(TAG, "push ✓ ${response.status}")
             } else {
                 val body = runCatching { response.bodyAsText() }.getOrDefault("")
                 Log.e(TAG, "push ✗ ${response.status} — $body")
@@ -112,7 +113,7 @@ class CloudSyncManager @Inject constructor(
 
         val deviceId = settingsManager.getOrCreateDeviceId()
         val endpoint = "$supabaseUrl/rest/v1/$TABLE"
-        Log.d(TAG, "restore → GET $endpoint (device=$deviceId)")
+        if (BuildConfig.DEBUG) Log.d(TAG, "restore → GET $endpoint (device=$deviceId)")
 
         return try {
             val response = httpClient.get(endpoint) {
@@ -143,7 +144,7 @@ class CloudSyncManager @Inject constructor(
             skillDao.insertSkills(snapshot.skills.map { it.toEntity() })
             itemDao.insertItems(snapshot.items.map { it.toEntity() })
 
-            Log.d(TAG, "Restored ${snapshot.skills.size} skills, ${snapshot.items.size} items from cloud")
+            if (BuildConfig.DEBUG) Log.d(TAG, "Restored ${snapshot.skills.size} skills, ${snapshot.items.size} items from cloud")
             true
         } catch (e: Exception) {
             Log.e(TAG, "restore failed", e)
@@ -157,7 +158,7 @@ class CloudSyncManager @Inject constructor(
         val supabaseUrl = settingsManager.supabaseUrl.first().trim().normalizeUrl()
         val anonKey = settingsManager.supabaseAnonKey.first().trim()
         if (supabaseUrl.isBlank() || anonKey.isBlank()) {
-            Log.d(TAG, "Supabase not configured — skip history push")
+            if (BuildConfig.DEBUG) Log.d(TAG, "Supabase not configured — skip history push")
             return false
         }
 
@@ -170,7 +171,7 @@ class CloudSyncManager @Inject constructor(
         )
 
         val endpoint = "$supabaseUrl/rest/v1/$HISTORY_TABLE"
-        Log.d(TAG, "history push → ${payload.date_key}")
+        if (BuildConfig.DEBUG) Log.d(TAG, "history push → ${payload.date_key}")
 
         return try {
             val response = httpClient.post(endpoint) {
@@ -183,7 +184,7 @@ class CloudSyncManager @Inject constructor(
                 setBody(payload)
             }
             val ok = response.status.value in 200..299
-            if (ok) Log.d(TAG, "history push ✓ ${payload.date_key}")
+            if (ok && BuildConfig.DEBUG) Log.d(TAG, "history push ✓ ${payload.date_key}")
             else {
                 val body = runCatching { response.bodyAsText() }.getOrDefault("")
                 Log.e(TAG, "history push ✗ ${response.status} — $body")
@@ -200,7 +201,7 @@ class CloudSyncManager @Inject constructor(
         val summaries = dailySummaryDao.getRecentSummaries(days)
         var successCount = 0
         summaries.forEach { if (pushDailyHistory(it)) successCount++ }
-        Log.d(TAG, "history batch: $successCount/${summaries.size} pushed")
+        if (BuildConfig.DEBUG) Log.d(TAG, "history batch: $successCount/${summaries.size} pushed")
         return successCount
     }
 }

@@ -119,9 +119,6 @@ class OnboardingViewModel @Inject constructor(
         // Save Skills — group AI nodes by category into parent+child hierarchy
         val roadmapToUse = selectedJobClass?.roadmap ?: emptyList()
 
-        // Clear any previous skills (re-onboarding or mock data)
-        skillDao.deleteAllSkills()
-
         val allSkillEntities = mutableListOf<SkillEntity>()
 
         // Group nodes by category → each category becomes a parent skill
@@ -167,7 +164,7 @@ class OnboardingViewModel @Inject constructor(
             }
         }
 
-        skillDao.insertSkills(allSkillEntities)
+        skillDao.replaceSkills(allSkillEntities)
 
         // Mark complete
         settingsManager.setOnboarded(true)

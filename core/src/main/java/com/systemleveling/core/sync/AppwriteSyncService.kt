@@ -3,6 +3,7 @@ package com.systemleveling.core.sync
 import android.content.Context
 import android.util.Log
 import androidx.annotation.WorkerThread
+import com.systemleveling.core.BuildConfig
 import com.systemleveling.core.database.dao.CourseDao
 import com.systemleveling.core.database.dao.LessonDao
 import com.systemleveling.core.database.entity.CourseEntity
@@ -57,7 +58,7 @@ class AppwriteSyncService @Inject constructor(
 
             while (hasMore) {
                 val url = "$endpoint/databases/$databaseId/collections/$collectionId/documents?queries[]=limit($limit)&queries[]=offset($offset)"
-                Log.d(TAG, "Fetching from Appwrite: $url")
+                if (BuildConfig.DEBUG) Log.d(TAG, "Fetching from Appwrite: $url")
 
                 val response = httpClient.get(url) {
                     headers {
@@ -76,7 +77,7 @@ class AppwriteSyncService @Inject constructor(
                 val raw = response.bodyAsText()
                 val docsResponse = lenientJson.decodeFromString<AppwriteDocumentsResponse>(raw)
                 val batchDocs = docsResponse.documents
-                Log.d(TAG, "Fetched ${batchDocs.size} documents at offset $offset")
+                if (BuildConfig.DEBUG) Log.d(TAG, "Fetched ${batchDocs.size} documents at offset $offset")
 
                 if (batchDocs.size < limit) {
                     hasMore = false
@@ -114,7 +115,7 @@ class AppwriteSyncService @Inject constructor(
                 offset += limit
             }
 
-            Log.d(TAG, "Import done: $importedCount courses/lessons")
+            if (BuildConfig.DEBUG) Log.d(TAG, "Import done: $importedCount courses/lessons")
             Result.success(importedCount)
         } catch (e: Exception) {
             Log.e(TAG, "Sync failed", e)
@@ -139,7 +140,7 @@ class AppwriteSyncService @Inject constructor(
                         Log.e(TAG, "Failed to import node ${node.id}: ${e.message}")
                     }
                 }
-            Log.d(TAG, "JSON array import done: $count items")
+            if (BuildConfig.DEBUG) Log.d(TAG, "JSON array import done: $count items")
             Result.success(count)
         } catch (e: Exception) {
             Log.e(TAG, "JSON array import failed", e)

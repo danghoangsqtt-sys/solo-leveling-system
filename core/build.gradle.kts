@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.systemleveling.core"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 26
@@ -32,6 +32,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.11"
@@ -81,6 +82,7 @@ dependencies {
 
     // Datastore
     implementation(libs.androidx.datastore.preferences)
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
