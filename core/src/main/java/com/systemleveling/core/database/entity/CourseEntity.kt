@@ -1,11 +1,15 @@
 package com.systemleveling.core.database.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.systemleveling.core.model.CourseContentType
 import com.systemleveling.core.model.ItemRarity
 
-@Entity(tableName = "courses")
+@Entity(
+    tableName = "courses",
+    indices = [Index(value = ["parentId"], name = "idx_courses_parentId")]
+)
 data class CourseEntity(
     @PrimaryKey val id: String,
     val title: String,
