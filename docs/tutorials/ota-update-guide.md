@@ -290,6 +290,7 @@ bash docs/tutorials/ota-release.sh 2 "1.1" "Fix sync bug, debounce cloud push"
 | `1` | `"1.0"` | 2026-05-23 | Initial release — OTA support, Gemini AI, Supabase sync |
 | `2` | `"1.1"` | 2026-05-24 | RPG Splash Screen, Motivational Quotes, Aura NPC greeting, Library drag-to-folder, lesson editing |
 | `10401` | `"1.4.1"` | 2026-05-24 | Fix black screen (QuestListScreen), fix Calendar sort, fix OTA semantic version parsing, perf improvements |
+| `10402` | `"1.4.2"` | 2026-05-24 | Tap notification → open quest list; onNewIntent deep-link; back-stack fix |
 
 > AI cập nhật bảng này sau mỗi lần release thành công.
 
