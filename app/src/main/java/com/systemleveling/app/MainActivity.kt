@@ -1,6 +1,7 @@
 package com.systemleveling.app
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -43,6 +44,15 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestPermission()
     ) { /* permission granted or denied — channels are already created, worker will fire */ }
 
+    // Tracks notification deep-link destination; survives onNewIntent without recreating the Activity
+    private var deepLinkDest by mutableStateOf<String?>(null)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        intent.getStringExtra("nav_destination")?.let { deepLinkDest = it }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Keep splash visible until we know where to navigate
         var isReady = false
@@ -71,22 +81,23 @@ class MainActivity : ComponentActivity() {
                     val scope = rememberCoroutineScope()
 
                     LaunchedEffect(Unit) {
-                        // Check if launched from notification deep-link
                         val navExtra = intent?.getStringExtra("nav_destination")
-                        if (navExtra != null) {
-                            postSplashDestination = navExtra
-                            isReady = true
-                            return@LaunchedEffect
-                        }
-
                         val isOnboarded = settingsManager.isOnboarded.first()
+                        if (navExtra != null && isOnboarded) {
+                            deepLinkDest = navExtra
+                        }
                         postSplashDestination = if (isOnboarded) "home" else "onboarding"
                         isReady = true
                     }
 
                     Box(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
                         postSplashDestination?.let { dest ->
-                            AppNavGraph(startDestination = dest, postSplashDestination = dest)
+                            AppNavGraph(
+                                startDestination = dest,
+                                postSplashDestination = dest,
+                                deepLinkDest = deepLinkDest,
+                                onDeepLinkConsumed = { deepLinkDest = null }
+                            )
                         }
                         DebugOverlay(
                             modifier = Modifier.align(Alignment.TopEnd).padding(top = 56.dp, end = 16.dp),

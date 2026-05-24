@@ -1,6 +1,7 @@
 package com.systemleveling.app.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -24,8 +25,17 @@ import com.systemleveling.feature.quests.ui.QuestViewModel
 fun AppNavGraph(
     navController: NavHostController = rememberNavController(),
     startDestination: String,
-    postSplashDestination: String = "home"
+    postSplashDestination: String = "home",
+    deepLinkDest: String? = null,
+    onDeepLinkConsumed: () -> Unit = {}
 ) {
+    LaunchedEffect(deepLinkDest) {
+        if (deepLinkDest != null) {
+            navController.navigate(deepLinkDest)
+            onDeepLinkConsumed()
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = startDestination

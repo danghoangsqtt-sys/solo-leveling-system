@@ -50,6 +50,19 @@ class NotificationHelper @Inject constructor(
         createNotificationChannels()
     }
 
+    private fun makePendingIntent(requestCode: Int, navDestination: String): PendingIntent {
+        val launchIntent = context.packageManager
+            .getLaunchIntentForPackage(context.packageName)
+            ?.apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra("nav_destination", navDestination)
+            }
+        return PendingIntent.getActivity(
+            context, requestCode, launchIntent ?: Intent(),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
     private fun createNotificationChannels() {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -140,6 +153,7 @@ class NotificationHelper @Inject constructor(
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_EVENT)
+            .setContentIntent(makePendingIntent(NOTIFICATION_QUEST_NEW, "quests"))
             .build()
 
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -204,6 +218,7 @@ class NotificationHelper @Inject constructor(
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setContentIntent(makePendingIntent(NOTIFICATION_HEALTH_WATER, "quests"))
             .build()
 
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -221,6 +236,7 @@ class NotificationHelper @Inject constructor(
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setContentIntent(makePendingIntent(NOTIFICATION_HEALTH_STANDUP, "quests"))
             .build()
 
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -252,6 +268,7 @@ class NotificationHelper @Inject constructor(
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVibrate(longArrayOf(0, 400, 200, 400))
+            .setContentIntent(makePendingIntent(notificationId, "quests"))
             .build()
         (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
             .notify(notificationId, notification)
@@ -274,6 +291,7 @@ class NotificationHelper @Inject constructor(
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setContentIntent(makePendingIntent(NOTIFICATION_QUEST_FOCUS_URGE, "quests"))
             .build()
         (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
             .notify(NOTIFICATION_QUEST_FOCUS_URGE, notification)
@@ -383,6 +401,7 @@ class NotificationHelper @Inject constructor(
             .setChronometerCountDown(true)
             .setShowWhen(true)
             .addAction(R.drawable.ic_dismiss, "Đã Hiểu", dismissPi)
+            .setContentIntent(makePendingIntent(notifId, "quests"))
             .build()
 
         manager.notify(notifId, notification)
@@ -408,6 +427,7 @@ class NotificationHelper @Inject constructor(
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setContentIntent(makePendingIntent(NOTIFICATION_PENALTY, "quests"))
             .build()
 
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
