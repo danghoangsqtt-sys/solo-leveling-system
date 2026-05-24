@@ -27,6 +27,24 @@ import javax.inject.Inject
 
 enum class RecordMode { CHAT, NOTES, TRANSLATE }
 
+/** Represents a single recognized sentence and its translation (live mode). */
+data class TranslationSegment(
+    val original: String,
+    val translation: String = ""  // empty = translation in progress
+)
+
+/** Source language options for the live translator. */
+data class SourceLanguage(val label: String, val locale: String)
+
+val SOURCE_LANGUAGES = listOf(
+    SourceLanguage("Auto",  ""),
+    SourceLanguage("中文",   "zh-CN"),
+    SourceLanguage("English", "en-US"),
+    SourceLanguage("English (IN)", "en-IN"),
+    SourceLanguage("हिंदी",  "hi-IN"),
+    SourceLanguage("한국어", "ko-KR")
+)
+
 @HiltViewModel
 class NpcChatViewModel @Inject constructor(
     private val auraRepository: AuraRepository,
@@ -48,7 +66,7 @@ class NpcChatViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    // ── Audio recording state ─────────────────────────────────────────────────
+    // ── Audio recording state (NOTES mode) ───────────────────────────────────
 
     private val _isRecording = MutableStateFlow(false)
     val isRecording: StateFlow<Boolean> = _isRecording.asStateFlow()
@@ -68,6 +86,24 @@ class NpcChatViewModel @Inject constructor(
     private val audioManager = AudioRecordingManager(context)
     private var recordingFile: File? = null
     private var timerJob: Job? = null
+
+    // ── Live translation state (TRANSLATE mode) ───────────────────────────────
+
+    private val _isLiveTranslating = MutableStateFlow(false)
+    val isLiveTranslating: StateFlow<Boolean> = _isLiveTranslating.asStateFlow()
+
+    /** Accumulated segments: (original sentence, translated sentence) */
+    private val _liveSegments = MutableStateFlow<List<TranslationSegment>>(emptyList())
+    val liveSegments: StateFlow<List<TranslationSegment>> = _liveSegments.asStateFlow()
+
+    /** Current partial utterance being recognized (before onResults) */
+    private val _livePartialText = MutableStateFlow("")
+    val livePartialText: StateFlow<String> = _livePartialText.asStateFlow()
+
+    private val _sourceLang = MutableStateFlow(SOURCE_LANGUAGES[0])
+    val sourceLang: StateFlow<SourceLanguage> = _sourceLang.asStateFlow()
+
+    private var liveTranslationManager: RealtimeTranslationManager? = null
 
     // ── Chat ──────────────────────────────────────────────────────────────────
 
@@ -151,11 +187,19 @@ class NpcChatViewModel @Inject constructor(
         }
     }
 
-    // ── Audio recording ───────────────────────────────────────────────────────
+    // ── Audio recording (NOTES mode) ──────────────────────────────────────────
 
     fun setRecordMode(mode: RecordMode) { _recordMode.value = mode }
 
     fun setTargetLanguage(lang: String) { _targetLanguage.value = lang }
+
+    fun setSourceLang(lang: SourceLanguage) {
+        _sourceLang.value = lang
+        if (_isLiveTranslating.value) {
+            liveTranslationManager?.stop()
+            liveTranslationManager?.start(lang.locale)
+        }
+    }
 
     fun startRecording() {
         if (_isRecording.value || _processingAudio.value) return
@@ -249,8 +293,79 @@ class NpcChatViewModel @Inject constructor(
         _recordingSeconds.value = 0
     }
 
+    // ── Live translation (TRANSLATE mode) ─────────────────────────────────────
+
+    fun startLiveTranslation() {
+        if (_isLiveTranslating.value) return
+        val manager = RealtimeTranslationManager(
+            context = context,
+            onPartialResult = { partial -> _livePartialText.value = partial },
+            onSentenceComplete = { sentence -> onSentenceRecognized(sentence) },
+            onError = { msg -> _error.value = msg }
+        )
+        if (!manager.isAvailable()) {
+            _error.value = "Thiết bị không hỗ trợ nhận dạng giọng nói trực tiếp."
+            return
+        }
+        liveTranslationManager = manager
+        _liveSegments.value = emptyList()
+        _livePartialText.value = ""
+        _error.value = null
+        _isLiveTranslating.value = true
+        manager.start(_sourceLang.value.locale)
+    }
+
+    private fun onSentenceRecognized(sentence: String) {
+        _livePartialText.value = ""
+        val idx = _liveSegments.value.size
+        _liveSegments.value = _liveSegments.value + TranslationSegment(original = sentence)
+
+        viewModelScope.launch {
+            val result = auraRepository.translateText(sentence, _targetLanguage.value)
+            val translation = result.getOrElse { "…" }
+            val current = _liveSegments.value.toMutableList()
+            if (idx < current.size) {
+                current[idx] = current[idx].copy(translation = translation)
+                _liveSegments.value = current.toList()
+            }
+        }
+    }
+
+    /** Stops live translation and saves the session to chat history. */
+    fun stopLiveTranslation() {
+        liveTranslationManager?.stop()
+        liveTranslationManager = null
+        _isLiveTranslating.value = false
+        _livePartialText.value = ""
+
+        val segments = _liveSegments.value
+        if (segments.isNotEmpty()) {
+            val targetLang = _targetLanguage.value
+            val sourceName = _sourceLang.value.label.ifBlank { "Auto" }
+            val content = buildString {
+                append("🌐 Phiên dịch trực tiếp ($sourceName → $targetLang)\n")
+                append("━━━━━━━━━━━━━━━━━━━━\n")
+                segments.forEachIndexed { i, seg ->
+                    append("${i + 1}. ${seg.original}\n")
+                    append("   → ${seg.translation.ifBlank { "…" }}\n")
+                }
+            }
+            _messages.value = (_messages.value +
+                ChatMessage(MessageRole.ASSISTANT, content)
+            ).takeLast(100)
+        }
+        _liveSegments.value = emptyList()
+    }
+
+    /** Clears the live segment list (user pressed "Xoá" mid-session). */
+    fun clearLiveSegments() {
+        _liveSegments.value = emptyList()
+        _livePartialText.value = ""
+    }
+
     override fun onCleared() {
         super.onCleared()
         if (_isRecording.value) audioManager.cancelRecording()
+        liveTranslationManager?.stop()
     }
 }

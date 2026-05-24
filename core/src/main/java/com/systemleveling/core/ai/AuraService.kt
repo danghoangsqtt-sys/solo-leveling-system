@@ -310,6 +310,48 @@ class AuraService @Inject constructor(
         return Result.failure(lastError)
     }
 
+    /** Quick text-to-text translation. Returns only the translated text, no extra output. */
+    suspend fun translateText(
+        apiKey: String,
+        text: String,
+        targetLanguage: String = "Tiếng Việt"
+    ): Result<String> {
+        if (apiKey.isBlank()) return Result.failure(IllegalArgumentException("API key chưa được cài đặt"))
+        if (text.isBlank()) return Result.success("")
+        val request = GeminiRequest(
+            systemInstruction = GeminiSystemInstruction(
+                parts = listOf(GeminiPart(text =
+                    "Bạn là máy dịch. Dịch văn bản sang $targetLanguage. " +
+                    "CHỈ trả về bản dịch, không giải thích, không thêm ký tự thừa. " +
+                    "Nếu văn bản đã là $targetLanguage, trả về nguyên văn."
+                ))
+            ),
+            contents = listOf(GeminiContent(role = "user", parts = listOf(GeminiPart(text = text)))),
+            generationConfig = GeminiGenerationConfig(maxOutputTokens = 512, temperature = 0.1)
+        )
+        return try {
+            val response: HttpResponse = client.post(GEMINI_BASE_URL) {
+                contentType(ContentType.Application.Json)
+                header("x-goog-api-key", apiKey)
+                setBody(request)
+            }
+            when {
+                response.status == HttpStatusCode.OK -> {
+                    val t = response.body<GeminiResponse>()
+                        .candidates.firstOrNull()?.content?.parts?.firstOrNull()?.text?.trim()
+                        ?: text
+                    Result.success(t)
+                }
+                response.status == HttpStatusCode.TooManyRequests ->
+                    Result.failure(Exception("Lỗi 429: API Key hết hạn mức (Quota Exceeded)."))
+                else ->
+                    Result.failure(Exception("Lỗi dịch thuật: ${response.status.value}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun transcribeAudio(
         apiKey: String,
         audioBase64: String,

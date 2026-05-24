@@ -44,6 +44,17 @@ class AuraRepository @Inject constructor(
         return auraService.generateProactiveGreeting(apiKey, context)
     }
 
+    /** Translates [text] to [targetLanguage]. Used for real-time per-sentence translation. */
+    suspend fun translateText(text: String, targetLanguage: String = "Tiếng Việt"): Result<String> {
+        return try {
+            val apiKey = settingsManager.geminiApiKey.first()
+            if (apiKey.isBlank()) return Result.failure(Exception("Chưa cài đặt Gemini API Key."))
+            auraService.translateText(apiKey, text, targetLanguage)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     /** Transcribes [audioFile] and saves a .txt companion file. Returns the transcript text. */
     suspend fun transcribeAudio(audioFile: File): Result<String> {
         val apiKey = settingsManager.geminiApiKey.first()

@@ -17,6 +17,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -52,6 +53,7 @@ private val TextMuted    = Color(0xB3FFFFFF)
 private val Purple       = Color(0xFFB48EFF)
 private val Primary      = Color(0xFF4A9EFF)
 private val RecordRed    = Color(0xFFFF4444)
+private val LiveGreen    = Color(0xFF44FF88)
 private val UserBubbleBg = Color(0x55B48EFF)
 private val AiBubbleBg   = Color(0x33000000)
 
@@ -71,17 +73,30 @@ fun NpcChatScreen(
     val targetLanguage   by viewModel.targetLanguage.collectAsState()
     val processingAudio  by viewModel.processingAudio.collectAsState()
 
-    var showApiKeyDialog by remember { mutableStateOf(false) }
-    var webViewRef       by remember { mutableStateOf<WebView?>(null) }
-    var inputText        by remember { mutableStateOf("") }
-    var targetLangInput  by remember { mutableStateOf("Tiếng Việt") }
-    val listState        = rememberLazyListState()
+    // Live translation state
+    val isLiveTranslating by viewModel.isLiveTranslating.collectAsState()
+    val liveSegments      by viewModel.liveSegments.collectAsState()
+    val livePartialText   by viewModel.livePartialText.collectAsState()
+    val sourceLang        by viewModel.sourceLang.collectAsState()
 
-    // All launchers at top level — required by Compose rules
+    var showApiKeyDialog  by remember { mutableStateOf(false) }
+    var webViewRef        by remember { mutableStateOf<WebView?>(null) }
+    var inputText         by remember { mutableStateOf("") }
+    var targetLangInput   by remember { mutableStateOf("Tiếng Việt") }
+    val listState         = rememberLazyListState()
+    val segmentsListState = rememberLazyListState()
+
+    // pending live vs recording — determines which action to perform after permission grant
+    var pendingLive by remember { mutableStateOf(false) }
+
     val recordPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
-        if (granted) viewModel.startRecording()
+        if (granted) {
+            if (pendingLive) viewModel.startLiveTranslation()
+            else viewModel.startRecording()
+        }
+        pendingLive = false
     }
 
     val speechLauncher = rememberLauncherForActivityResult(
@@ -95,36 +110,32 @@ fun NpcChatScreen(
         }
     }
 
-    // Auto-scroll to newest message
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) listState.animateScrollToItem(messages.size - 1)
     }
 
-    // Trigger proactive greeting on open
-    LaunchedEffect(apiKey) {
-        if (apiKey.isNotBlank() && messages.isEmpty()) {
-            viewModel.triggerProactiveGreeting()
+    LaunchedEffect(liveSegments.size) {
+        if (liveSegments.isNotEmpty()) {
+            segmentsListState.animateScrollToItem(liveSegments.size - 1)
         }
     }
 
-    // Sync target language field
+    LaunchedEffect(apiKey) {
+        if (apiKey.isNotBlank() && messages.isEmpty()) viewModel.triggerProactiveGreeting()
+    }
+
     LaunchedEffect(targetLanguage) { targetLangInput = targetLanguage }
 
-    // Animate Live2D mouth while AI is busy
     val isBusy = isLoading || processingAudio
     LaunchedEffect(isBusy) {
         if (isBusy) {
             while (true) {
                 val vol = (10..70).random() / 10f
-                webViewRef?.evaluateJavascript(
-                    "if(typeof window.setVolume==='function')window.setVolume($vol);", null
-                )
+                webViewRef?.evaluateJavascript("if(typeof window.setVolume==='function')window.setVolume($vol);", null)
                 kotlinx.coroutines.delay(120)
             }
         } else {
-            webViewRef?.evaluateJavascript(
-                "if(typeof window.setVolume==='function')window.setVolume(0);", null
-            )
+            webViewRef?.evaluateJavascript("if(typeof window.setVolume==='function')window.setVolume(0);", null)
         }
     }
 
@@ -137,7 +148,7 @@ fun NpcChatScreen(
 
     Box(modifier = Modifier.fillMaxSize().background(BgDeep)) {
 
-        // ── 1. Full-screen Live2D WebView ────────────────────────────────────────
+        // ── Live2D WebView ────────────────────────────────────────────────────
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { ctx ->
@@ -150,38 +161,28 @@ fun NpcChatScreen(
                     settings.javaScriptEnabled = true
                     settings.domStorageEnabled = true
                     settings.mediaPlaybackRequiresUserGesture = false
-                    @Suppress("DEPRECATION")
-                    settings.allowFileAccessFromFileURLs = true
-                    @Suppress("DEPRECATION")
-                    settings.allowUniversalAccessFromFileURLs = true
-                    @Suppress("DEPRECATION")
-                    settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+                    @Suppress("DEPRECATION") settings.allowFileAccessFromFileURLs = true
+                    @Suppress("DEPRECATION") settings.allowUniversalAccessFromFileURLs = true
+                    @Suppress("DEPRECATION") settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
                     webViewClient = object : WebViewClient() {
-                        override fun shouldInterceptRequest(
-                            view: WebView?,
-                            request: WebResourceRequest?
-                        ): WebResourceResponse? {
-                            val url = request?.url.toString()
+                        override fun shouldInterceptRequest(v: WebView?, req: WebResourceRequest?): WebResourceResponse? {
+                            val url = req?.url.toString()
                             if (url.startsWith("https://appassets.local/")) {
                                 try {
-                                    val assetPath = url.substringAfter("https://appassets.local/")
-                                    val mimeType = when {
-                                        assetPath.endsWith(".html") -> "text/html"
-                                        assetPath.endsWith(".js")   -> "application/javascript"
-                                        assetPath.endsWith(".json") -> "application/json"
-                                        assetPath.endsWith(".png")  -> "image/png"
-                                        assetPath.endsWith(".moc3") -> "application/octet-stream"
+                                    val path = url.substringAfter("https://appassets.local/")
+                                    val mime = when {
+                                        path.endsWith(".html") -> "text/html"
+                                        path.endsWith(".js")   -> "application/javascript"
+                                        path.endsWith(".json") -> "application/json"
+                                        path.endsWith(".png")  -> "image/png"
                                         else -> "application/octet-stream"
                                     }
-                                    val inputStream = ctx.assets.open(assetPath)
-                                    return WebResourceResponse(mimeType, "UTF-8", inputStream).apply {
+                                    return WebResourceResponse(mime, "UTF-8", ctx.assets.open(path)).apply {
                                         responseHeaders = mapOf("Access-Control-Allow-Origin" to "*")
                                     }
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                }
+                                } catch (_: Exception) {}
                             }
-                            return super.shouldInterceptRequest(view, request)
+                            return super.shouldInterceptRequest(v, req)
                         }
                     }
                     webChromeClient = WebChromeClient()
@@ -194,20 +195,23 @@ fun NpcChatScreen(
             }
         )
 
-        // ── 2. Gradient overlay ─────────────────────────────────────────────────
+        // ── Gradient overlay ──────────────────────────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.68f)
+                .fillMaxHeight(if (isLiveTranslating) 1f else 0.68f)
                 .align(Alignment.BottomCenter)
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(Color.Transparent, Color(0xCC0D0D1A), BgDeep)
+                        colors = if (isLiveTranslating)
+                            listOf(Color(0xCC0D0D1A), BgDeep)
+                        else
+                            listOf(Color.Transparent, Color(0xCC0D0D1A), BgDeep)
                     )
                 )
         )
 
-        // ── 3. UI overlay ───────────────────────────────────────────────────────
+        // ── UI overlay ────────────────────────────────────────────────────────
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -215,157 +219,330 @@ fun NpcChatScreen(
                 .padding(horizontal = 16.dp)
         ) {
             NpcTopBar(
-                apiKeySet    = apiKey.isNotBlank(),
-                recordMode   = recordMode,
-                onBack       = onBack,
-                onSettings   = { showApiKeyDialog = true },
+                apiKeySet      = apiKey.isNotBlank(),
+                recordMode     = recordMode,
+                onBack         = onBack,
+                onSettings     = { showApiKeyDialog = true },
                 onClearHistory = { viewModel.clearHistory() },
-                onModeChange = { viewModel.setRecordMode(it) }
+                onModeChange   = { viewModel.setRecordMode(it) }
             )
 
-            Spacer(modifier = Modifier.weight(1f))
-
-            // Suggestion chips (chat mode, no messages)
-            if (messages.isEmpty() && apiKey.isNotBlank() && recordMode == RecordMode.CHAT) {
-                val suggestions = listOf(
-                    "Xin chào Aura! 👋",
-                    "Bạn có thể làm gì?",
-                    "Kể cho tôi một câu chuyện",
-                    "Giao cho tôi một nhiệm vụ",
-                    "Hôm nay bạn thấy thế nào?"
+            if (isLiveTranslating) {
+                // ── LIVE TRANSLATION VIEW ─────────────────────────────────────
+                LiveTranslationView(
+                    modifier        = Modifier.weight(1f),
+                    segments        = liveSegments,
+                    partialText     = livePartialText,
+                    sourceLang      = sourceLang,
+                    targetLanguage  = targetLanguage,
+                    listState       = segmentsListState,
+                    onSourceChange  = { viewModel.setSourceLang(it) },
+                    onStop          = { viewModel.stopLiveTranslation() },
+                    onClear         = { viewModel.clearLiveSegments() }
                 )
-                androidx.compose.foundation.lazy.LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
-                ) {
-                    items(suggestions, key = { it }) { text ->
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(GlassSurface)
-                                .border(1.dp, GlassBorder, RoundedCornerShape(16.dp))
-                                .clickable { inputText = text }
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                        ) {
-                            Text(text, color = Color.White, fontSize = 13.sp)
+            } else {
+                // ── NORMAL CHAT VIEW ──────────────────────────────────────────
+                Spacer(modifier = Modifier.weight(1f))
+
+                if (messages.isEmpty() && apiKey.isNotBlank() && recordMode == RecordMode.CHAT) {
+                    val suggestions = listOf(
+                        "Xin chào Aura! 👋", "Bạn có thể làm gì?",
+                        "Kể cho tôi một câu chuyện", "Giao cho tôi một nhiệm vụ"
+                    )
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+                    ) {
+                        items(suggestions, key = { it }) { text ->
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(GlassSurface)
+                                    .border(1.dp, GlassBorder, RoundedCornerShape(16.dp))
+                                    .clickable { inputText = text }
+                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                            ) { Text(text, color = Color.White, fontSize = 13.sp) }
                         }
                     }
                 }
-            }
 
-            // Chat messages
-            if (messages.isNotEmpty()) {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 240.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                    contentPadding = PaddingValues(bottom = 4.dp)
-                ) {
-                    items(messages, key = { "${it.role}-${it.content.hashCode()}" }) { msg ->
-                        ChatBubble(msg)
+                if (messages.isNotEmpty()) {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 240.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        contentPadding = PaddingValues(bottom = 4.dp)
+                    ) {
+                        items(messages, key = { "${it.role}-${it.content.hashCode()}" }) { msg ->
+                            ChatBubble(msg)
+                        }
                     }
                 }
-            }
 
-            // Error banner
-            error?.let { errMsg ->
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "⚠ $errMsg",
-                    color = Color(0xFFFF6B6B),
-                    fontSize = 12.sp,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0x33FF0000))
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                        .clickable { viewModel.clearError() }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // ── Bottom action area ─────────────────────────────────────────────
-            when {
-                isRecording -> RecordingActivePanel(
-                    seconds  = recordingSeconds,
-                    onStop   = { viewModel.stopAndProcess() },
-                    onCancel = { viewModel.cancelRecording() }
-                )
-
-                processingAudio -> ProcessingPanel(
-                    label = if (recordMode == RecordMode.NOTES) "Đang xử lý ghi chú..."
-                            else "Đang nhận dạng & dịch..."
-                )
-
-                recordMode == RecordMode.TRANSLATE -> Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = targetLangInput,
-                        onValueChange = {
-                            targetLangInput = it
-                            viewModel.setTargetLanguage(it)
-                        },
-                        label = { Text("Ngôn ngữ đích", color = TextMuted, fontSize = 11.sp) },
-                        placeholder = { Text("VD: Tiếng Việt, English...", color = TextMuted) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor      = Purple,
-                            unfocusedBorderColor    = GlassBorder,
-                            focusedTextColor        = Color.White,
-                            unfocusedTextColor      = Color.White,
-                            focusedContainerColor   = Color(0x28000000),
-                            unfocusedContainerColor = Color(0x1A000000)
-                        ),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+                error?.let { errMsg ->
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        "⚠ $errMsg",
+                        color = Color(0xFFFF6B6B), fontSize = 12.sp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0x33FF0000))
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                            .clickable { viewModel.clearError() }
                     )
-                    RecordStartButton(
-                        label     = "🌐 Nhấn để dịch ngoại ngữ",
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                when {
+                    isRecording -> RecordingActivePanel(
+                        seconds  = recordingSeconds,
+                        onStop   = { viewModel.stopAndProcess() },
+                        onCancel = { viewModel.cancelRecording() }
+                    )
+
+                    processingAudio -> ProcessingPanel(
+                        label = if (recordMode == RecordMode.NOTES) "Đang xử lý ghi chú..."
+                                else "Đang nhận dạng & dịch..."
+                    )
+
+                    recordMode == RecordMode.TRANSLATE -> Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = targetLangInput,
+                            onValueChange = { targetLangInput = it; viewModel.setTargetLanguage(it) },
+                            label = { Text("Ngôn ngữ đích", color = TextMuted, fontSize = 11.sp) },
+                            placeholder = { Text("VD: Tiếng Việt, English...", color = TextMuted) },
+                            modifier = Modifier.fillMaxWidth(), singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Purple, unfocusedBorderColor = GlassBorder,
+                                focusedTextColor = Color.White, unfocusedTextColor = Color.White,
+                                focusedContainerColor = Color(0x28000000),
+                                unfocusedContainerColor = Color(0x1A000000)
+                            ),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+                        )
+                        // Live translation start button
+                        Button(
+                            onClick = {
+                                if (apiKey.isBlank()) { showApiKeyDialog = true }
+                                else { pendingLive = true; recordPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO) }
+                            },
+                            modifier = Modifier.fillMaxWidth().height(56.dp),
+                            shape = RoundedCornerShape(28.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = LiveGreen.copy(alpha = 0.15f))
+                        ) {
+                            Icon(Icons.Rounded.Hearing, contentDescription = null,
+                                tint = LiveGreen, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(10.dp))
+                            Text("🌐 Dịch trực tiếp (real-time)", color = Color.White,
+                                fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                        }
+                    }
+
+                    recordMode == RecordMode.NOTES -> RecordStartButton(
+                        label = "🎙 Nhấn để ghi chú cuộc họp / học",
                         hasApiKey = apiKey.isNotBlank(),
                         onApiKeyClick = { showApiKeyDialog = true },
-                        onRecord = { recordPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO) }
+                        onRecord = { pendingLive = false; recordPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO) }
+                    )
+
+                    else -> ChatInputRow(
+                        text = inputText,
+                        onTextChange = { inputText = it },
+                        isLoading = isLoading,
+                        hasApiKey = apiKey.isNotBlank(),
+                        onSend = {
+                            if (inputText.isNotBlank()) { viewModel.sendMessage(inputText); inputText = "" }
+                        },
+                        onApiKeyClick = { showApiKeyDialog = true },
+                        onMicClick = {
+                            val intent = android.content.Intent(
+                                android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH
+                            ).apply {
+                                putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                                    android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE, "vi-VN")
+                                putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, "Nói gì đó với Aura...")
+                            }
+                            try { speechLauncher.launch(intent) } catch (_: Exception) {}
+                        }
                     )
                 }
-
-                recordMode == RecordMode.NOTES -> RecordStartButton(
-                    label     = "🎙 Nhấn để ghi chú cuộc họp / học",
-                    hasApiKey = apiKey.isNotBlank(),
-                    onApiKeyClick = { showApiKeyDialog = true },
-                    onRecord = { recordPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO) }
-                )
-
-                else -> ChatInputRow(
-                    text          = inputText,
-                    onTextChange  = { inputText = it },
-                    isLoading     = isLoading,
-                    hasApiKey     = apiKey.isNotBlank(),
-                    onSend        = {
-                        if (inputText.isNotBlank()) {
-                            viewModel.sendMessage(inputText)
-                            inputText = ""
-                        }
-                    },
-                    onApiKeyClick = { showApiKeyDialog = true },
-                    onMicClick    = {
-                        val intent = android.content.Intent(
-                            android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH
-                        ).apply {
-                            putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                                android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                            putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE, "vi-VN")
-                            putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, "Nói gì đó với Aura...")
-                        }
-                        try { speechLauncher.launch(intent) } catch (_: Exception) {}
-                    }
-                )
             }
 
             Spacer(modifier = Modifier.height(20.dp))
         }
+    }
+}
+
+// ── Live translation view ──────────────────────────────────────────────────────
+@Composable
+private fun LiveTranslationView(
+    modifier: Modifier,
+    segments: List<TranslationSegment>,
+    partialText: String,
+    sourceLang: SourceLanguage,
+    targetLanguage: String,
+    listState: androidx.compose.foundation.lazy.LazyListState,
+    onSourceChange: (SourceLanguage) -> Unit,
+    onStop: () -> Unit,
+    onClear: () -> Unit
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Source language chips
+        Text("Ngôn ngữ nguồn:", color = TextMuted, fontSize = 11.sp,
+            modifier = Modifier.padding(top = 4.dp))
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            items(SOURCE_LANGUAGES, key = { it.locale }) { lang ->
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(if (lang == sourceLang) LiveGreen.copy(alpha = 0.25f) else GlassSurface)
+                        .border(1.dp, if (lang == sourceLang) LiveGreen else GlassBorder, RoundedCornerShape(16.dp))
+                        .clickable { onSourceChange(lang) }
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text(lang.label,
+                        color = if (lang == sourceLang) LiveGreen else TextMuted,
+                        fontSize = 12.sp,
+                        fontWeight = if (lang == sourceLang) FontWeight.SemiBold else FontWeight.Normal)
+                }
+            }
+        }
+
+        // Header
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                val livePulse = rememberInfiniteTransition(label = "live")
+                val dotAlpha by livePulse.animateFloat(
+                    initialValue = 0.4f, targetValue = 1f,
+                    animationSpec = infiniteRepeatable(tween(700), RepeatMode.Reverse),
+                    label = "dot"
+                )
+                Box(modifier = Modifier.size(8.dp).clip(CircleShape)
+                    .background(LiveGreen.copy(alpha = dotAlpha)))
+                Text("ĐANG NGHE", color = LiveGreen, fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+            }
+            Text("→ $targetLanguage", color = TextMuted, fontSize = 11.sp)
+        }
+
+        // Segments list
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+            contentPadding = PaddingValues(bottom = 4.dp)
+        ) {
+            items(segments, key = { it.original.hashCode() + System.identityHashCode(it) }) { seg ->
+                SegmentCard(seg)
+            }
+            if (partialText.isNotBlank()) {
+                item(key = "partial") {
+                    PartialTextCard(partialText)
+                }
+            } else if (segments.isEmpty()) {
+                item(key = "placeholder") {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "Đang lắng nghe...\nBắt đầu nói để xem bản dịch xuất hiện.",
+                            color = TextMuted, fontSize = 14.sp, textAlign = TextAlign.Center,
+                            lineHeight = 22.sp
+                        )
+                    }
+                }
+            }
+        }
+
+        // Action buttons
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            OutlinedButton(
+                onClick = onClear,
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = TextMuted),
+                border = ButtonDefaults.outlinedButtonBorder.copy(
+                    brush = Brush.linearGradient(listOf(GlassBorder, GlassBorder))
+                )
+            ) {
+                Icon(Icons.Rounded.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Xoá", fontSize = 13.sp)
+            }
+            Button(
+                onClick = onStop,
+                modifier = Modifier.weight(2f),
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = RecordRed.copy(alpha = 0.85f))
+            ) {
+                Icon(Icons.Rounded.Stop, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Dừng & Lưu", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SegmentCard(seg: TranslationSegment) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(GlassSurface)
+            .border(1.dp, GlassBorder, RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(seg.original, color = TextMuted, fontSize = 13.sp, lineHeight = 18.sp)
+        HorizontalDivider(color = GlassBorder.copy(alpha = 0.4f), thickness = 0.5.dp)
+        if (seg.translation.isBlank()) {
+            val pulse = rememberInfiniteTransition(label = "tpulse")
+            val alpha by pulse.animateFloat(
+                initialValue = 0.4f, targetValue = 1f,
+                animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse), label = "ta"
+            )
+            Text("● dịch...", color = Purple.copy(alpha = alpha), fontSize = 13.sp)
+        } else {
+            Text(seg.translation, color = Color.White, fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold, lineHeight = 20.sp)
+        }
+    }
+}
+
+@Composable
+private fun PartialTextCard(partial: String) {
+    val pulse = rememberInfiniteTransition(label = "ppulse")
+    val borderAlpha by pulse.animateFloat(
+        initialValue = 0.3f, targetValue = 0.9f,
+        animationSpec = infiniteRepeatable(tween(800), RepeatMode.Reverse), label = "pa"
+    )
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(LiveGreen.copy(alpha = 0.07f))
+            .border(1.dp, LiveGreen.copy(alpha = borderAlpha), RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+    ) {
+        Text("🎤  $partial", color = Color.White.copy(alpha = 0.85f),
+            fontSize = 13.sp, lineHeight = 18.sp)
     }
 }
 
@@ -385,44 +562,34 @@ private fun NpcTopBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier
-                    .size(40.dp).clip(CircleShape).background(GlassSurface)
+                modifier = Modifier.size(40.dp).clip(CircleShape).background(GlassSurface)
                     .clickable(onClick = onBack),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back",
                     tint = Color.White, modifier = Modifier.size(20.dp))
             }
-
             Spacer(modifier = Modifier.width(12.dp))
-
             Column(modifier = Modifier.weight(1f)) {
                 Text("AURA", color = Color.White, fontSize = 18.sp,
                     fontWeight = FontWeight.Black, letterSpacing = 3.sp)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier.size(6.dp).clip(CircleShape)
-                            .background(if (apiKeySet) Color(0xFF44FF88) else Color(0xFFFF4444))
-                    )
+                    Box(modifier = Modifier.size(6.dp).clip(CircleShape)
+                        .background(if (apiKeySet) Color(0xFF44FF88) else Color(0xFFFF4444)))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        if (apiKeySet) "Online" else "API Key Required",
-                        color = TextMuted, fontSize = 10.sp, letterSpacing = 0.5.sp
-                    )
+                    Text(if (apiKeySet) "Online" else "API Key Required",
+                        color = TextMuted, fontSize = 10.sp, letterSpacing = 0.5.sp)
                 }
             }
-
             Box(
                 modifier = Modifier.size(38.dp).clip(CircleShape).background(GlassSurface)
                     .clickable(onClick = onClearHistory),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Rounded.Delete, contentDescription = "Clear history",
+                Icon(Icons.Rounded.Delete, contentDescription = "Clear",
                     tint = TextMuted, modifier = Modifier.size(17.dp))
             }
-
             Spacer(modifier = Modifier.width(8.dp))
-
             Box(
                 modifier = Modifier.size(38.dp).clip(CircleShape).background(GlassSurface)
                     .clickable(onClick = onSettings),
@@ -433,18 +600,14 @@ private fun NpcTopBar(
             }
         }
 
-        // Mode selector chips
         if (apiKeySet) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                ModeChip("💬 Chat",    selected = recordMode == RecordMode.CHAT)
-                    { onModeChange(RecordMode.CHAT) }
-                ModeChip("📝 Ghi chú", selected = recordMode == RecordMode.NOTES)
-                    { onModeChange(RecordMode.NOTES) }
-                ModeChip("🌐 Dịch",    selected = recordMode == RecordMode.TRANSLATE)
-                    { onModeChange(RecordMode.TRANSLATE) }
+                ModeChip("💬 Chat",    selected = recordMode == RecordMode.CHAT)    { onModeChange(RecordMode.CHAT) }
+                ModeChip("📝 Ghi chú", selected = recordMode == RecordMode.NOTES)   { onModeChange(RecordMode.NOTES) }
+                ModeChip("🌐 Dịch",    selected = recordMode == RecordMode.TRANSLATE) { onModeChange(RecordMode.TRANSLATE) }
             }
         }
     }
@@ -460,12 +623,9 @@ private fun ModeChip(label: String, selected: Boolean, onClick: () -> Unit) {
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
-        Text(
-            label,
-            color = if (selected) Purple else TextMuted,
-            fontSize = 12.sp,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
-        )
+        Text(label,
+            color = if (selected) Purple else TextMuted, fontSize = 12.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal)
     }
 }
 
@@ -477,7 +637,6 @@ private fun ChatBubble(message: ChatMessage) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
     ) {
-        // Wider bubble for AI results (may contain transcripts + translations)
         val bubbleWidthFraction = if (isUser) 0.82f else 0.95f
         Box(
             modifier = Modifier
@@ -499,66 +658,41 @@ private fun ChatBubble(message: ChatMessage) {
 // ── Chat input row ─────────────────────────────────────────────────────────────
 @Composable
 private fun ChatInputRow(
-    text: String,
-    onTextChange: (String) -> Unit,
-    isLoading: Boolean,
-    hasApiKey: Boolean,
-    onSend: () -> Unit,
-    onApiKeyClick: () -> Unit,
-    onMicClick: () -> Unit
+    text: String, onTextChange: (String) -> Unit, isLoading: Boolean,
+    hasApiKey: Boolean, onSend: () -> Unit, onApiKeyClick: () -> Unit, onMicClick: () -> Unit
 ) {
-    if (!hasApiKey) {
-        ApiKeyButton(onClick = onApiKeyClick)
-        return
-    }
-
+    if (!hasApiKey) { ApiKeyButton(onClick = onApiKeyClick); return }
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         OutlinedTextField(
-            value = text,
-            onValueChange = onTextChange,
+            value = text, onValueChange = onTextChange,
             placeholder = { Text("Nói gì đó với Aura...", color = TextMuted, fontSize = 14.sp) },
-            modifier = Modifier.weight(1f),
-            maxLines = 4,
+            modifier = Modifier.weight(1f), maxLines = 4,
             shape = RoundedCornerShape(20.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor      = Purple,
-                unfocusedBorderColor    = GlassBorder,
-                focusedTextColor        = Color.White,
-                unfocusedTextColor      = Color.White,
-                focusedContainerColor   = Color(0x28000000),
-                unfocusedContainerColor = Color(0x1A000000)
+                focusedBorderColor = Purple, unfocusedBorderColor = GlassBorder,
+                focusedTextColor = Color.White, unfocusedTextColor = Color.White,
+                focusedContainerColor = Color(0x28000000), unfocusedContainerColor = Color(0x1A000000)
             ),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
             keyboardActions = KeyboardActions(onSend = { onSend() })
         )
-
         val isTyping = text.isNotBlank()
         Box(
-            modifier = Modifier
-                .size(52.dp).clip(CircleShape)
-                .background(
-                    brush = Brush.linearGradient(
-                        if (isTyping || isLoading) listOf(Purple, Primary)
-                        else listOf(GlassSurface, GlassSurface)
-                    )
-                )
-                .clickable(enabled = !isLoading) {
-                    if (isTyping) onSend() else onMicClick()
-                },
+            modifier = Modifier.size(52.dp).clip(CircleShape)
+                .background(Brush.linearGradient(
+                    if (isTyping || isLoading) listOf(Purple, Primary) else listOf(GlassSurface, GlassSurface)
+                ))
+                .clickable(enabled = !isLoading) { if (isTyping) onSend() else onMicClick() },
             contentAlignment = Alignment.Center
         ) {
             when {
-                isLoading -> CircularProgressIndicator(
-                    modifier = Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp
-                )
-                isTyping  -> Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = "Send",
-                    tint = Color.White, modifier = Modifier.size(20.dp))
-                else      -> Icon(Icons.Rounded.Mic, contentDescription = "Mic",
-                    tint = Color.White, modifier = Modifier.size(22.dp))
+                isLoading -> CircularProgressIndicator(Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp)
+                isTyping  -> Icon(Icons.AutoMirrored.Rounded.Send, "Send", tint = Color.White, modifier = Modifier.size(20.dp))
+                else      -> Icon(Icons.Rounded.Mic, "Mic", tint = Color.White, modifier = Modifier.size(22.dp))
             }
         }
     }
@@ -566,22 +700,14 @@ private fun ChatInputRow(
 
 // ── Record start button ────────────────────────────────────────────────────────
 @Composable
-private fun RecordStartButton(
-    label: String,
-    hasApiKey: Boolean,
-    onApiKeyClick: () -> Unit,
-    onRecord: () -> Unit
-) {
+private fun RecordStartButton(label: String, hasApiKey: Boolean, onApiKeyClick: () -> Unit, onRecord: () -> Unit) {
     if (!hasApiKey) { ApiKeyButton(onClick = onApiKeyClick); return }
-
     Button(
-        onClick = onRecord,
-        modifier = Modifier.fillMaxWidth().height(56.dp),
+        onClick = onRecord, modifier = Modifier.fillMaxWidth().height(56.dp),
         shape = RoundedCornerShape(28.dp),
         colors = ButtonDefaults.buttonColors(containerColor = RecordRed.copy(alpha = 0.18f))
     ) {
-        Icon(Icons.Rounded.FiberManualRecord, contentDescription = null,
-            tint = RecordRed, modifier = Modifier.size(20.dp))
+        Icon(Icons.Rounded.FiberManualRecord, null, tint = RecordRed, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(10.dp))
         Text(label, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
     }
@@ -593,20 +719,11 @@ private fun RecordingActivePanel(seconds: Int, onStop: () -> Unit, onCancel: () 
     val pulse = rememberInfiniteTransition(label = "rec-pulse")
     val dotScale by pulse.animateFloat(
         initialValue = 1f, targetValue = 1.4f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(500, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
+        animationSpec = infiniteRepeatable(tween(500, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "dotScale"
     )
-
-    val min = seconds / 60
-    val sec = seconds % 60
-
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp))
             .background(RecordRed.copy(alpha = 0.12f))
             .border(1.dp, RecordRed.copy(alpha = 0.45f), RoundedCornerShape(20.dp))
             .padding(horizontal = 16.dp, vertical = 14.dp)
@@ -616,40 +733,18 @@ private fun RecordingActivePanel(seconds: Int, onStop: () -> Unit, onCancel: () 
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Icon(
-                    Icons.Rounded.FiberManualRecord,
-                    contentDescription = null,
-                    tint = RecordRed,
-                    modifier = Modifier.size(12.dp).scale(dotScale)
-                )
-                Text(
-                    "REC  %d:%02d".format(min, sec),
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
-                )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Icon(Icons.Rounded.FiberManualRecord, null, tint = RecordRed,
+                    modifier = Modifier.size(12.dp).scale(dotScale))
+                Text("REC  %d:%02d".format(seconds / 60, seconds % 60),
+                    color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(
-                    modifier = Modifier.size(40.dp).clip(CircleShape)
-                        .background(GlassSurface).clickable(onClick = onCancel),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Rounded.Close, contentDescription = "Cancel",
-                        tint = TextMuted, modifier = Modifier.size(18.dp))
+                Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(GlassSurface).clickable(onClick = onCancel), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Rounded.Close, "Cancel", tint = TextMuted, modifier = Modifier.size(18.dp))
                 }
-                Box(
-                    modifier = Modifier.size(40.dp).clip(CircleShape)
-                        .background(RecordRed).clickable(onClick = onStop),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Rounded.Stop, contentDescription = "Stop",
-                        tint = Color.White, modifier = Modifier.size(18.dp))
+                Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(RecordRed).clickable(onClick = onStop), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Rounded.Stop, "Stop", tint = Color.White, modifier = Modifier.size(18.dp))
                 }
             }
         }
@@ -659,54 +754,39 @@ private fun RecordingActivePanel(seconds: Int, onStop: () -> Unit, onCancel: () 
 // ── Processing panel ───────────────────────────────────────────────────────────
 @Composable
 private fun ProcessingPanel(label: String) {
-    Box(
-        modifier = Modifier.fillMaxWidth().height(64.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(20.dp), color = Purple, strokeWidth = 2.dp
-            )
+    Box(modifier = Modifier.fillMaxWidth().height(64.dp), contentAlignment = Alignment.Center) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            CircularProgressIndicator(Modifier.size(20.dp), color = Purple, strokeWidth = 2.dp)
             Text(label, color = TextMuted, fontSize = 14.sp)
         }
     }
 }
 
-// ── Shared API key prompt button ───────────────────────────────────────────────
+// ── Shared API key button ──────────────────────────────────────────────────────
 @Composable
 private fun ApiKeyButton(onClick: () -> Unit) {
     Button(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth().height(52.dp),
+        onClick = onClick, modifier = Modifier.fillMaxWidth().height(52.dp),
         shape = RoundedCornerShape(26.dp),
         colors = ButtonDefaults.buttonColors(containerColor = GlassSurface)
     ) {
-        Icon(Icons.Rounded.AutoAwesome, contentDescription = null,
-            tint = Purple, modifier = Modifier.size(16.dp))
+        Icon(Icons.Rounded.AutoAwesome, null, tint = Purple, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(8.dp))
         Text("NHẬP API KEY", color = Color.White, fontWeight = FontWeight.Bold,
             letterSpacing = 1.5.sp, fontSize = 13.sp)
     }
 }
 
-// ── API Key dialog ─────────────────────────────────────────────────────────────
+// ── API key dialog ─────────────────────────────────────────────────────────────
 @Composable
 private fun ApiKeyDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
     var keyText by remember { mutableStateOf("") }
     var showKey by remember { mutableStateOf(false) }
-
     AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Color(0xFF12102A),
+        onDismissRequest = onDismiss, containerColor = Color(0xFF12102A),
         shape = RoundedCornerShape(20.dp),
         title = {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                 Text("✦", fontSize = 32.sp, color = Purple)
                 Spacer(Modifier.height(8.dp))
                 Text("Kết Nối Aura", color = Purple, fontWeight = FontWeight.Black, fontSize = 18.sp)
@@ -717,41 +797,27 @@ private fun ApiKeyDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
-                    value = keyText,
-                    onValueChange = { keyText = it },
+                    value = keyText, onValueChange = { keyText = it },
                     label = { Text("AIzaSy...", color = TextMuted, fontSize = 12.sp) },
                     placeholder = { Text("Dán Gemini API Key vào đây", color = TextMuted) },
-                    visualTransformation = if (showKey) VisualTransformation.None
-                                          else PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
+                    visualTransformation = if (showKey) VisualTransformation.None else PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth(), singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor   = Purple,
-                        unfocusedBorderColor = GlassBorder,
-                        focusedTextColor     = Color.White,
-                        unfocusedTextColor   = Color.White
+                        focusedBorderColor = Purple, unfocusedBorderColor = GlassBorder,
+                        focusedTextColor = Color.White, unfocusedTextColor = Color.White
                     )
                 )
-                Text(
-                    if (showKey) "Ẩn key" else "Hiện key",
-                    color = Primary, fontSize = 11.sp,
-                    modifier = Modifier.clickable { showKey = !showKey }
-                )
-                Text(
-                    "Lấy key tại aistudio.google.com → Get API key.\nKey chỉ lưu cục bộ trên thiết bị.",
-                    color = TextMuted, fontSize = 10.sp
-                )
+                Text(if (showKey) "Ẩn key" else "Hiện key", color = Primary, fontSize = 11.sp,
+                    modifier = Modifier.clickable { showKey = !showKey })
+                Text("Lấy key tại aistudio.google.com → Get API key.\nKey chỉ lưu cục bộ trên thiết bị.",
+                    color = TextMuted, fontSize = 10.sp)
             }
         },
         confirmButton = {
-            Button(
-                onClick = { if (keyText.isNotBlank()) onConfirm(keyText) },
+            Button(onClick = { if (keyText.isNotBlank()) onConfirm(keyText) },
                 colors = ButtonDefaults.buttonColors(containerColor = Purple),
-                shape = RoundedCornerShape(10.dp)
-            ) { Text("KÍCH HOẠT", fontWeight = FontWeight.Bold) }
+                shape = RoundedCornerShape(10.dp)) { Text("KÍCH HOẠT", fontWeight = FontWeight.Bold) }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("ĐỂ SAU", color = TextMuted) }
-        }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("ĐỂ SAU", color = TextMuted) } }
     )
 }
