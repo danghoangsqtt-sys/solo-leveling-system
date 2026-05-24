@@ -34,7 +34,7 @@ import com.systemleveling.core.database.entity.BudgetEntity
 import com.systemleveling.core.database.entity.DebtEntity
 import com.systemleveling.core.database.entity.LessonEntity
 
-@Database(entities = [UserEntity::class, StatEntity::class, QuestEntity::class, SkillEntity::class, ItemEntity::class, TitleEntity::class, TransactionEntity::class, CourseEntity::class, JournalEntity::class, DailySummaryEntity::class, CalendarEventEntity::class, BudgetEntity::class, DebtEntity::class, LessonEntity::class], version = 14, exportSchema = true)
+@Database(entities = [UserEntity::class, StatEntity::class, QuestEntity::class, SkillEntity::class, ItemEntity::class, TitleEntity::class, TransactionEntity::class, CourseEntity::class, JournalEntity::class, DailySummaryEntity::class, CalendarEventEntity::class, BudgetEntity::class, DebtEntity::class, LessonEntity::class], version = 15, exportSchema = true)
 @TypeConverters(AppTypeConverters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
@@ -148,6 +148,13 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("CREATE INDEX IF NOT EXISTS idx_quests_date ON quests(date)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS idx_transactions_timestamp ON transactions(timestamp)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS idx_lessons_courseId ON lessons(courseId)")
+            }
+        }
+
+        /** v14→v15: performance index on courses.parentId for folder filtering */
+        val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE INDEX IF NOT EXISTS idx_courses_parentId ON courses(parentId)")
             }
         }
     }

@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.systemleveling.core.database.dao.FinanceDao
 import com.systemleveling.core.database.dao.QuestDao
 import com.systemleveling.core.database.dao.UserDao
-import com.systemleveling.core.network.AiAvatarGeneratorService
 import com.systemleveling.core.database.entity.StatEntity
 import com.systemleveling.core.database.entity.UserEntity
 import com.systemleveling.core.model.QuestStatus
@@ -64,8 +63,7 @@ class HomeViewModel @Inject constructor(
     private val settingsManager: SettingsManager,
     private val cloudSyncManager: CloudSyncManager,
     private val otaUpdateManager: OtaUpdateManager,
-    private val buildInfo: AppBuildInfo,
-    private val aiAvatarGeneratorService: AiAvatarGeneratorService
+    private val buildInfo: AppBuildInfo
 ) : ViewModel() {
 
     private val todayStart: Long = Calendar.getInstance().apply {
@@ -83,11 +81,7 @@ class HomeViewModel @Inject constructor(
     private val _otaDownloading = MutableStateFlow(false)
     val otaDownloading: StateFlow<Boolean> = _otaDownloading.asStateFlow()
 
-    private val _isGeneratingAvatar = MutableStateFlow(false)
-    val isGeneratingAvatar: StateFlow<Boolean> = _isGeneratingAvatar.asStateFlow()
 
-    private val _avatarError = MutableStateFlow<String?>(null)
-    val avatarError: StateFlow<String?> = _avatarError.asStateFlow()
 
     private val _auraGreeting = MutableStateFlow<String?>(pickAuraGreeting())
     val auraGreeting: StateFlow<String?> = _auraGreeting.asStateFlow()
@@ -95,11 +89,17 @@ class HomeViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             _syncState.value = SyncState.Restoring
-            val restored = cloudSyncManager.restoreIfEmpty()
-            _syncState.value = if (restored) SyncState.Restored else SyncState.Idle
+            try {
+                val restored = cloudSyncManager.restoreIfEmpty()
+                _syncState.value = if (restored) SyncState.Restored else SyncState.Idle
+            } catch (_: Exception) {
+                _syncState.value = SyncState.SyncFailed
+            }
         }
         viewModelScope.launch {
-            _otaUpdateInfo.value = otaUpdateManager.checkForUpdate(buildInfo.versionCode)
+            try {
+                _otaUpdateInfo.value = otaUpdateManager.checkForUpdate(buildInfo.versionCode)
+            } catch (_: Exception) { }
         }
     }
 
@@ -111,16 +111,23 @@ class HomeViewModel @Inject constructor(
         val url = _otaUpdateInfo.value?.downloadUrl ?: return
         viewModelScope.launch {
             _otaDownloading.value = true
-            otaUpdateManager.downloadAndInstall(url)
-            _otaDownloading.value = false
+            try {
+                otaUpdateManager.downloadAndInstall(url)
+            } finally {
+                _otaDownloading.value = false
+            }
         }
     }
 
     fun pushToCloud() {
         viewModelScope.launch {
             _syncState.value = SyncState.Syncing
-            val ok = cloudSyncManager.push()
-            _syncState.value = if (ok) SyncState.Synced else SyncState.SyncFailed
+            try {
+                val ok = cloudSyncManager.push()
+                _syncState.value = if (ok) SyncState.Synced else SyncState.SyncFailed
+            } catch (_: Exception) {
+                _syncState.value = SyncState.SyncFailed
+            }
         }
     }
 
@@ -204,24 +211,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun generateAndSaveAvatar(profession: String, description: String) {
-        viewModelScope.launch {
-            _isGeneratingAvatar.value = true
-            _avatarError.value = null
-            try {
-                val tier = userDao.getUserSync()?.promotionTier ?: 0
-                val base64 = aiAvatarGeneratorService.generateAvatar(profession, description, tier)
-                userDao.updateAvatarProfile(profession.trim(), description.trim(), base64)
-            } catch (e: Exception) {
-                _avatarError.value = e.message ?: "Không thể tạo ảnh. Kiểm tra API key và thử lại."
-                userDao.updateAvatarProfile(profession.trim(), description.trim(), null)
-            } finally {
-                _isGeneratingAvatar.value = false
-            }
-        }
-    }
 
-    fun clearAvatarError() { _avatarError.value = null }
 
     fun dismissAuraGreeting() { _auraGreeting.value = null }
 }

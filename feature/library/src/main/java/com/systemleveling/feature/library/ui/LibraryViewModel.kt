@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.UUID
 import javax.inject.Inject
 
@@ -38,9 +39,13 @@ class LibraryViewModel @Inject constructor(
     private val _expandedFolderIds = MutableStateFlow<Set<String>>(emptySet())
     val expandedFolderIds: StateFlow<Set<String>> = _expandedFolderIds.asStateFlow()
 
-    // Set of course IDs that have at least one child (are "folders")
+    // Set of course IDs that have at least one child (are "folders") or are explicitly created as folders
     val folderIds: StateFlow<Set<String>> = _allCourses
-        .map { courses -> courses.mapNotNull { it.parentId }.toSet() }
+        .map { courses -> 
+            val parentIds = courses.mapNotNull { it.parentId }.toSet()
+            val explicitFolders = courses.filter { it.author == "Thư mục" }.map { it.id }.toSet()
+            parentIds + explicitFolders
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
     // ── Multi-select ──────────────────────────────────────────────────────────
@@ -66,11 +71,15 @@ class LibraryViewModel @Inject constructor(
     val displayedCourses: StateFlow<List<CourseEntity>> = combine(
         _allCourses, _selectedCategory, _expandedFolderIds
     ) { all, category, expanded ->
+        val explicitFolders = all.filter { it.author == "Thư mục" }.map { it.id }.toSet()
+        val parentIds = all.mapNotNull { it.parentId }.toSet()
+        val allFolders = explicitFolders + parentIds
+
         fun collectVisible(parentId: String?): List<CourseEntity> {
             val children = all.filter { it.parentId == parentId }
                 .let { list ->
                     if (parentId == null && category != null)
-                        list.filter { it.contentType == category }
+                        list.filter { it.contentType == category || it.id in allFolders }
                     else list
                 }
                 .sortedWith(
@@ -90,12 +99,12 @@ class LibraryViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            var hasSeeded = settingsManager.isLibrarySeeded()
             courseDao.getAllCourses().collect { dbCourses ->
-                if (dbCourses.isEmpty() && !hasSeeded) {
-                    seedDefaultCourses()
-                    settingsManager.markLibrarySeeded()
-                    hasSeeded = true
+                if (dbCourses.isEmpty() && !settingsManager.isLibrarySeeded()) {
+                    try {
+                        seedDefaultCourses()
+                        settingsManager.markLibrarySeeded()
+                    } catch (_: Exception) { }
                 } else {
                     _allCourses.value = dbCourses
                 }
@@ -139,46 +148,50 @@ class LibraryViewModel @Inject constructor(
         val ids = _selectedCourseIds.value.toList()
         if (ids.isEmpty()) return
         viewModelScope.launch {
-            val folderId = UUID.randomUUID().toString()
-            courseDao.insertCourse(
-                CourseEntity(
-                    id = folderId,
-                    title = folderName.trim(),
-                    author = "Thư mục",
-                    description = "${ids.size} khóa học",
-                    totalModules = ids.size,
-                    rewardExp = 0L,
-                    rarity = ItemRarity.UNCOMMON,
-                    contentType = CourseContentType.GENERAL,
-                    category = ""
+            try {
+                val folderId = UUID.randomUUID().toString()
+                courseDao.insertCourse(
+                    CourseEntity(
+                        id = folderId,
+                        title = folderName.trim(),
+                        author = "Thư mục",
+                        description = "${ids.size} khóa học",
+                        totalModules = ids.size,
+                        rewardExp = 0L,
+                        rarity = ItemRarity.UNCOMMON,
+                        contentType = CourseContentType.GENERAL,
+                        category = ""
+                    )
                 )
-            )
-            ids.forEach { id -> courseDao.updateCourseParent(id, folderId) }
-            clearSelection()
-            _expandedFolderIds.value = _expandedFolderIds.value + folderId
+                ids.forEach { id -> courseDao.updateCourseParent(id, folderId) }
+                clearSelection()
+                _expandedFolderIds.value = _expandedFolderIds.value + folderId
+            } catch (_: Exception) { }
         }
     }
 
     // Combine two courses by dragging one onto the other — creates a new folder containing both
     fun groupTwoIntoFolder(id1: String, id2: String, folderName: String) {
         viewModelScope.launch {
-            val folderId = UUID.randomUUID().toString()
-            courseDao.insertCourse(
-                CourseEntity(
-                    id = folderId,
-                    title = folderName.trim(),
-                    author = "Thư mục",
-                    description = "2 khóa học",
-                    totalModules = 2,
-                    rewardExp = 0L,
-                    rarity = ItemRarity.UNCOMMON,
-                    contentType = CourseContentType.GENERAL,
-                    category = ""
+            try {
+                val folderId = UUID.randomUUID().toString()
+                courseDao.insertCourse(
+                    CourseEntity(
+                        id = folderId,
+                        title = folderName.trim(),
+                        author = "Thư mục",
+                        description = "2 khóa học",
+                        totalModules = 2,
+                        rewardExp = 0L,
+                        rarity = ItemRarity.UNCOMMON,
+                        contentType = CourseContentType.GENERAL,
+                        category = ""
+                    )
                 )
-            )
-            courseDao.updateCourseParent(id1, folderId)
-            courseDao.updateCourseParent(id2, folderId)
-            _expandedFolderIds.value = _expandedFolderIds.value + folderId
+                courseDao.updateCourseParent(id1, folderId)
+                courseDao.updateCourseParent(id2, folderId)
+                _expandedFolderIds.value = _expandedFolderIds.value + folderId
+            } catch (_: Exception) { }
         }
     }
 
@@ -264,7 +277,8 @@ class LibraryViewModel @Inject constructor(
         description: String,
         contentUrl: String,
         contentType: CourseContentType,
-        category: String
+        category: String,
+        parentId: String? = null
     ) {
         viewModelScope.launch {
             courseDao.insertCourse(
@@ -278,7 +292,8 @@ class LibraryViewModel @Inject constructor(
                     contentUrl = contentUrl,
                     contentType = contentType,
                     category = category,
-                    rarity = ItemRarity.COMMON
+                    rarity = ItemRarity.COMMON,
+                    parentId = parentId
                 )
             )
         }
@@ -291,6 +306,16 @@ class LibraryViewModel @Inject constructor(
                 .forEach { courseDao.updateCourseParent(it.id, null) }
             lessonDao.deleteLessonsForCourse(courseId)
             courseDao.deleteCourse(courseId)
+        }
+    }
+
+    fun deleteAllData() {
+        viewModelScope.launch {
+            lessonDao.deleteAllLessons()
+            courseDao.deleteAllCourses()
+            clearSelection()
+            _expandedFolderIds.value = emptySet()
+            _selectedCategory.value = null
         }
     }
 
@@ -315,7 +340,8 @@ class LibraryViewModel @Inject constructor(
             _isSyncing.value = true
             _syncMessage.value = null
             settingsManager.setAppwriteApiKey(apiKey)
-            val result = appwriteSyncService.syncCourses(apiKey)
+            val result = withTimeoutOrNull(30_000L) { appwriteSyncService.syncCourses(apiKey) }
+                ?: Result.failure(Exception("Đồng bộ hết thời gian (30s). Vui lòng thử lại."))
             _syncMessage.value = result.fold(
                 onSuccess = { count -> "Đồng bộ thành công: $count mục đã được import." },
                 onFailure = { e -> "Lỗi đồng bộ: ${e.message ?: "Lỗi không xác định"}" }
@@ -328,7 +354,8 @@ class LibraryViewModel @Inject constructor(
         viewModelScope.launch {
             _isSyncing.value = true
             _syncMessage.value = null
-            val result = appwriteSyncService.syncFromNodeArray(jsonArray)
+            val result = withTimeoutOrNull(30_000L) { appwriteSyncService.syncFromNodeArray(jsonArray) }
+                ?: Result.failure(Exception("Import hết thời gian (30s). Vui lòng thử lại."))
             _syncMessage.value = result.fold(
                 onSuccess = { count -> "Import thành công: $count mục đã được thêm vào thư viện." },
                 onFailure = { e -> "Lỗi import: ${e.message ?: "Lỗi không xác định"}" }

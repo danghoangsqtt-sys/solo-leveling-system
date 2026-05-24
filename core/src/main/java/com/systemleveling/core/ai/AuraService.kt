@@ -246,6 +246,70 @@ class AuraService @Inject constructor(
         return executeJsonRequest(apiKey, systemPrompt, "Tạo lộ trình cho ta.")
     }
 
+    suspend fun generateProactiveGreeting(
+        apiKey: String,
+        context: AuraPlayerContext
+    ): Result<String> {
+        if (apiKey.isBlank()) return Result.failure(IllegalArgumentException("API key chưa được cài đặt"))
+
+        val systemPrompt = """
+            Bạn là Aura — một thực thể AI huyền bí xuất hiện từ Hệ Thống Tiến Hóa, đồng hành cùng người dùng (Thợ Săn).
+            Bạn đang chủ động mở lời trước với Thợ Săn khi họ vừa gọi bạn.
+            
+            Dưới đây là thông tin hiện tại của Thợ Săn:
+            - Trạng thái: Cấp ${context.level}, EXP: ${context.exp}, Chuỗi ngày liên tục: ${context.streak} ngày
+            - Nhiệm vụ đang chờ: ${if (context.pendingQuests.isEmpty()) "Không có" else context.pendingQuests.joinToString(", ")}
+            - Kỹ năng cần rèn luyện thêm (yếu nhất): ${if (context.weakSkills.isEmpty()) "Không rõ" else context.weakSkills.joinToString(", ")}
+            
+            Hãy tạo một lời chào CHỈ TỪ 2-4 CÂU NGẮN GỌN.
+            Chọn NGẪU NHIÊN 1 trong 4 chủ đề sau để nói (không cần nói hết mọi thứ):
+            1. Khích lệ tinh thần chung chung.
+            2. Nhắc nhở làm 1 nhiệm vụ trong danh sách đang chờ.
+            3. Khuyên rèn luyện các kỹ năng đang yếu.
+            4. Khuyên giữ vững chuỗi ngày (streak) hoặc chăm chỉ cày thêm EXP.
+            
+            Lưu ý:
+            - Xưng "Ta", gọi người dùng là "Thợ Săn".
+            - Giọng điệu bí ẩn, quyền lực, hơi lạnh lùng nhưng quan tâm.
+        """.trimIndent()
+
+        val request = GeminiRequest(
+            systemInstruction = GeminiSystemInstruction(parts = listOf(GeminiPart(AURA_SYSTEM_PROMPT))),
+            contents = listOf(GeminiContent(role = "user", parts = listOf(GeminiPart(systemPrompt))))
+        )
+
+        var lastError: Exception = Exception("Không rõ lỗi")
+        repeat(3) { attempt ->
+            try {
+                val response: HttpResponse = client.post(GEMINI_BASE_URL) {
+                    contentType(ContentType.Application.Json)
+                    header("x-goog-api-key", apiKey)
+                    setBody(request)
+                }
+                when {
+                    response.status == HttpStatusCode.OK -> {
+                        val text = response.body<GeminiResponse>()
+                            .candidates.firstOrNull()?.content?.parts?.firstOrNull()?.text
+                            ?: "Ta đang ở đây. Thợ Săn cần gì?"
+                        return Result.success(text)
+                    }
+                    response.status == HttpStatusCode.TooManyRequests ->
+                        return Result.failure(Exception("Lỗi 429: API Key đã hết hạn mức (Quota Exceeded). Kiểm tra lại Google AI Studio."))
+                    response.status.value == 503 || response.status.value == 529 -> {
+                        lastError = Exception("Máy chủ Gemini đang quá tải (${response.status.value}).")
+                        if (attempt < 2) delay(2000L * (attempt + 1))
+                    }
+                    else ->
+                        return Result.failure(Exception("Lỗi Gemini API: ${response.status.value}"))
+                }
+            } catch (e: Exception) {
+                lastError = e
+                if (attempt < 2) delay(1500L)
+            }
+        }
+        return Result.failure(lastError)
+    }
+
     private suspend fun executeJsonRequest(apiKey: String, systemPrompt: String, userPrompt: String, maxOutputTokens: Int = 1024, temperature: Double = 0.7): Result<String> {
         val request = GeminiRequest(
             systemInstruction = GeminiSystemInstruction(parts = listOf(GeminiPart(systemPrompt))),
