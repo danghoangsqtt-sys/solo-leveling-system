@@ -32,7 +32,7 @@ class OtaUpdateManager @Inject constructor(
                 header("User-Agent", "SoloLevelingSystem-OTA/1.0")
             }
             val release = json.decodeFromString<GitHubRelease>(response.bodyAsText())
-            val remoteVersionCode = release.tagName.removePrefix("v").toIntOrNull()
+            val remoteVersionCode = parseVersionCode(release.tagName)
                 ?: return@withContext null
             if (remoteVersionCode <= currentVersionCode) return@withContext null
             val apkAsset = release.assets.firstOrNull { it.name.endsWith(".apk") }
@@ -71,6 +71,18 @@ class OtaUpdateManager @Inject constructor(
     companion object {
         private const val RELEASES_URL =
             "https://api.github.com/repos/danghoangsqtt-sys/solo-leveling-system/releases/latest"
+
+        // Supports "v6" (legacy int) and "v1.4.1" (semantic: major*10000 + minor*100 + patch)
+        fun parseVersionCode(tagName: String): Int? {
+            val raw = tagName.removePrefix("v")
+            raw.toIntOrNull()?.let { return it }
+            val parts = raw.split(".")
+            if (parts.size < 2) return null
+            val major = parts.getOrNull(0)?.toIntOrNull() ?: return null
+            val minor = parts.getOrNull(1)?.toIntOrNull() ?: return null
+            val patch = parts.getOrNull(2)?.toIntOrNull() ?: 0
+            return major * 10_000 + minor * 100 + patch
+        }
     }
 }
 
