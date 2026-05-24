@@ -125,7 +125,7 @@ fun JournalCard(journal: JournalEntity) {
                     )
                 }
                 
-                val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+                val sdf = remember { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()) }
                 Text(
                     text = sdf.format(Date(journal.timestamp)),
                     color = Color.Gray,

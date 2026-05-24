@@ -83,7 +83,15 @@ class CalendarViewModel @Inject constructor(
             .map { CalendarItem.EventItem(it) }
 
         _itemsForDate.value = (questItems + eventItems)
-            .sortedBy { it.timeStart ?: "23:59" }
+            .sortedBy { parseTimeToMinutes(it.timeStart) }
+    }
+
+    private fun parseTimeToMinutes(time: String?): Int {
+        if (time == null) return 23 * 60 + 59
+        val parts = time.split(":")
+        val h = parts.getOrNull(0)?.toIntOrNull() ?: 23
+        val m = parts.getOrNull(1)?.toIntOrNull() ?: 59
+        return h * 60 + m
     }
 
     private fun isEventOnDate(event: CalendarEventEntity, targetCal: Calendar): Boolean {

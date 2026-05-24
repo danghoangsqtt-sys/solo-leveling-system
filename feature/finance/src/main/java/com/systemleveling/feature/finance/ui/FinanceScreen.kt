@@ -70,7 +70,7 @@ fun FinanceScreen(
     var showAddDebtDialog by remember { mutableStateOf(false) }
     var showClearAllConfirm by remember { mutableStateOf(false) }
 
-    val formatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+    val formatter = remember { NumberFormat.getCurrencyInstance(Locale("vi", "VN")) }
 
     // Dialogs
     if (showAddTxDialog) {
@@ -297,7 +297,7 @@ fun FinanceScreen(
                                         modifier = Modifier.size(100.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        val categoryColors = getCategoryColors()
+                                        val categoryColors = remember { getCategoryColors() }
                                         Canvas(modifier = Modifier.fillMaxSize()) {
                                             var startAngle = -90f
                                             categorySpent.forEach { (cat, spent) ->
@@ -328,7 +328,7 @@ fun FinanceScreen(
                                         modifier = Modifier.weight(1f),
                                         verticalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
-                                        val colors = getCategoryColors()
+                                        val colors = remember { getCategoryColors() }
                                         categorySpent.entries.sortedByDescending { it.value }.take(4).forEach { (cat, spent) ->
                                             val pct = (spent.toDouble() / expense.toDouble() * 100).toInt()
                                             Row(
@@ -787,7 +787,7 @@ private fun BudgetCard(
     formatter: NumberFormat,
     onDelete: () -> Unit
 ) {
-    val categoryIcons = getCategoryIcons()
+    val categoryIcons = remember { getCategoryIcons() }
     val pct = if (budget.limitAmount > 0) (spent.toFloat() / budget.limitAmount.toFloat()) else 0f
     val isOver = spent > budget.limitAmount
     val progressColor = if (isOver) Color(0xFFFF5252) else md_theme_dark_primary
@@ -892,7 +892,7 @@ private fun DebtItemCard(
     onTogglePaid: (Boolean) -> Unit,
     onDelete: () -> Unit
 ) {
-    val dateStr = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(debt.timestamp)
+    val dateStr = remember(debt.timestamp) { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(debt.timestamp) }
     val isBorrowed = debt.type == DebtType.BORROWED
     val primaryColor = if (isBorrowed) Color(0xFFFF5252) else Color(0xFF40E17E)
     var confirmDelete by remember { mutableStateOf(false) }

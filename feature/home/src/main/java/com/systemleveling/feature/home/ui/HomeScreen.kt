@@ -781,7 +781,7 @@ private fun FinanceSummaryCard(
     todayExpense: Long,
     onNavigateToFinance: () -> Unit
 ) {
-    val formatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+    val formatter = remember { NumberFormat.getCurrencyInstance(Locale("vi", "VN")) }
     val balanceColor = if (totalBalance >= 0) GREEN else Color(0xFFFF6B6B)
 
     GlassCard(
@@ -1243,7 +1243,7 @@ private fun AuraGreetingBubble(
 ) {
     var visible by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(message) {
         visible = true
         delay(7_000L)
         visible = false

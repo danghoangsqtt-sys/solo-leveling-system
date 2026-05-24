@@ -58,6 +58,7 @@ fun QuestListScreen(
     val quests by viewModel.quests.collectAsState(initial = emptyList())
     val workPlanItems by viewModel.workPlanItems.collectAsState(initial = emptyList())
     val isGenerating by viewModel.isGenerating.collectAsState()
+    val generationError by viewModel.generationError.collectAsState()
     val user by viewModel.user.collectAsState()
     var rewardToShow by remember { mutableStateOf<RewardResult?>(null) }
     var penaltyToShow by remember { mutableStateOf<QuestViewModel.PenaltyEvent?>(null) }
@@ -250,6 +251,39 @@ fun QuestListScreen(
             }
 
             Spacer(Modifier.height(12.dp))
+
+            // ── Generation error banner ──────────────────────────────────────
+            generationError?.let { errMsg ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                        .background(Color(0xFF2A0A0A))
+                        .border(1.dp, Color(0xFFFF5252).copy(0.5f), androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("⚠️", fontSize = 14.sp)
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            errMsg,
+                            color = Color(0xFFFF8A80),
+                            fontSize = 11.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .clip(androidx.compose.foundation.shape.RoundedCornerShape(6.dp))
+                                .clickable { viewModel.regenerateQuests() }
+                                .background(Color(0xFF4A9EFF).copy(0.15f))
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text("Thử lại", color = PRIMARY, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
 
             // ── Timeline ──────────────────────────────────────────────────────
             LazyColumn(

@@ -239,8 +239,8 @@ fun CalendarScreen(
 // ── Day chip ───────────────────────────────────────────────────────────────────
 @Composable
 private fun DayChip(timestamp: Long, isSelected: Boolean, isToday: Boolean, onClick: () -> Unit) {
-    val dow  = SimpleDateFormat("EEE", Locale("vi", "VN")).format(Date(timestamp))
-    val dom  = SimpleDateFormat("dd",  Locale.getDefault()).format(Date(timestamp))
+    val dow = remember(timestamp) { SimpleDateFormat("EEE", Locale("vi", "VN")).format(Date(timestamp)) }
+    val dom = remember(timestamp) { SimpleDateFormat("dd",  Locale.getDefault()).format(Date(timestamp)) }
     val bgColor = when {
         isSelected -> PRIMARY
         isToday    -> Color(0xFF152030)

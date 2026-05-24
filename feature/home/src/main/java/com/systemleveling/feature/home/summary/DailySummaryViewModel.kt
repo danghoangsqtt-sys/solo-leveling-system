@@ -202,9 +202,18 @@ class DailySummaryViewModel @Inject constructor(
     }
 
     private fun parseJsonFields(entity: DailySummaryEntity) {
-        try { _statChanges.value  = json.decodeFromString(entity.statChanges)  } catch (e: Exception) { android.util.Log.w("DailySummaryVM", "statChanges parse failed: ${e.message}") }
-        try { _skillProgress.value= json.decodeFromString(entity.skillProgress) } catch (e: Exception) { android.util.Log.w("DailySummaryVM", "skillProgress parse failed: ${e.message}") }
-        try { _tomorrowPlan.value = json.decodeFromString(entity.tomorrowPlan)  } catch (e: Exception) { android.util.Log.w("DailySummaryVM", "tomorrowPlan parse failed: ${e.message}") }
+        try { _statChanges.value   = json.decodeFromString(entity.statChanges) } catch (e: Exception) {
+            android.util.Log.w("DailySummaryVM", "statChanges parse failed: ${e.message}")
+            _statChanges.value = emptyMap()
+        }
+        try { _skillProgress.value = json.decodeFromString(entity.skillProgress) } catch (e: Exception) {
+            android.util.Log.w("DailySummaryVM", "skillProgress parse failed: ${e.message}")
+            _skillProgress.value = emptyMap()
+        }
+        try { _tomorrowPlan.value  = json.decodeFromString(entity.tomorrowPlan) } catch (e: Exception) {
+            android.util.Log.w("DailySummaryVM", "tomorrowPlan parse failed: ${e.message}")
+            _tomorrowPlan.value = emptyList()
+        }
     }
 
     private fun getTodayMidnight(): Long = Calendar.getInstance().apply {

@@ -66,6 +66,9 @@ class QuestViewModel @Inject constructor(
     private val _isGenerating = MutableStateFlow(false)
     val isGenerating: StateFlow<Boolean> = _isGenerating
 
+    private val _generationError = MutableStateFlow<String?>(null)
+    val generationError: StateFlow<String?> = _generationError
+
     private var pendingPushJob: Job? = null
 
     private fun schedulePush() {
@@ -89,7 +92,15 @@ class QuestViewModel @Inject constructor(
             _isGenerating.value = true
             try {
                 val apiKey = settingsManager.geminiApiKey.first()
+                if (apiKey.isBlank()) {
+                    _generationError.value = "Chưa cài Gemini API key — vào Cài đặt để nhập key"
+                    return
+                }
                 aiQuestGenerator.generateDailyQuests(apiKey, todayStart)
+                _generationError.value = null
+            } catch (e: Exception) {
+                android.util.Log.e("QuestViewModel", "Quest generation failed: ${e.message}", e)
+                _generationError.value = "Không thể tạo nhiệm vụ hôm nay: ${e.message?.take(80)}"
             } finally {
                 _isGenerating.value = false
             }
