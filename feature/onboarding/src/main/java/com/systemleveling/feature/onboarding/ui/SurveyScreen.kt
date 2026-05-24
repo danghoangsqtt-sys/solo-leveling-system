@@ -42,7 +42,12 @@ private data class SurveyData(
     val studyHours: Float = 2f,
     val languageLevel: Int = -1,
     val sleepHours: Float = 7f,
-    val workStyle: Int = -1
+    val workStyle: Int = -1,
+    val wakeTime: String = "06:00",
+    val sleepTime: String = "23:00",
+    val workTime: String = "08:00 - 17:00",
+    val lunchTime: String = "12:00 - 13:00",
+    val workoutTime: String = "17:30 - 18:30"
 )
 
 // ── Survey Screen ─────────────────────────────────────────────────────────────
@@ -51,7 +56,7 @@ fun SurveyScreen(
     onBack: () -> Unit,
     onNext: (AiSurveyData) -> Unit
 ) {
-    var phase by remember { mutableStateOf(1) }      // 1: Cơ bản, 2: Thể chất, 3: Trí tuệ & Kỹ năng
+    var phase by remember { mutableStateOf(1) }      // 1: Cơ bản, 2: Thể chất, 3: Trí tuệ & Kỹ năng, 4: Lịch trình
     var data by remember { mutableStateOf(SurveyData()) }
 
     val scanPulse by rememberInfiniteTransition(label = "scan").animateFloat(
@@ -102,7 +107,7 @@ fun SurveyScreen(
                         .background(GLASS_BORDER)
                 ) {
                     val animProg by animateFloatAsState(
-                        targetValue = phase / 3f,
+                        targetValue = phase / 4f,
                         animationSpec = tween(600),
                         label = "scan_prog"
                     )
@@ -120,8 +125,8 @@ fun SurveyScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Phase $phase / 3", color = GOLD, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                    Text("${(phase * 33.3f).toInt()}%", color = PRIMARY.copy(0.7f), fontSize = 9.sp)
+                    Text("Phase $phase / 4", color = GOLD, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    Text("${(phase * 25f).toInt()}%", color = PRIMARY.copy(0.7f), fontSize = 9.sp)
                 }
             }
 
@@ -138,10 +143,11 @@ fun SurveyScreen(
                 val phaseTitle = when (phase) {
                     1 -> "THÔNG TIN CƠ BẢN"
                     2 -> "THỂ CHẤT"
-                    else -> "TRÍ TUỆ & KỸ NĂNG"
+                    3 -> "TRÍ TUỆ & KỸ NĂNG"
+                    else -> "LỊCH TRÌNH SINH HỌC"
                 }
                 val phaseIcon = when (phase) {
-                    1 -> "🧬"; 2 -> "💪"; else -> "🧠"
+                    1 -> "🧬"; 2 -> "💪"; 3 -> "🧠"; else -> "🕒"
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -170,6 +176,7 @@ fun SurveyScreen(
                     1 -> PhaseBasic(data) { data = it }
                     2 -> PhasePhysical(data) { data = it }
                     3 -> PhaseMental(data) { data = it }
+                    4 -> PhaseSchedule(data) { data = it }
                 }
 
                 Spacer(Modifier.height(32.dp))
@@ -198,6 +205,7 @@ fun SurveyScreen(
                     1 -> data.height.isNotBlank() && data.weight.isNotBlank()
                     2 -> data.pushUps != -1 && data.lifting != -1 && data.runningPace != -1
                     3 -> data.languageLevel != -1 && data.workStyle != -1
+                    4 -> data.wakeTime.isNotBlank() && data.sleepTime.isNotBlank() && data.workTime.isNotBlank()
                     else -> true
                 }
 
@@ -211,7 +219,7 @@ fun SurveyScreen(
                                 Brush.horizontalGradient(listOf(GLASS, GLASS))
                         )
                         .clickable(enabled = canProceed) {
-                            if (phase < 3) {
+                            if (phase < 4) {
                                 phase++
                             } else {
                                 val pushUpsStr = listOf("Dưới 10 cái", "10-20 cái", "20-40 cái", "Hơn 40 cái")[data.pushUps.coerceAtLeast(0)]
@@ -229,7 +237,12 @@ fun SurveyScreen(
                                     studyHours = "${data.studyHours.toInt()} giờ/ngày",
                                     languageLevel = langStr,
                                     sleepHours = "${data.sleepHours.toInt()} giờ/ngày",
-                                    workStyle = workStr
+                                    workStyle = workStr,
+                                    wakeTime = data.wakeTime,
+                                    sleepTime = data.sleepTime,
+                                    workTime = data.workTime,
+                                    lunchTime = data.lunchTime,
+                                    workoutTime = data.workoutTime
                                 )
                                 onNext(aiData)
                             }
@@ -238,7 +251,7 @@ fun SurveyScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        if (phase < 3) "Tiếp theo  ›" else "Khởi tạo STAT  ›",
+                        if (phase < 4) "Tiếp theo  ›" else "Khởi tạo STAT  ›",
                         color = if (canProceed) Color.White else TEXT_MUTED.copy(0.4f),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
@@ -377,6 +390,78 @@ private fun PhaseMental(data: SurveyData, onDataChange: (SurveyData) -> Unit) {
         options = listOf("Nhanh nhạy, linh hoạt ứng biến", "Cẩn thận, chi tiết từng bước", "Sáng tạo, hay có ý tưởng đột phá", "Cần cù, kỷ luật, đúng hạn"),
         selected = data.workStyle, onSelect = { onDataChange(data.copy(workStyle = it)) }
     )
+}
+
+// ── Phase 4: Lịch Trình ──────────────────────────────────────────────────────
+@Composable
+private fun PhaseSchedule(data: SurveyData, onDataChange: (SurveyData) -> Unit) {
+    SurveyCard(
+        icon = "🕒", label = "TIME", labelColor = Color(0xFF4A9EFF),
+        title = "Đồng Bộ Sinh Học", question = "Hệ thống cần lịch trình của bạn để giao nhiệm vụ vào đúng mốc thời gian."
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                OutlinedTextField(
+                    value = data.wakeTime,
+                    onValueChange = { onDataChange(data.copy(wakeTime = it)) },
+                    label = { Text("Giờ thức (VD: 06:00)", fontSize = 11.sp) },
+                    modifier = Modifier.weight(1f),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = GLASS, unfocusedContainerColor = GLASS,
+                        focusedTextColor = TEXT, unfocusedTextColor = TEXT,
+                        focusedIndicatorColor = PRIMARY, unfocusedIndicatorColor = GLASS_BORDER
+                    )
+                )
+                OutlinedTextField(
+                    value = data.sleepTime,
+                    onValueChange = { onDataChange(data.copy(sleepTime = it)) },
+                    label = { Text("Giờ ngủ (VD: 23:00)", fontSize = 11.sp) },
+                    modifier = Modifier.weight(1f),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = GLASS, unfocusedContainerColor = GLASS,
+                        focusedTextColor = TEXT, unfocusedTextColor = TEXT,
+                        focusedIndicatorColor = PRIMARY, unfocusedIndicatorColor = GLASS_BORDER
+                    )
+                )
+            }
+            
+            OutlinedTextField(
+                value = data.workTime,
+                onValueChange = { onDataChange(data.copy(workTime = it)) },
+                label = { Text("Giờ làm việc (VD: 08:00 - 17:00)", fontSize = 11.sp) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = GLASS, unfocusedContainerColor = GLASS,
+                    focusedTextColor = TEXT, unfocusedTextColor = TEXT,
+                    focusedIndicatorColor = PRIMARY, unfocusedIndicatorColor = GLASS_BORDER
+                )
+            )
+
+            OutlinedTextField(
+                value = data.lunchTime,
+                onValueChange = { onDataChange(data.copy(lunchTime = it)) },
+                label = { Text("Nghỉ trưa (VD: 12:00 - 13:00)", fontSize = 11.sp) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = GLASS, unfocusedContainerColor = GLASS,
+                    focusedTextColor = TEXT, unfocusedTextColor = TEXT,
+                    focusedIndicatorColor = PRIMARY, unfocusedIndicatorColor = GLASS_BORDER
+                )
+            )
+
+            OutlinedTextField(
+                value = data.workoutTime,
+                onValueChange = { onDataChange(data.copy(workoutTime = it)) },
+                label = { Text("Tập luyện (VD: 17:30 - 18:30)", fontSize = 11.sp) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = GLASS, unfocusedContainerColor = GLASS,
+                    focusedTextColor = TEXT, unfocusedTextColor = TEXT,
+                    focusedIndicatorColor = PRIMARY, unfocusedIndicatorColor = GLASS_BORDER
+                )
+            )
+        }
+    }
 }
 
 // ── Shared Card Components ────────────────────────────────────────────────────

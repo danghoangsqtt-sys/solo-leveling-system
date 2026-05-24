@@ -31,6 +31,7 @@ import com.systemleveling.core.model.QuestRank
 import com.systemleveling.core.model.QuestStatus
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlinx.serialization.json.Json
 
 // ── Rank meta ─────────────────────────────────────────────────────────────────
 private data class RankMeta(val color: Color, val bg: Color, val label: String, val glow: Boolean = false)
@@ -50,13 +51,14 @@ fun QuestListScreen(
     viewModel: QuestViewModel,
     onBack: () -> Unit
 ) {
-    val quests by viewModel.quests.collectAsState()
-    val workPlanItems by viewModel.workPlanItems.collectAsState()
+    val quests by viewModel.quests.collectAsState(initial = emptyList())
+    val workPlanItems by viewModel.workPlanItems.collectAsState(initial = emptyList())
     val isGenerating by viewModel.isGenerating.collectAsState()
     val user by viewModel.user.collectAsState()
     var rewardToShow by remember { mutableStateOf<RewardResult?>(null) }
     var penaltyToShow by remember { mutableStateOf<QuestViewModel.PenaltyEvent?>(null) }
     var showWorkPlanSheet by remember { mutableStateOf(false) }
+    var selectedQuest by remember { mutableStateOf<QuestEntity?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.rewardResult.collectLatest { result ->
@@ -257,7 +259,7 @@ fun QuestListScreen(
                 items(quests, key = { it.id }) { quest ->
                     QuestTimelineItem(
                         quest = quest,
-                        onComplete = { viewModel.completeQuest(quest) },
+                        onClick = { selectedQuest = quest },
                         onExpired = { viewModel.failExpiredQuest(quest) }
                     )
                 }
@@ -324,6 +326,18 @@ fun QuestListScreen(
                 onDismiss = { rewardToShow = null }
             )
         }
+
+        // ── Quest Detail Sheet ────────────────────────────────────────────────
+        selectedQuest?.let { quest ->
+            QuestDetailSheet(
+                quest = quest,
+                onDismiss = { selectedQuest = null },
+                onComplete = { 
+                    viewModel.completeQuest(it)
+                    selectedQuest = null
+                }
+            )
+        }
     }
 }
 
@@ -331,7 +345,7 @@ fun QuestListScreen(
 @Composable
 fun QuestTimelineItem(
     quest: QuestEntity,
-    onComplete: () -> Unit,
+    onClick: () -> Unit,
     onExpired: () -> Unit = {}
 ) {
     val meta = rankMeta(quest.rank)
@@ -400,7 +414,7 @@ fun QuestTimelineItem(
                 .clip(RoundedCornerShape(12.dp))
                 .background(cardBg)
                 .border(1.dp, borderColor, RoundedCornerShape(12.dp))
-                .clickable(enabled = !isCompleted && !isFailed && !localExpired) { onComplete() }
+                .clickable { onClick() }
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
 
@@ -688,5 +702,150 @@ fun QuestTimer(timeStart: String, durationMinutes: Int, onExpired: () -> Unit = 
             color = timerColor,
             letterSpacing = 0.04f.em
         )
+    }
+}
+
+// ── Quest Detail Sheet ────────────────────────────────────────────────────────
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun QuestDetailSheet(
+    quest: QuestEntity,
+    onDismiss: () -> Unit,
+    onComplete: (QuestEntity) -> Unit
+) {
+    val meta = rankMeta(quest.rank)
+    val isCompleted = quest.status == QuestStatus.COMPLETED
+    val isFailed = quest.status == QuestStatus.FAILED || quest.status == QuestStatus.EXPIRED
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF141420),
+        scrimColor = Color(0xCC000000)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 10.dp)
+                .padding(bottom = 32.dp)
+        ) {
+            // Rank and Title
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(meta.bg)
+                        .border(1.dp, meta.color.copy(0.6f), RoundedCornerShape(6.dp))
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = "RANK ${meta.label}",
+                        color = meta.color,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 0.1f.em
+                    )
+                }
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    text = quest.category.uppercase(),
+                    color = Color(0xFF8899CC),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.1f.em
+                )
+            }
+            
+            Spacer(Modifier.height(16.dp))
+
+            Text(
+                text = quest.title,
+                color = Color.White,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Black
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            // Description
+            Text(
+                text = quest.description,
+                color = Color(0xFFB0C4DE),
+                fontSize = 13.sp,
+                lineHeight = 20.sp
+            )
+
+            Spacer(Modifier.height(20.dp))
+
+            // Subtasks
+            if (quest.subtasks.isNotBlank() && quest.subtasks != "[]") {
+                val subtasksList = try {
+                    Json.decodeFromString<List<String>>(quest.subtasks)
+                } catch (e: Exception) { emptyList() }
+
+                if (subtasksList.isNotEmpty()) {
+                    Text("CÁC BƯỚC THỰC HIỆN", color = PRIMARY, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(8.dp))
+                    subtasksList.forEach { task ->
+                        Row(
+                            modifier = Modifier.padding(bottom = 6.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Text("🔸", fontSize = 10.sp, modifier = Modifier.padding(top = 2.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(task, color = Color.White, fontSize = 13.sp)
+                        }
+                    }
+                    Spacer(Modifier.height(20.dp))
+                }
+            }
+
+            // Rewards
+            Text("PHẦN THƯỞNG", color = GOLD, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(Color(0xFF1A1A2E)).padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("⚡", fontSize = 16.sp)
+                    Spacer(Modifier.width(6.dp))
+                    Text("+${quest.expReward} EXP", color = Color(0xFF4A9EFF), fontWeight = FontWeight.Bold)
+                }
+                Row(
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(Color(0xFF2E221A)).padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("💰", fontSize = 16.sp)
+                    Spacer(Modifier.width(6.dp))
+                    Text("+${quest.goldReward} G", color = GOLD, fontWeight = FontWeight.Bold)
+                }
+            }
+
+            Spacer(Modifier.height(32.dp))
+
+            // Complete Button
+            Button(
+                onClick = { onComplete(quest) },
+                enabled = !isCompleted && !isFailed,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PRIMARY,
+                    disabledContainerColor = Color(0xFF2A2A40)
+                ),
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = when {
+                        isCompleted -> "ĐÃ HOÀN THÀNH"
+                        isFailed -> "THẤT BẠI"
+                        else -> "XÁC NHẬN HOÀN THÀNH"
+                    },
+                    color = if (!isCompleted && !isFailed) Color.White else Color(0xFF8899CC),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 0.1f.em
+                )
+            }
+        }
     }
 }

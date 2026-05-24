@@ -81,18 +81,18 @@ class OnboardingViewModel @Inject constructor(
         _uiState.value = OnboardingUiState.Idle
     }
 
-    fun acceptAndComplete(nickname: String, goal: String, selectedClassName: String, data: AiCompleteOnboardingResponse) {
+    fun acceptAndComplete(nickname: String, goal: String, selectedClassName: String, data: AiCompleteOnboardingResponse, surveyData: AiSurveyData) {
         viewModelScope.launch {
             _uiState.value = OnboardingUiState.Loading("Đang lưu dữ liệu...")
             try {
-                saveDataAndComplete(nickname, goal, selectedClassName, data)
+                saveDataAndComplete(nickname, goal, selectedClassName, data, surveyData)
             } catch (e: Exception) {
                 _uiState.value = OnboardingUiState.Error("Lưu thất bại: ${e.localizedMessage}")
             }
         }
     }
 
-    private suspend fun saveDataAndComplete(nickname: String, goal: String, selectedClassName: String, data: AiCompleteOnboardingResponse) {
+    private suspend fun saveDataAndComplete(nickname: String, goal: String, selectedClassName: String, data: AiCompleteOnboardingResponse, surveyData: AiSurveyData) {
         val selectedJobClass = data.suggestedClasses.find { it.className == selectedClassName }
 
         // Save User
@@ -165,6 +165,15 @@ class OnboardingViewModel @Inject constructor(
         }
 
         skillDao.replaceSkills(allSkillEntities)
+
+        // Save Biological Schedule
+        settingsManager.setSchedule(
+            wake = surveyData.wakeTime,
+            sleep = surveyData.sleepTime,
+            work = surveyData.workTime,
+            lunch = surveyData.lunchTime,
+            workout = surveyData.workoutTime
+        )
 
         // Mark complete
         settingsManager.setOnboarded(true)

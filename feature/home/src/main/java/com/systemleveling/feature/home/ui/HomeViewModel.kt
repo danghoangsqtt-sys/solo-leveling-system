@@ -190,6 +190,13 @@ class HomeViewModel @Inject constructor(
             initialValue = ""
         )
 
+    val syncId: StateFlow<String> = settingsManager.syncIdFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ""
+        )
+
     val totalBalance: StateFlow<Long> = combine(
         financeDao.getTotalIncome(),
         financeDao.getTotalExpense()
@@ -208,6 +215,27 @@ class HomeViewModel @Inject constructor(
     fun saveSupabaseConfig(url: String, anonKey: String) {
         viewModelScope.launch {
             settingsManager.setSupabaseConfig(url, anonKey)
+        }
+    }
+
+    fun saveSyncId(newSyncId: String) {
+        viewModelScope.launch {
+            settingsManager.setDeviceId(newSyncId)
+        }
+    }
+
+    fun forceSync() {
+        viewModelScope.launch {
+            _syncState.value = SyncState.Syncing
+            // Always try pushing first, then if push returns false (maybe it failed or data was older?), 
+            // well in this case just do a simple push then pull or just restoreIfEmpty
+            // Wait, for a simple manual sync, we'll try pushing local state.
+            val success = cloudSyncManager.push()
+            if (success) {
+                _syncState.value = SyncState.Synced
+            } else {
+                _syncState.value = SyncState.SyncFailed
+            }
         }
     }
 

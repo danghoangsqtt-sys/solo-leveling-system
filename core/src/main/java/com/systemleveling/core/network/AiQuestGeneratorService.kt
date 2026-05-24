@@ -149,6 +149,12 @@ class AiQuestGeneratorService @Inject constructor(
         val weeklyPlan = settingsManager.weeklyPlanItems.first()
         val monthlyPlan = settingsManager.monthlyPlanItems.first()
 
+        val wakeTime = settingsManager.wakeTime.first()
+        val sleepTime = settingsManager.sleepTime.first()
+        val workTime = settingsManager.workTime.first()
+        val lunchTime = settingsManager.lunchTime.first()
+        val workoutTime = settingsManager.workoutTime.first()
+
         // Pass only child skills (parentId != null) so AI can reference real skill IDs
         val allSkills = skillDao.getAllSkillsSync()
         val childSkills = allSkills.filter { it.parentId != null }
@@ -207,6 +213,17 @@ $weeklyBlock
 
 ════════════ MỤC TIÊU THÁNG ════════════
 $monthlyBlock
+════════════ LỊCH TRÌNH SINH HỌC & LÀM VIỆC ════════════
+Giờ thức dậy: $wakeTime
+Giờ đi ngủ: $sleepTime
+Giờ làm việc: $workTime
+Nghỉ trưa: $lunchTime
+Thời gian tập luyện: $workoutTime
+
+* Yêu cầu BẮT BUỘC về thời gian:
+- KHÔNG xếp nhiệm vụ nặng, học tập, hoặc làm việc vào Giờ đi ngủ hoặc Nghỉ trưa.
+- Nhiệm vụ thể chất (fitness/workout) PHẢI ưu tiên xếp vào "Thời gian tập luyện" ($workoutTime) hoặc "Giờ thức dậy" ($wakeTime).
+- Các nhiệm vụ học tập / làm việc phải nằm gọn trong "Giờ làm việc" ($workTime) hoặc thời gian rảnh rỗi.
 
 ════════════ THUẬT TOÁN ƯU TIÊN ════════════
 Phân loại mọi công việc theo ma trận Eisenhower (Urgent × Important):

@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.platform.LocalConfiguration
 import com.systemleveling.core.database.entity.StatEntity
 import com.systemleveling.core.database.entity.UserEntity
 import com.systemleveling.core.designsystem.components.GlassCard
@@ -75,8 +76,12 @@ fun HomeScreen(
     val otaUpdateInfo by viewModel.otaUpdateInfo.collectAsState()
     val otaDownloading by viewModel.otaDownloading.collectAsState()
     val auraGreeting by viewModel.auraGreeting.collectAsState()
+    val syncId by viewModel.syncId.collectAsState()
+    val syncState by viewModel.syncState.collectAsState()
 
     var showSettingsDialog by remember { mutableStateOf(false) }
+
+    val isTablet = LocalConfiguration.current.screenWidthDp >= 600
 
     Box(
         modifier = Modifier
@@ -88,58 +93,124 @@ fun HomeScreen(
                 )
             )
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            TopSystemBar(
-                user = user,
-                onSettingsClick = { showSettingsDialog = true }
-            )
-
-            if (isAdvancementReady) {
-                AdvancementBanner(onClick = onNavigateToAdvancement)
+        Row(modifier = Modifier.fillMaxSize()) {
+            if (isTablet) {
+                SideNavBar(
+                    onNavigateToQuests = onNavigateToQuests,
+                    onNavigateToSkills = onNavigateToSkills,
+                    onNavigateToFinance = onNavigateToFinance,
+                    onNavigateToAura = onNavigateToNpc
+                )
             }
 
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 8.dp)
-            ) {
-                Spacer(Modifier.height(12.dp))
-                CharacterStatusPanel(
+            Column(modifier = Modifier.weight(1f)) {
+                TopSystemBar(
                     user = user,
-                    stats = stats
+                    onSettingsClick = { showSettingsDialog = true }
                 )
-                Spacer(Modifier.height(14.dp))
-                MotivationalQuoteCard()
-                Spacer(Modifier.height(14.dp))
-                QuestProgressCard(
-                    questSummary = questSummary,
-                    onNavigateToQuests = onNavigateToQuests
-                )
-                Spacer(Modifier.height(16.dp))
-                FinanceSummaryCard(
-                    totalBalance = totalBalance,
-                    todayExpense = todayExpense,
-                    onNavigateToFinance = onNavigateToFinance
-                )
-                Spacer(Modifier.height(16.dp))
-                QuickActionsRow(
-                    onCalendar = onNavigateToCalendar,
-                    onJournal = onNavigateToJournal,
-                    onLibrary = onNavigateToLibrary,
-                    onInventory = onNavigateToInventory,
-                    onDailySummary = onNavigateToDailySummary
-                )
-                Spacer(Modifier.height(8.dp))
-            }
 
-            BottomNavBar(
-                onNavigateToQuests = onNavigateToQuests,
-                onNavigateToSkills = onNavigateToSkills,
-                onNavigateToFinance = onNavigateToFinance,
-                onNavigateToAura = onNavigateToNpc
-            )
+                if (isAdvancementReady) {
+                    AdvancementBanner(onClick = onNavigateToAdvancement)
+                }
+
+                if (isTablet) {
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 16.dp)
+                            .padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // Left Column
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Spacer(Modifier.height(12.dp))
+                            CharacterStatusPanel(
+                                user = user,
+                                stats = stats
+                            )
+                            FinanceSummaryCard(
+                                totalBalance = totalBalance,
+                                todayExpense = todayExpense,
+                                onNavigateToFinance = onNavigateToFinance
+                            )
+                            Spacer(Modifier.height(8.dp))
+                        }
+
+                        // Right Column
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Spacer(Modifier.height(12.dp))
+                            QuestProgressCard(
+                                questSummary = questSummary,
+                                onNavigateToQuests = onNavigateToQuests
+                            )
+                            QuickActionsRow(
+                                onCalendar = onNavigateToCalendar,
+                                onJournal = onNavigateToJournal,
+                                onLibrary = onNavigateToLibrary,
+                                onInventory = onNavigateToInventory,
+                                onDailySummary = onNavigateToDailySummary
+                            )
+                            MotivationalQuoteCard()
+                            Spacer(Modifier.height(8.dp))
+                        }
+                    }
+                } else {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 16.dp)
+                            .padding(bottom = 8.dp)
+                    ) {
+                        Spacer(Modifier.height(12.dp))
+                        CharacterStatusPanel(
+                            user = user,
+                            stats = stats
+                        )
+                        Spacer(Modifier.height(14.dp))
+                        MotivationalQuoteCard()
+                        Spacer(Modifier.height(14.dp))
+                        QuestProgressCard(
+                            questSummary = questSummary,
+                            onNavigateToQuests = onNavigateToQuests
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        FinanceSummaryCard(
+                            totalBalance = totalBalance,
+                            todayExpense = todayExpense,
+                            onNavigateToFinance = onNavigateToFinance
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        QuickActionsRow(
+                            onCalendar = onNavigateToCalendar,
+                            onJournal = onNavigateToJournal,
+                            onLibrary = onNavigateToLibrary,
+                            onInventory = onNavigateToInventory,
+                            onDailySummary = onNavigateToDailySummary
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
+                }
+
+                if (!isTablet) {
+                    BottomNavBar(
+                        onNavigateToQuests = onNavigateToQuests,
+                        onNavigateToSkills = onNavigateToSkills,
+                        onNavigateToFinance = onNavigateToFinance,
+                        onNavigateToAura = onNavigateToNpc
+                    )
+                }
+            }
         }
         
         if (showSettingsDialog) {
@@ -147,10 +218,14 @@ fun HomeScreen(
                 currentApiKey = geminiApiKey,
                 currentSupabaseUrl = supabaseUrl,
                 currentSupabaseAnonKey = supabaseAnonKey,
+                currentSyncId = syncId,
+                syncState = syncState,
                 onDismiss = { showSettingsDialog = false },
-                onSave = { apiKey, sbUrl, sbKey ->
+                onForceSync = { viewModel.forceSync() },
+                onSave = { apiKey, sbUrl, sbKey, newSyncId ->
                     viewModel.saveApiKey(apiKey)
                     viewModel.saveSupabaseConfig(sbUrl, sbKey)
+                    viewModel.saveSyncId(newSyncId)
                     showSettingsDialog = false
                 }
             )
@@ -248,12 +323,16 @@ private fun SettingsDialog(
     currentApiKey: String,
     currentSupabaseUrl: String,
     currentSupabaseAnonKey: String,
+    currentSyncId: String,
+    syncState: SyncState,
     onDismiss: () -> Unit,
-    onSave: (apiKey: String, supabaseUrl: String, supabaseAnonKey: String) -> Unit
+    onForceSync: () -> Unit,
+    onSave: (apiKey: String, supabaseUrl: String, supabaseAnonKey: String, syncId: String) -> Unit
 ) {
     var apiKey by remember { mutableStateOf(currentApiKey) }
     var sbUrl by remember { mutableStateOf(currentSupabaseUrl) }
     var sbKey by remember { mutableStateOf(currentSupabaseAnonKey) }
+    var sId by remember { mutableStateOf(currentSyncId) }
 
     val fieldColors = OutlinedTextFieldDefaults.colors(
         focusedTextColor = Color.White,
@@ -323,10 +402,39 @@ private fun SettingsDialog(
                     "Data syncs to Supabase on quest completion and restores automatically on fresh install.",
                     color = TEXT_MUTED, fontSize = 11.sp
                 )
+                
+                Spacer(Modifier.height(8.dp))
+                Text("Device / Sync ID:", color = Color.White, fontSize = 14.sp)
+                OutlinedTextField(
+                    value = sId,
+                    onValueChange = { sId = it },
+                    colors = fieldColors,
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                Text(
+                    "Copy this ID to another device (e.g., Tablet) to sync both devices to the same cloud save.",
+                    color = GOLD, fontSize = 11.sp
+                )
+
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = onForceSync,
+                    colors = ButtonDefaults.buttonColors(containerColor = PRIMARY.copy(alpha = 0.2f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    val statusText = when (syncState) {
+                        SyncState.Syncing -> "Syncing..."
+                        SyncState.Synced -> "Synced ✓"
+                        SyncState.SyncFailed -> "Sync Failed ✗"
+                        else -> "Sync Now (Force Push)"
+                    }
+                    Text(statusText, color = PRIMARY, fontWeight = FontWeight.Bold)
+                }
             }
         },
         confirmButton = {
-            TextButton(onClick = { onSave(apiKey, sbUrl, sbKey) }) {
+            TextButton(onClick = { onSave(apiKey, sbUrl, sbKey, sId) }) {
                 Text("Save", color = PRIMARY, fontWeight = FontWeight.Bold)
             }
         },
@@ -904,6 +1012,108 @@ private fun BottomNavBar(
                         )
                         if (isHome) {
                             Spacer(Modifier.height(2.dp))
+                            Box(
+                                modifier = Modifier
+                                    .size(4.dp)
+                                    .clip(CircleShape)
+                                    .background(PRIMARY)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ── Side navigation bar (Tablet) ──────────────────────────────────────────────
+@Composable
+private fun SideNavBar(
+    onNavigateToQuests: () -> Unit,
+    onNavigateToSkills: () -> Unit,
+    onNavigateToFinance: () -> Unit,
+    onNavigateToAura: () -> Unit
+) {
+    val auraGlow by rememberInfiniteTransition(label = "nav_aura_side").animateFloat(
+        0.4f, 1f,
+        infiniteRepeatable(tween(1800, easing = EaseInOutSine), RepeatMode.Reverse),
+        label = "aura_glow_side"
+    )
+    val Purple = Color(0xFFB48EFF)
+
+    data class NavItem(val icon: String, val label: String, val action: (() -> Unit)?, val isAura: Boolean = false)
+
+    val items = listOf(
+        NavItem("🏠", "HOME", null),
+        NavItem("📋", "NHIỆM VỤ", onNavigateToQuests),
+        NavItem("✦", "AURA", onNavigateToAura, isAura = true),
+        NavItem("🌳", "KỸ NĂNG", onNavigateToSkills),
+        NavItem("💰", "TÀI CHÍNH", onNavigateToFinance)
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxHeight()
+            .width(80.dp)
+            .background(Color(0xCC0A0A1A))
+            .border(BorderStroke(0.5.dp, GLASS_BORDER))
+            .padding(vertical = 16.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxHeight(),
+            verticalArrangement = Arrangement.SpaceEvenly,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            items.forEachIndexed { idx, item ->
+                val isHome = idx == 0
+                if (item.isAura) {
+                    Column(
+                        modifier = Modifier
+                            .clickable { item.action?.invoke() }
+                            .padding(vertical = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    Brush.radialGradient(
+                                        listOf(Purple.copy(auraGlow * 0.5f), Color(0xFF1A0A2E))
+                                    )
+                                )
+                                .border(1.5.dp, Purple.copy(auraGlow), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("✦", fontSize = 18.sp, color = Purple.copy(auraGlow))
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "AURA",
+                            color = Purple.copy(auraGlow),
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.1f.em
+                        )
+                    }
+                } else {
+                    Column(
+                        modifier = Modifier
+                            .clickable(enabled = item.action != null) { item.action?.invoke() }
+                            .padding(vertical = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(item.icon, fontSize = 22.sp)
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            item.label,
+                            color = if (isHome) PRIMARY else TEXT_MUTED,
+                            fontSize = 9.sp,
+                            fontWeight = if (isHome) FontWeight.Bold else FontWeight.Normal,
+                            letterSpacing = 0.06f.em
+                        )
+                        if (isHome) {
+                            Spacer(Modifier.height(4.dp))
                             Box(
                                 modifier = Modifier
                                     .size(4.dp)

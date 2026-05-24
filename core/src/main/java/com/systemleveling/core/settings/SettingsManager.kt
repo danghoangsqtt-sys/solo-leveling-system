@@ -42,6 +42,13 @@ class SettingsManager @Inject constructor(
         private val IS_JOURNAL_SEEDED = booleanPreferencesKey("is_journal_seeded")
         private val IS_LIBRARY_SEEDED = booleanPreferencesKey("is_library_seeded")
 
+        // Biological Schedule
+        private val WAKE_TIME = stringPreferencesKey("wake_time")
+        private val SLEEP_TIME = stringPreferencesKey("sleep_time")
+        private val WORK_TIME = stringPreferencesKey("work_time")
+        private val LUNCH_TIME = stringPreferencesKey("lunch_time")
+        private val WORKOUT_TIME = stringPreferencesKey("workout_time")
+
         const val DEFAULT_APPWRITE_ENDPOINT = "https://sgp.cloud.appwrite.io/v1"
     }
 
@@ -75,6 +82,24 @@ class SettingsManager @Inject constructor(
 
     suspend fun isLibrarySeeded(): Boolean = dataStore.data.first()[IS_LIBRARY_SEEDED] ?: false
     suspend fun markLibrarySeeded() { dataStore.edit { prefs -> prefs[IS_LIBRARY_SEEDED] = true } }
+
+    // ── Biological Schedule ──────────────────────────────────────────────────
+
+    val wakeTime: Flow<String> = dataStore.data.map { it[WAKE_TIME] ?: "06:00" }
+    val sleepTime: Flow<String> = dataStore.data.map { it[SLEEP_TIME] ?: "23:00" }
+    val workTime: Flow<String> = dataStore.data.map { it[WORK_TIME] ?: "08:00 - 17:00" }
+    val lunchTime: Flow<String> = dataStore.data.map { it[LUNCH_TIME] ?: "12:00 - 13:00" }
+    val workoutTime: Flow<String> = dataStore.data.map { it[WORKOUT_TIME] ?: "17:30 - 18:30" }
+
+    suspend fun setSchedule(wake: String, sleep: String, work: String, lunch: String, workout: String) {
+        dataStore.edit { prefs ->
+            prefs[WAKE_TIME] = wake
+            prefs[SLEEP_TIME] = sleep
+            prefs[WORK_TIME] = work
+            prefs[LUNCH_TIME] = lunch
+            prefs[WORKOUT_TIME] = workout
+        }
+    }
 
     // ── Appwrite sync ────────────────────────────────────────────────────────
 
@@ -120,6 +145,14 @@ class SettingsManager @Inject constructor(
     }
 
     // ── Device identity & cloud sync ─────────────────────────────────────────
+
+    val syncIdFlow: Flow<String> = dataStore.data.map { prefs ->
+        prefs[DEVICE_UUID] ?: ""
+    }
+
+    suspend fun setDeviceId(newId: String) {
+        dataStore.edit { prefs -> prefs[DEVICE_UUID] = newId.trim() }
+    }
 
     suspend fun getOrCreateDeviceId(): String {
         val existing = dataStore.data.first()[DEVICE_UUID]

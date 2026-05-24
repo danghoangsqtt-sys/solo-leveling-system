@@ -90,7 +90,7 @@ fun OnboardingScreen(
                 ResultStep(
                     data = state.data,
                     onAccept = { selectedClassName ->
-                        viewModel.acceptAndComplete(nickname, combinedGoal, selectedClassName, state.data)
+                        viewModel.acceptAndComplete(nickname, combinedGoal, selectedClassName, state.data, surveyData!!)
                     },
                     onReroll = {
                         surveyData?.let {

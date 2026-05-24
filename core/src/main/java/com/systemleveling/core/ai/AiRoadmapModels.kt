@@ -15,7 +15,12 @@ data class AiSurveyData(
     val studyHours: String = "",
     val languageLevel: String = "",
     val sleepHours: String = "",
-    val workStyle: String = ""
+    val workStyle: String = "",
+    val wakeTime: String = "",
+    val sleepTime: String = "",
+    val workTime: String = "",
+    val lunchTime: String = "",
+    val workoutTime: String = ""
 )
 
 @Serializable
