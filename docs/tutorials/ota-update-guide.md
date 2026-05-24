@@ -292,6 +292,7 @@ bash docs/tutorials/ota-release.sh 2 "1.1" "Fix sync bug, debounce cloud push"
 | `10401` | `"1.4.1"` | 2026-05-24 | Fix black screen (QuestListScreen), fix Calendar sort, fix OTA semantic version parsing, perf improvements |
 | `10402` | `"1.4.2"` | 2026-05-24 | Tap notification → open quest list; onNewIntent deep-link; back-stack fix |
 | `10403` | `"1.4.3"` | 2026-05-24 | Quest time slots đồng bộ lịch sinh học; mô tả nhiệm vụ cụ thể hơn (gắn tên task) |
+| `10404` | `"1.4.4"` | 2026-05-25 | WorkManager network constraint + backoff; LazyColumn key= fixes; empty catch logging |
 
 > AI cập nhật bảng này sau mỗi lần release thành công.
 
