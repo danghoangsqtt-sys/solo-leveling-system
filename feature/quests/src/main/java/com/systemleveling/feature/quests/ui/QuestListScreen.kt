@@ -31,7 +31,7 @@ import com.systemleveling.core.model.QuestRank
 import com.systemleveling.core.model.QuestStatus
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlinx.serialization.json.Json
+import org.json.JSONArray
 
 // ── Rank meta ─────────────────────────────────────────────────────────────────
 private data class RankMeta(val color: Color, val bg: Color, val label: String, val glow: Boolean = false)
@@ -44,6 +44,10 @@ private fun rankMeta(rank: QuestRank) = when (rank) {
     QuestRank.A -> RankMeta(Color(0xFFFFAB40), Color(0x22FFAB40), "A", glow = true)
     QuestRank.S -> RankMeta(Color(0xFFFF5252), Color(0x33FF5252), "S", glow = true)
 }
+
+private val BG_DEEP  = Color(0xFF050508)
+private val PRIMARY  = Color(0xFF4A9EFF)
+private val GOLD     = Color(0xFFFFD700)
 
 // ── Root ──────────────────────────────────────────────────────────────────────
 @Composable
@@ -70,10 +74,6 @@ fun QuestListScreen(
             penaltyToShow = event
         }
     }
-
-    val BG_DEEP  = Color(0xFF050508)
-    val PRIMARY  = Color(0xFF4A9EFF)
-    val GOLD     = Color(0xFFFFD700)
 
     Box(
         modifier = Modifier
@@ -180,8 +180,9 @@ fun QuestListScreen(
             }
 
             // ── Date header ───────────────────────────────────────────────────
-            val dateFormat = SimpleDateFormat("EEEE — dd/MM/yyyy", Locale("vi", "VN"))
-            val todayStr = dateFormat.format(Date()).uppercase()
+            val todayStr = remember {
+                SimpleDateFormat("EEEE — dd/MM/yyyy", Locale("vi", "VN")).format(Date()).uppercase()
+            }
 
             Box(
                 modifier = Modifier
@@ -205,9 +206,9 @@ fun QuestListScreen(
             }
 
             // ── Quest stats row ───────────────────────────────────────────────
-            val completed = quests.count { it.status == QuestStatus.COMPLETED }
-            val total = quests.size
-            val progress = if (total > 0) completed.toFloat() / total else 0f
+            val completed = remember(quests) { quests.count { it.status == QuestStatus.COMPLETED } }
+            val total = remember(quests) { quests.size }
+            val progress = remember(completed, total) { if (total > 0) completed.toFloat() / total else 0f }
 
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                 Row(
@@ -777,26 +778,30 @@ fun QuestDetailSheet(
             Spacer(Modifier.height(20.dp))
 
             // Subtasks
-            if (quest.subtasks.isNotBlank() && quest.subtasks != "[]") {
-                val subtasksList = try {
-                    Json.decodeFromString<List<String>>(quest.subtasks)
-                } catch (e: Exception) { emptyList() }
-
-                if (subtasksList.isNotEmpty()) {
-                    Text("CÁC BƯỚC THỰC HIỆN", color = PRIMARY, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(8.dp))
-                    subtasksList.forEach { task ->
-                        Row(
-                            modifier = Modifier.padding(bottom = 6.dp),
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            Text("🔸", fontSize = 10.sp, modifier = Modifier.padding(top = 2.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(task, color = Color.White, fontSize = 13.sp)
-                        }
+            val subtasksList = remember(quest.subtasks) {
+                buildList {
+                    if (quest.subtasks.isNotBlank() && quest.subtasks != "[]") {
+                        try {
+                            val array = JSONArray(quest.subtasks)
+                            for (i in 0 until array.length()) add(array.getString(i))
+                        } catch (e: Exception) {}
                     }
-                    Spacer(Modifier.height(20.dp))
                 }
+            }
+            if (subtasksList.isNotEmpty()) {
+                Text("CÁC BƯỚC THỰC HIỆN", color = PRIMARY, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(8.dp))
+                subtasksList.forEach { task ->
+                    Row(
+                        modifier = Modifier.padding(bottom = 6.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Text("🔸", fontSize = 10.sp, modifier = Modifier.padding(top = 2.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(task, color = Color.White, fontSize = 13.sp)
+                    }
+                }
+                Spacer(Modifier.height(20.dp))
             }
 
             // Rewards
