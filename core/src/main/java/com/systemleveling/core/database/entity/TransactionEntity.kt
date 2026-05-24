@@ -5,7 +5,12 @@ import androidx.room.PrimaryKey
 import com.systemleveling.core.model.FinanceCategory
 import com.systemleveling.core.model.TransactionType
 
-@Entity(tableName = "transactions")
+import androidx.room.Index
+
+@Entity(
+    tableName = "transactions",
+    indices = [Index(value = ["timestamp"], name = "idx_transactions_timestamp")]
+)
 data class TransactionEntity(
     @PrimaryKey val id: String,
     val amount: Long,

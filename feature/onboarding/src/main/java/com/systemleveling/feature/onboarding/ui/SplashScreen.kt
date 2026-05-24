@@ -4,6 +4,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -12,19 +13,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
+import java.util.Random
 
 // ── Palette ──────────────────────────────────────────────────────────────────
 private val BgDeep   = Color(0xFF05050F)
@@ -33,7 +30,6 @@ private val Cyan     = Color(0xFF38BDF8)
 private val CyanDim  = Color(0xFF1E8FCF)
 private val CyanGlow = Color(0xFF7DD3F8)
 private val Gold     = Color(0xFFFFD700)
-private val GoldDim  = Color(0xFFB8860B)
 private val Green    = Color(0xFF00FF87)
 private val White    = Color(0xFFFFFFFF)
 private val TextDim  = Color(0xFF8BA3C7)
@@ -51,9 +47,8 @@ private val BootMessages = listOf(
 
 private val StarCount = 60
 
-private data class Particle(
-    val x: Float, val y: Float, val r: Float,
-    val speedY: Float, val alpha: Float, val color: Color
+private data class Star(
+    val x: Float, val y: Float, val r: Float, val a: Float
 )
 
 @Composable
@@ -71,8 +66,8 @@ fun SplashScreen(onComplete: () -> Unit) {
 
     val infiniteTransition = rememberInfiniteTransition(label = "splash")
 
-    val orbScale by infiniteTransition.animateFloat(
-        1f, 1.10f,
+    val orbPulse by infiniteTransition.animateFloat(
+        0.9f, 1.05f,
         infiniteRepeatable(tween(1500, easing = EaseInOutSine), RepeatMode.Reverse), "orb"
     )
     val glowAlpha by infiniteTransition.animateFloat(
@@ -83,33 +78,23 @@ fun SplashScreen(onComplete: () -> Unit) {
         0f, 360f,
         infiniteRepeatable(tween(5000, easing = LinearEasing)), "ring"
     )
-    val innerRot by infiniteTransition.animateFloat(
-        360f, 0f,
-        infiniteRepeatable(tween(3200, easing = LinearEasing)), "inner"
-    )
-    val particleProg by infiniteTransition.animateFloat(
-        0f, 1f,
-        infiniteRepeatable(tween(4000, easing = LinearEasing)), "particles"
+    val starTwinkle by infiniteTransition.animateFloat(
+        0.5f, 1f,
+        infiniteRepeatable(tween(2000, easing = EaseInOutSine), RepeatMode.Reverse), "stars"
     )
     val scanY by infiniteTransition.animateFloat(
         -0.05f, 1.05f,
         infiniteRepeatable(tween(2800, easing = LinearEasing)), "scan"
     )
-    val titleGlow by infiniteTransition.animateFloat(
-        0.7f, 1f,
-        infiniteRepeatable(tween(2000, easing = EaseInOutSine), RepeatMode.Reverse), "title"
-    )
 
     val stars = remember {
-        val rng = java.util.Random(7L)
+        val rng = Random(7L)
         List(StarCount) {
-            Particle(
+            Star(
                 x = rng.nextFloat(),
                 y = rng.nextFloat(),
-                r = rng.nextFloat() * 1.8f + 0.3f,
-                speedY = rng.nextFloat() * 0.001f + 0.0002f,
-                alpha = rng.nextFloat() * 0.5f + 0.1f,
-                color = if (rng.nextInt(4) == 0) Gold else CyanGlow
+                r = rng.nextFloat() * 1.5f + 0.5f,
+                a = rng.nextFloat() * 0.5f + 0.3f
             )
         }
     }
@@ -130,27 +115,20 @@ fun SplashScreen(onComplete: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.radialGradient(
-                    listOf(Color(0xFF0D0D2B), BgDeep),
-                    radius = 2000f
-                )
-            )
-            .alpha(animAlpha),
+            .background(BgNavy),
         contentAlignment = Alignment.Center
     ) {
-        // Star field + floating particles
+        // Star field
         Canvas(modifier = Modifier.fillMaxSize()) {
-            stars.forEachIndexed { i, star ->
-                val yPos = ((star.y + particleProg * star.speedY * 100f) % 1f) * size.height
+            stars.forEach { star ->
                 drawCircle(
-                    color = star.color.copy(alpha = star.alpha),
-                    radius = star.r * density,
-                    center = Offset(star.x * size.width, yPos)
+                    color = Cyan.copy(alpha = star.a * starTwinkle),
+                    radius = star.r.dp.toPx(),
+                    center = Offset(star.x * size.width, star.y * size.height)
                 )
             }
         }
-
+        
         // Scan line
         Canvas(modifier = Modifier.fillMaxSize()) {
             val pos = scanY * size.height
@@ -170,130 +148,81 @@ fun SplashScreen(onComplete: () -> Unit) {
         ) {
             Spacer(Modifier.height(56.dp))
 
-            // ── Title ─────────────────────────────────────────────────────────
-            Text(
-                text = "SOLO LEVELING SYSTEM",
-                color = Cyan.copy(alpha = titleGlow),
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = 0.10f.em,
-                textAlign = TextAlign.Center
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = "CLOSED BETA  ·  IN-DEVELOPMENT BUILD",
-                color = TextDim.copy(0.55f),
-                fontSize = 9.sp,
-                letterSpacing = 0.12f.em,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(Modifier.height(28.dp))
-
-            // ── Central energy figure (Canvas) ────────────────────────────────
+            // System orb
             Box(
-                modifier = Modifier.size(240.dp),
+                modifier = Modifier.size(160.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     val cx = size.width / 2f
                     val cy = size.height / 2f
+                    val r = size.minDimension / 2f
 
                     // Outer ambient glow
                     drawCircle(
                         brush = Brush.radialGradient(
-                            listOf(
-                                Cyan.copy(alpha = 0.18f * glowAlpha),
-                                CyanDim.copy(alpha = 0.08f * glowAlpha),
-                                Color.Transparent
-                            ),
-                            center = Offset(cx, cy), radius = 110f
+                            listOf(Cyan.copy(glowAlpha * 0.25f), Color.Transparent),
+                            center = Offset(cx, cy), radius = r
                         ),
-                        radius = 110f
+                        center = Offset(cx, cy), radius = r
                     )
 
-                    // Outer rotating ring with tick marks
-                    rotate(ringRot, Offset(cx, cy)) {
-                        drawCircle(
-                            color = Cyan.copy(0.20f), radius = 95f,
-                            style = Stroke(width = 1f)
-                        )
-                        repeat(16) { i ->
-                            val angle = i * (360f / 16f) * (PI / 180f).toFloat()
-                            val inner = 91f
-                            val outer = if (i % 4 == 0) 82f else 86f
-                            drawLine(
-                                color = Cyan.copy(if (i % 4 == 0) 0.7f else 0.35f),
-                                start = Offset(cx + inner * cos(angle), cy + inner * sin(angle)),
-                                end = Offset(cx + outer * cos(angle), cy + outer * sin(angle)),
-                                strokeWidth = if (i % 4 == 0) 2f else 1f
-                            )
-                        }
-                        // Bright dot at 0° (follows rotation)
-                        drawCircle(
-                            color = Gold.copy(0.9f), radius = 4f,
-                            center = Offset(cx + 95f, cy)
-                        )
-                    }
-
-                    // Inner counter-rotating ring
-                    rotate(innerRot, Offset(cx, cy)) {
-                        drawCircle(
-                            color = CyanDim.copy(0.30f), radius = 65f,
-                            style = Stroke(width = 1f)
-                        )
-                        repeat(8) { i ->
-                            val angle = i * 45f * (PI / 180f).toFloat()
-                            drawCircle(
-                                color = Gold.copy(0.75f), radius = 3.5f,
-                                center = Offset(cx + 65f * cos(angle), cy + 65f * sin(angle))
-                            )
-                        }
-                    }
-
-                    // Electric arcs from core outward
-                    val arcCount = 6
-                    repeat(arcCount) { i ->
-                        val angle = (i * (360f / arcCount) + ringRot * 0.6f) * (PI / 180f).toFloat()
-                        val len = 38f + (i % 3) * 12f
-                        drawLine(
-                            color = Cyan.copy(0.5f * glowAlpha),
-                            start = Offset(cx + 22f * cos(angle), cy + 22f * sin(angle)),
-                            end = Offset(cx + len * cos(angle), cy + len * sin(angle)),
-                            strokeWidth = 1.2f
-                        )
-                    }
-
-                    // Core glow orb (layers)
+                    // Rotating arc 1
+                    drawArc(
+                        color = Cyan.copy(glowAlpha * 0.8f),
+                        startAngle = ringRot,
+                        sweepAngle = 220f, useCenter = false,
+                        style = Stroke(2.5f.dp.toPx())
+                    )
+                    // Rotating arc 2 (offset)
+                    drawArc(
+                        color = Gold.copy(glowAlpha * 0.5f),
+                        startAngle = ringRot + 200f,
+                        sweepAngle = 100f, useCenter = false,
+                        style = Stroke(1.5f.dp.toPx())
+                    )
+                    // Inner ring (static)
                     drawCircle(
-                        brush = Brush.radialGradient(
-                            listOf(White.copy(0.95f), Cyan.copy(0.7f), CyanDim.copy(0.2f), Color.Transparent),
-                            center = Offset(cx, cy), radius = 26f * orbScale
-                        ),
-                        radius = 26f * orbScale
+                        color = Cyan.copy(0.12f),
+                        center = Offset(cx, cy),
+                        radius = r * 0.58f,
+                        style = Stroke(1f.dp.toPx())
                     )
-                    // Core bright spot
-                    drawCircle(color = White.copy(0.8f), radius = 8f * orbScale, center = Offset(cx, cy))
                 }
 
-                // Center text label
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("✦", color = Gold.copy(0.9f), fontSize = 12.sp)
-                    Text(
-                        "Level Up!",
-                        color = Gold,
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 0.04f.em
-                    )
-                    Text("✦", color = Gold.copy(0.5f), fontSize = 9.sp)
+                // Core orb box
+                Box(
+                    modifier = Modifier
+                        .size((72 * orbPulse).dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(listOf(Color(0xFF0E2A44), Color(0xFF050510)))
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("⚡", fontSize = (34 * orbPulse).sp, modifier = Modifier.alpha(glowAlpha))
                 }
             }
 
-            // ── HP / MP bars ──────────────────────────────────────────────────
-            HudBars(modifier = Modifier.padding(horizontal = 48.dp))
+            Spacer(Modifier.height(36.dp))
 
-            Spacer(Modifier.height(20.dp))
+            // Title
+            Text(
+                "SYSTEM LEVELING",
+                color = Cyan.copy(glowAlpha * 0.9f + 0.1f),
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 0.18f.em
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "AWAKENING PROTOCOL",
+                color = TextDim.copy(0.7f),
+                fontSize = 10.sp,
+                letterSpacing = 0.22f.em
+            )
+
+            Spacer(Modifier.height(40.dp))
 
             // ── Boot messages ─────────────────────────────────────────────────
             Column(

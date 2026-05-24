@@ -5,7 +5,12 @@ import androidx.room.PrimaryKey
 import com.systemleveling.core.model.CourseContentType
 import java.util.UUID
 
-@Entity(tableName = "lessons")
+import androidx.room.Index
+
+@Entity(
+    tableName = "lessons",
+    indices = [Index(value = ["courseId"], name = "idx_lessons_courseId")]
+)
 data class LessonEntity(
     @PrimaryKey val id: String = UUID.randomUUID().toString(),
     val courseId: String,

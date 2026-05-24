@@ -16,9 +16,16 @@ import kotlinx.serialization.json.Json
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import android.content.Context
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 @Singleton
 class SettingsManager @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val dataStore: DataStore<Preferences>
 ) {
     private val json = Json { ignoreUnknownKeys = true }
@@ -34,16 +41,21 @@ class SettingsManager @Inject constructor(
         private val IS_ONBOARDED = booleanPreferencesKey("isOnboarded")
         private val IS_JOURNAL_SEEDED = booleanPreferencesKey("is_journal_seeded")
         private val IS_LIBRARY_SEEDED = booleanPreferencesKey("is_library_seeded")
-        private val APPWRITE_API_KEY = stringPreferencesKey("appwrite_api_key")
-        private val APPWRITE_ENDPOINT = stringPreferencesKey("appwrite_endpoint")
-        private val APPWRITE_PROJECT_ID = stringPreferencesKey("appwrite_project_id")
-        private val APPWRITE_DATABASE_ID = stringPreferencesKey("appwrite_database_id")
-        private val APPWRITE_COLLECTION_ID = stringPreferencesKey("appwrite_collection_id")
 
         const val DEFAULT_APPWRITE_ENDPOINT = "https://sgp.cloud.appwrite.io/v1"
-        const val DEFAULT_APPWRITE_PROJECT_ID = "698fe17d00005a81c862"
-        const val DEFAULT_APPWRITE_DATABASE_ID = "698fe1b90013010bd402"
-        const val DEFAULT_APPWRITE_COLLECTION_ID = "69c4e168003b8a09bff8"
+    }
+
+    private val encryptedPrefs by lazy {
+        val masterKey = MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+        EncryptedSharedPreferences.create(
+            context,
+            "secret_prefs",
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
     }
 
     // ── Onboarding state ─────────────────────────────────────────────────────
@@ -66,40 +78,45 @@ class SettingsManager @Inject constructor(
 
     // ── Appwrite sync ────────────────────────────────────────────────────────
 
-    val appwriteApiKey: Flow<String> = dataStore.data.map { prefs -> prefs[APPWRITE_API_KEY] ?: "" }
+    private val _appwriteApiKey = MutableStateFlow(encryptedPrefs.getString("appwrite_api_key", "") ?: "")
+    val appwriteApiKey: Flow<String> = _appwriteApiKey.asStateFlow()
 
     suspend fun setAppwriteApiKey(key: String) {
-        dataStore.edit { prefs -> prefs[APPWRITE_API_KEY] = key.trim() }
+        encryptedPrefs.edit().putString("appwrite_api_key", key.trim()).apply()
+        _appwriteApiKey.value = key.trim()
     }
 
-    val appwriteEndpoint: Flow<String> = dataStore.data.map { prefs ->
-        prefs[APPWRITE_ENDPOINT] ?: DEFAULT_APPWRITE_ENDPOINT
-    }
-    val appwriteProjectId: Flow<String> = dataStore.data.map { prefs ->
-        prefs[APPWRITE_PROJECT_ID] ?: DEFAULT_APPWRITE_PROJECT_ID
-    }
-    val appwriteDatabaseId: Flow<String> = dataStore.data.map { prefs ->
-        prefs[APPWRITE_DATABASE_ID] ?: DEFAULT_APPWRITE_DATABASE_ID
-    }
-    val appwriteCollectionId: Flow<String> = dataStore.data.map { prefs ->
-        prefs[APPWRITE_COLLECTION_ID] ?: DEFAULT_APPWRITE_COLLECTION_ID
-    }
+    private val _appwriteEndpoint = MutableStateFlow(encryptedPrefs.getString("appwrite_endpoint", DEFAULT_APPWRITE_ENDPOINT) ?: DEFAULT_APPWRITE_ENDPOINT)
+    val appwriteEndpoint: Flow<String> = _appwriteEndpoint.asStateFlow()
+
+    private val _appwriteProjectId = MutableStateFlow(encryptedPrefs.getString("appwrite_project_id", "") ?: "")
+    val appwriteProjectId: Flow<String> = _appwriteProjectId.asStateFlow()
+
+    private val _appwriteDatabaseId = MutableStateFlow(encryptedPrefs.getString("appwrite_database_id", "") ?: "")
+    val appwriteDatabaseId: Flow<String> = _appwriteDatabaseId.asStateFlow()
+
+    private val _appwriteCollectionId = MutableStateFlow(encryptedPrefs.getString("appwrite_collection_id", "") ?: "")
+    val appwriteCollectionId: Flow<String> = _appwriteCollectionId.asStateFlow()
 
     suspend fun setAppwriteConfig(endpoint: String, projectId: String, databaseId: String, collectionId: String) {
-        dataStore.edit { prefs ->
-            prefs[APPWRITE_ENDPOINT] = endpoint.trim()
-            prefs[APPWRITE_PROJECT_ID] = projectId.trim()
-            prefs[APPWRITE_DATABASE_ID] = databaseId.trim()
-            prefs[APPWRITE_COLLECTION_ID] = collectionId.trim()
-        }
+        encryptedPrefs.edit()
+            .putString("appwrite_endpoint", endpoint.trim())
+            .putString("appwrite_project_id", projectId.trim())
+            .putString("appwrite_database_id", databaseId.trim())
+            .putString("appwrite_collection_id", collectionId.trim())
+            .apply()
+        _appwriteEndpoint.value = endpoint.trim()
+        _appwriteProjectId.value = projectId.trim()
+        _appwriteDatabaseId.value = databaseId.trim()
+        _appwriteCollectionId.value = collectionId.trim()
     }
 
-    val geminiApiKey: Flow<String> = dataStore.data.map { prefs ->
-        prefs[GEMINI_API_KEY] ?: ""
-    }
+    private val _geminiApiKey = MutableStateFlow(encryptedPrefs.getString("gemini_api_key", "") ?: "")
+    val geminiApiKey: Flow<String> = _geminiApiKey.asStateFlow()
 
     suspend fun setGeminiApiKey(apiKey: String) {
-        dataStore.edit { prefs -> prefs[GEMINI_API_KEY] = apiKey.trim() }
+        encryptedPrefs.edit().putString("gemini_api_key", apiKey.trim()).apply()
+        _geminiApiKey.value = apiKey.trim()
     }
 
     // ── Device identity & cloud sync ─────────────────────────────────────────
@@ -112,19 +129,19 @@ class SettingsManager @Inject constructor(
         return newId
     }
 
-    val supabaseUrl: Flow<String> = dataStore.data.map { prefs ->
-        prefs[SUPABASE_URL] ?: ""
-    }
+    private val _supabaseUrl = MutableStateFlow(encryptedPrefs.getString("supabase_url", "") ?: "")
+    val supabaseUrl: Flow<String> = _supabaseUrl.asStateFlow()
 
-    val supabaseAnonKey: Flow<String> = dataStore.data.map { prefs ->
-        prefs[SUPABASE_ANON_KEY] ?: ""
-    }
+    private val _supabaseAnonKey = MutableStateFlow(encryptedPrefs.getString("supabase_anon_key", "") ?: "")
+    val supabaseAnonKey: Flow<String> = _supabaseAnonKey.asStateFlow()
 
     suspend fun setSupabaseConfig(url: String, anonKey: String) {
-        dataStore.edit { prefs ->
-            prefs[SUPABASE_URL] = url.trim()
-            prefs[SUPABASE_ANON_KEY] = anonKey.trim()
-        }
+        encryptedPrefs.edit()
+            .putString("supabase_url", url.trim())
+            .putString("supabase_anon_key", anonKey.trim())
+            .apply()
+        _supabaseUrl.value = url.trim()
+        _supabaseAnonKey.value = anonKey.trim()
     }
 
     // ── Generic list helper ──────────────────────────────────────────────────

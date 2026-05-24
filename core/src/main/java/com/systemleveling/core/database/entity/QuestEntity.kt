@@ -6,7 +6,12 @@ import com.systemleveling.core.model.QuestRank
 import com.systemleveling.core.model.QuestStatus
 import com.systemleveling.core.model.QuestType
 
-@Entity(tableName = "quests")
+import androidx.room.Index
+
+@Entity(
+    tableName = "quests",
+    indices = [Index(value = ["date"], name = "idx_quests_date")]
+)
 data class QuestEntity(
     @PrimaryKey val id: String,
     val title: String,

@@ -19,13 +19,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import android.graphics.BitmapFactory
-import android.util.Base64
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.layout.ContentScale
 import com.systemleveling.core.database.entity.StatEntity
 import com.systemleveling.core.database.entity.UserEntity
 import com.systemleveling.core.designsystem.components.GlassCard
@@ -60,7 +55,6 @@ fun HomeScreen(
     onNavigateToQuests: () -> Unit = {},
     onNavigateToSkills: () -> Unit = {},
     onNavigateToInventory: () -> Unit = {},
-    onNavigateToTitles: () -> Unit = {},
     onNavigateToFinance: () -> Unit = {},
     onNavigateToLibrary: () -> Unit = {},
     onNavigateToJournal: () -> Unit = {},
@@ -80,12 +74,9 @@ fun HomeScreen(
     val todayExpense by viewModel.todayExpense.collectAsState()
     val otaUpdateInfo by viewModel.otaUpdateInfo.collectAsState()
     val otaDownloading by viewModel.otaDownloading.collectAsState()
-    val isGeneratingAvatar by viewModel.isGeneratingAvatar.collectAsState()
-    val avatarError by viewModel.avatarError.collectAsState()
     val auraGreeting by viewModel.auraGreeting.collectAsState()
 
     var showSettingsDialog by remember { mutableStateOf(false) }
-    var showProfileDialog by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -117,9 +108,7 @@ fun HomeScreen(
                 Spacer(Modifier.height(12.dp))
                 CharacterStatusPanel(
                     user = user,
-                    stats = stats,
-                    isGeneratingAvatar = isGeneratingAvatar,
-                    onAvatarClick = { showProfileDialog = true }
+                    stats = stats
                 )
                 Spacer(Modifier.height(14.dp))
                 MotivationalQuoteCard()
@@ -148,8 +137,6 @@ fun HomeScreen(
             BottomNavBar(
                 onNavigateToQuests = onNavigateToQuests,
                 onNavigateToSkills = onNavigateToSkills,
-                onNavigateToInventory = onNavigateToInventory,
-                onNavigateToTitles = onNavigateToTitles,
                 onNavigateToFinance = onNavigateToFinance,
                 onNavigateToAura = onNavigateToNpc
             )
@@ -169,27 +156,7 @@ fun HomeScreen(
             )
         }
 
-        if (showProfileDialog) {
-            // Auto-close on successful generation (isGeneratingAvatar goes false with no error)
-            val prevGenerating = remember { mutableStateOf(false) }
-            LaunchedEffect(isGeneratingAvatar) {
-                if (prevGenerating.value && !isGeneratingAvatar && avatarError == null) {
-                    showProfileDialog = false
-                }
-                prevGenerating.value = isGeneratingAvatar
-            }
-            ProfileSetupDialog(
-                currentProfession = user?.profession ?: "",
-                currentDescription = user?.personalDescription ?: "",
-                isGenerating = isGeneratingAvatar,
-                error = avatarError,
-                onDismiss = { showProfileDialog = false; viewModel.clearAvatarError() },
-                onGenerate = { prof, desc ->
-                    viewModel.generateAndSaveAvatar(prof, desc)
-                    // Dialog stays open to show spinner + error; auto-closes on success
-                }
-            )
-        }
+
 
         otaUpdateInfo?.let { info ->
             OtaUpdateDialog(
@@ -375,9 +342,7 @@ private fun SettingsDialog(
 @Composable
 private fun CharacterStatusPanel(
     user: UserEntity?,
-    stats: StatEntity?,
-    isGeneratingAvatar: Boolean,
-    onAvatarClick: () -> Unit
+    stats: StatEntity?
 ) {
     val u = user ?: UserEntity(
         nickname = "Shadow Monarch", characterClass = "Warrior",
@@ -385,7 +350,7 @@ private fun CharacterStatusPanel(
     )
     val s = stats ?: StatEntity()
 
-    val classEmoji = when (u.characterClass) {
+    val classEmoji = u.avatarUri ?: when (u.characterClass) {
         "Warrior" -> "⚔️"
         "Mage"    -> "🔮"
         "Ranger"  -> "🏹"
@@ -412,11 +377,8 @@ private fun CharacterStatusPanel(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // Avatar with animated aura
                 AuraProfileAvatar(
-                    avatarBase64 = u.generatedAvatarBase64,
                     classEmoji = classEmoji,
-                    promotionTier = u.promotionTier,
-                    isLoading = isGeneratingAvatar,
-                    onClick = onAvatarClick
+                    promotionTier = u.promotionTier
                 )
 
                 Spacer(Modifier.width(16.dp))
@@ -528,14 +490,10 @@ private fun CharacterStatusPanel(
     }
 }
 
-// ── Animated aura profile avatar ─────────────────────────────────────────────
 @Composable
 private fun AuraProfileAvatar(
-    avatarBase64: String?,
     classEmoji: String,
-    promotionTier: Int,
-    isLoading: Boolean,
-    onClick: () -> Unit
+    promotionTier: Int
 ) {
     val auraColor = when (promotionTier) {
         0    -> Color(0xFF4A9EFF)
@@ -557,17 +515,8 @@ private fun AuraProfileAvatar(
         label = "pulse"
     )
 
-    val bitmap = remember(avatarBase64) {
-        avatarBase64?.let {
-            try {
-                val bytes = Base64.decode(it, Base64.DEFAULT)
-                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
-            } catch (_: Exception) { null }
-        }
-    }
-
     Box(
-        modifier = Modifier.size(80.dp).clickable { onClick() },
+        modifier = Modifier.size(80.dp),
         contentAlignment = Alignment.Center
     ) {
         Box(
@@ -590,7 +539,7 @@ private fun AuraProfileAvatar(
                         center = center
                     ),
                     radius = r,
-                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                    style = Stroke(width = strokeWidth)
                 )
             }
         }
@@ -599,97 +548,9 @@ private fun AuraProfileAvatar(
                 .background(Brush.radialGradient(listOf(Color(0xFF1E3A5F), Color(0xFF0A1628)))),
             contentAlignment = Alignment.Center
         ) {
-            when {
-                isLoading -> CircularProgressIndicator(
-                    modifier = Modifier.size(32.dp),
-                    color = auraColor,
-                    strokeWidth = 2.dp
-                )
-                bitmap != null -> Image(
-                    bitmap = bitmap,
-                    contentDescription = "Character Avatar",
-                    modifier = Modifier.fillMaxSize().clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
-                else -> Text(classEmoji, fontSize = 28.sp)
-            }
+            Text(classEmoji, fontSize = 28.sp)
         }
     }
-}
-
-// ── Profile setup dialog ──────────────────────────────────────────────────────
-@Composable
-private fun ProfileSetupDialog(
-    currentProfession: String,
-    currentDescription: String,
-    isGenerating: Boolean,
-    error: String?,
-    onDismiss: () -> Unit,
-    onGenerate: (profession: String, description: String) -> Unit
-) {
-    var profession by remember { mutableStateOf(currentProfession) }
-    var description by remember { mutableStateOf(currentDescription) }
-
-    val fieldColors = OutlinedTextFieldDefaults.colors(
-        focusedTextColor = Color.White,
-        unfocusedTextColor = TEXT_MUTED,
-        focusedBorderColor = PRIMARY,
-        unfocusedBorderColor = GLASS_BORDER,
-        cursorColor = PRIMARY
-    )
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = BG_DEEP,
-        title = { Text("✨ Hồ Sơ Nhân Vật", color = PRIMARY_DIM, fontWeight = FontWeight.Bold) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    "AI sẽ tạo chân dung nhân vật RPG dựa trên thông tin của bạn.",
-                    color = TEXT_MUTED, fontSize = 12.sp
-                )
-                Spacer(Modifier.height(4.dp))
-                Text("Nghề nghiệp:", color = Color.White, fontSize = 14.sp)
-                OutlinedTextField(
-                    value = profession,
-                    onValueChange = { profession = it },
-                    colors = fieldColors,
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    placeholder = { Text("Ví dụ: Lập trình viên, Sinh viên...", color = TEXT_MUTED, fontSize = 12.sp) }
-                )
-                Text("Mô tả bản thân:", color = Color.White, fontSize = 14.sp)
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    colors = fieldColors,
-                    modifier = Modifier.fillMaxWidth().height(90.dp),
-                    maxLines = 4,
-                    placeholder = { Text("Đam mê, mục tiêu, cá tính...", color = TEXT_MUTED, fontSize = 12.sp) }
-                )
-                if (error != null) {
-                    Text(error, color = Color(0xFFFF6B6B), fontSize = 11.sp)
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onGenerate(profession, description) },
-                enabled = !isGenerating && profession.isNotBlank()
-            ) {
-                if (isGenerating) {
-                    CircularProgressIndicator(modifier = Modifier.size(16.dp), color = PRIMARY, strokeWidth = 2.dp)
-                    Spacer(Modifier.width(6.dp))
-                    Text("Đang tạo...", color = TEXT_MUTED)
-                } else {
-                    Text("✨ Tạo Avatar", color = PRIMARY, fontWeight = FontWeight.Bold)
-                }
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Đóng", color = TEXT_MUTED) }
-        }
-    )
 }
 
 @Composable
@@ -960,8 +821,6 @@ private fun AdvancementBanner(onClick: () -> Unit) {
 private fun BottomNavBar(
     onNavigateToQuests: () -> Unit,
     onNavigateToSkills: () -> Unit,
-    onNavigateToInventory: () -> Unit,
-    onNavigateToTitles: () -> Unit,
     onNavigateToFinance: () -> Unit,
     onNavigateToAura: () -> Unit
 ) {

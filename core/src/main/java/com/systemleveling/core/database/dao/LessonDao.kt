@@ -39,4 +39,7 @@ interface LessonDao {
 
     @Query("SELECT COUNT(*) FROM lessons WHERE courseId = :courseId")
     suspend fun getTotalCountSync(courseId: String): Int
+
+    @Query("DELETE FROM lessons")
+    suspend fun deleteAllLessons()
 }

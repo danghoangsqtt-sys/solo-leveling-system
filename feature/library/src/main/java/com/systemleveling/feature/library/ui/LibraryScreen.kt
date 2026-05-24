@@ -89,10 +89,12 @@ fun LibraryScreen(
 
     // ── Dialogs ───────────────────────────────────────────────────────────────
     if (showAddDialog) {
+        val folderList = courseMap.values.filter { it.id in folderIds || it.author == "Thư mục" }.sortedBy { it.title }
         AddCourseDialog(
+            folders = folderList,
             onDismiss = { showAddDialog = false },
-            onConfirm = { title, author, desc, url, type, category ->
-                viewModel.addCourse(title, author, desc, url, type, category)
+            onConfirm = { title, author, desc, url, type, category, parentId ->
+                viewModel.addCourse(title, author, desc, url, type, category, parentId)
                 showAddDialog = false
             }
         )
@@ -186,6 +188,7 @@ fun LibraryScreen(
                 Modifier
                     .fillMaxWidth()
                     .background(Color(0xFF0D0D1A))
+                    .statusBarsPadding()
                     .padding(horizontal = 12.dp, vertical = 9.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -213,6 +216,18 @@ fun LibraryScreen(
                         CircularProgressIndicator(Modifier.size(11.dp), strokeWidth = 1.5.dp, color = md_theme_dark_primary)
                     else
                         Text("⟳", color = md_theme_dark_primary, fontSize = 11.sp)
+                }
+                Spacer(Modifier.width(6.dp))
+                Box(
+                    Modifier
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(Color(0xFF2A1A1A))
+                        .border(0.5.dp, Color(0xFFA04040).copy(0.5f), RoundedCornerShape(5.dp))
+                        .clickable { viewModel.deleteAllData() }
+                        .padding(horizontal = 7.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("🗑", fontSize = 11.sp, color = Color(0xFFFF5252))
                 }
                 Spacer(Modifier.width(6.dp))
                 Box(
@@ -713,8 +728,9 @@ private fun AddFolderDialog(
 // ── Add Course Dialog ─────────────────────────────────────────────────────────
 @Composable
 private fun AddCourseDialog(
+    folders: List<CourseEntity>,
     onDismiss: () -> Unit,
-    onConfirm: (title: String, author: String, desc: String, url: String, type: CourseContentType, category: String) -> Unit
+    onConfirm: (title: String, author: String, desc: String, url: String, type: CourseContentType, category: String, parentId: String?) -> Unit
 ) {
     var title by remember { mutableStateOf("") }
     var author by remember { mutableStateOf("") }
@@ -722,6 +738,8 @@ private fun AddCourseDialog(
     var url by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf(CourseContentType.GENERAL) }
+    var selectedParentId by remember { mutableStateOf<String?>(null) }
+    var expanded by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -760,9 +778,39 @@ private fun AddCourseDialog(
                 item {
                     OutlinedTextField(
                         value = category, onValueChange = { category = it },
-                        label = { Text("Danh mục", color = Color.Gray) },
+                        label = { Text("Danh mục (không bắt buộc)", color = Color.Gray) },
                         singleLine = true, modifier = Modifier.fillMaxWidth(), colors = outlinedColors()
                     )
+                }
+                item {
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        OutlinedTextField(
+                            value = folders.find { it.id == selectedParentId }?.title ?: "Thư mục gốc",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Lưu vào thư mục", color = Color.Gray) },
+                            trailingIcon = { Text("▼", modifier = Modifier.padding(end = 10.dp), color = Color.Gray, fontSize = 10.sp) },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = outlinedColors()
+                        )
+                        Box(Modifier.matchParentSize().clickable { expanded = true })
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false },
+                            modifier = Modifier.background(Color(0xFF1E1E2F))
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("🏠 Thư mục gốc", color = Color.White) },
+                                onClick = { selectedParentId = null; expanded = false }
+                            )
+                            folders.forEach { folder ->
+                                DropdownMenuItem(
+                                    text = { Text("📁 ${folder.title}", color = Color.White) },
+                                    onClick = { selectedParentId = folder.id; expanded = false }
+                                )
+                            }
+                        }
+                    }
                 }
                 item {
                     Text("Loại nội dung", color = Color.Gray, fontSize = 11.sp)
@@ -790,7 +838,7 @@ private fun AddCourseDialog(
         },
         confirmButton = {
             Button(
-                onClick = { if (title.isNotBlank()) onConfirm(title.trim(), author.trim(), desc.trim(), url.trim(), selectedType, category.trim()) },
+                onClick = { if (title.isNotBlank()) onConfirm(title.trim(), author.trim(), desc.trim(), url.trim(), selectedType, category.trim(), selectedParentId) },
                 colors = ButtonDefaults.buttonColors(containerColor = md_theme_dark_primary)
             ) { Text("LƯU", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp) }
         },

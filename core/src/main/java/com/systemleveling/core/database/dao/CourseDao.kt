@@ -33,4 +33,7 @@ interface CourseDao {
 
     @Query("UPDATE courses SET parentId = :parentId WHERE id = :id")
     suspend fun updateCourseParent(id: String, parentId: String?)
+
+    @Query("DELETE FROM courses")
+    suspend fun deleteAllCourses()
 }

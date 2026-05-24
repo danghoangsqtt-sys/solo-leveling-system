@@ -9,6 +9,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -18,6 +20,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.systemleveling.app.navigation.AppNavGraph
@@ -81,12 +84,12 @@ class MainActivity : ComponentActivity() {
                         isReady = true
                     }
 
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    Box(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
                         postSplashDestination?.let { dest ->
                             AppNavGraph(startDestination = dest, postSplashDestination = dest)
                         }
                         DebugOverlay(
-                            modifier = Modifier.align(Alignment.TopEnd),
+                            modifier = Modifier.align(Alignment.TopEnd).padding(top = 56.dp, end = 16.dp),
                             onResetOnboarding = {
                                 scope.launch {
                                     settingsManager.setOnboarded(false)
