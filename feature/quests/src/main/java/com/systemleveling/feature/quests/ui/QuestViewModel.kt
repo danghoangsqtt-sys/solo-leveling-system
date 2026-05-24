@@ -5,11 +5,13 @@ import androidx.lifecycle.viewModelScope
 import com.systemleveling.core.database.dao.QuestDao
 import com.systemleveling.core.database.dao.UserDao
 import com.systemleveling.core.database.entity.QuestEntity
+import com.systemleveling.core.engine.PenaltyEngine
 import com.systemleveling.core.engine.RewardEngine
 import com.systemleveling.core.model.QuestStatus
 import com.systemleveling.core.model.RewardResult
 import com.systemleveling.core.model.WorkPlanItem
 import com.systemleveling.core.network.AiQuestGeneratorService
+import com.systemleveling.core.notification.NotificationHelper
 import com.systemleveling.core.settings.SettingsManager
 import com.systemleveling.core.sync.CloudSyncManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,16 +30,23 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Calendar
 import javax.inject.Inject
+import kotlin.math.ceil
+import kotlin.math.max
 
 @HiltViewModel
 class QuestViewModel @Inject constructor(
     private val questDao: QuestDao,
     private val userDao: UserDao,
     private val rewardEngine: RewardEngine,
+    private val penaltyEngine: PenaltyEngine,
+    private val notificationHelper: NotificationHelper,
     private val aiQuestGenerator: AiQuestGeneratorService,
     private val settingsManager: SettingsManager,
     private val cloudSyncManager: CloudSyncManager
 ) : ViewModel() {
+
+    /** Fired when a quest expires in real-time — displayed as in-app penalty banner. */
+    data class PenaltyEvent(val questTitle: String, val expLost: Int, val debtAdded: Int)
 
     val quests: StateFlow<List<QuestEntity>> = questDao.getAllQuests()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -50,6 +59,9 @@ class QuestViewModel @Inject constructor(
 
     private val _rewardResult = MutableSharedFlow<RewardResult>()
     val rewardResult: SharedFlow<RewardResult> = _rewardResult.asSharedFlow()
+
+    private val _penaltyEvent = MutableSharedFlow<PenaltyEvent>()
+    val penaltyEvent: SharedFlow<PenaltyEvent> = _penaltyEvent.asSharedFlow()
 
     private val _isGenerating = MutableStateFlow(false)
     val isGenerating: StateFlow<Boolean> = _isGenerating
@@ -85,11 +97,36 @@ class QuestViewModel @Inject constructor(
     }
 
     fun completeQuest(quest: QuestEntity) {
-        if (quest.status == QuestStatus.COMPLETED) return
+        // Guard: only allow completing PENDING or IN_PROGRESS quests
+        if (quest.status != QuestStatus.PENDING && quest.status != QuestStatus.IN_PROGRESS) return
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 val result = rewardEngine.processQuestCompletion(quest)
                 _rewardResult.emit(result)
+            }
+            schedulePush()
+        }
+    }
+
+    /**
+     * Called when a quest's countdown timer reaches zero in real-time.
+     * Immediately applies penalty and emits a penalty banner event.
+     */
+    fun failExpiredQuest(quest: QuestEntity) {
+        if (quest.status != QuestStatus.PENDING && quest.status != QuestStatus.IN_PROGRESS) return
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                penaltyEngine.processQuestFailure(quest)
+                val expLost = ceil(quest.expReward * 0.3).toInt()
+                _penaltyEvent.emit(PenaltyEvent(quest.title, expLost, quest.penaltyDebtPoints))
+                // System notification for penalty
+                if (quest.penaltyDebtPoints > 0) {
+                    val user = userDao.getUser().first()
+                    notificationHelper.notifyPenaltyWarning(
+                        debtPoints = max(0, (user?.debtPoints ?: 0)),
+                        failedQuests = 1
+                    )
+                }
             }
             schedulePush()
         }

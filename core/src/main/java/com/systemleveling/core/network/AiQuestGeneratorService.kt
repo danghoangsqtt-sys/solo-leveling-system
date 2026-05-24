@@ -84,18 +84,27 @@ class AiQuestGeneratorService @Inject constructor(
             
             val lowerTitle = item.title.lowercase()
             val category = when {
-                lowerTitle.contains("code") || lowerTitle.contains("bug") || lowerTitle.contains("dev") -> "coding"
-                lowerTitle.contains("học") || lowerTitle.contains("đọc") || lowerTitle.contains("nghiên cứu") -> "study"
-                lowerTitle.contains("tập") || lowerTitle.contains("chạy") || lowerTitle.contains("gym") -> "fitness"
-                lowerTitle.contains("ngủ") || lowerTitle.contains("thiền") -> "health"
-                lowerTitle.contains("tiền") || lowerTitle.contains("tài chính") -> "finance"
+                lowerTitle.contains("code") || lowerTitle.contains("bug") || lowerTitle.contains("dev") ||
+                lowerTitle.contains("lập trình") || lowerTitle.contains("app") || lowerTitle.contains("api") -> "coding"
+                lowerTitle.contains("học") || lowerTitle.contains("đọc") || lowerTitle.contains("nghiên cứu") ||
+                lowerTitle.contains("study") || lowerTitle.contains("khóa học") || lowerTitle.contains("course") -> "study"
+                lowerTitle.contains("tập") || lowerTitle.contains("chạy") || lowerTitle.contains("gym") ||
+                lowerTitle.contains("thể dục") || lowerTitle.contains("workout") || lowerTitle.contains("squat") ||
+                lowerTitle.contains("yoga") || lowerTitle.contains("bơi") || lowerTitle.contains("fitness") ||
+                lowerTitle.contains("thể thao") || lowerTitle.contains("hít đất") -> "fitness"
+                lowerTitle.contains("ngủ") || lowerTitle.contains("thiền") || lowerTitle.contains("sức khỏe") -> "health"
+                lowerTitle.contains("tiền") || lowerTitle.contains("tài chính") || lowerTitle.contains("đầu tư") -> "finance"
+                lowerTitle.contains("tiếng") || lowerTitle.contains("ngôn ngữ") || lowerTitle.contains("english") -> "language"
                 else -> "creative"
             }
             
             val statReward = when (category) {
-                "coding", "study" -> "{\"INT\": 1}"
-                "fitness", "health" -> "{\"STR\": 1, \"VIT\": 1}"
+                "coding" -> "{\"INT\": 1}"
+                "study" -> "{\"INT\": 1, \"WIS\": 1}"
+                "fitness" -> "{\"STR\": 1, \"AGI\": 1}"
+                "health" -> "{\"VIT\": 1}"
                 "finance" -> "{\"WIS\": 1}"
+                "language" -> "{\"INT\": 1, \"CHA\": 1}"
                 else -> "{\"CHA\": 1}"
             }
             
@@ -106,12 +115,13 @@ class AiQuestGeneratorService @Inject constructor(
             val exp = (item.workPriority.score * 2).coerceIn(10, 500)
             val gold = (item.workPriority.score / 2).coerceIn(5, 100)
             
-            val subtasksStr = if (item.note.isNotBlank()) "[\"${item.note.replace("\"", "'")}\"]" else "[]"
-            
+            val description = buildCategoryDescription(category, item.title, item.deadline, item.note)
+            val subtasksStr = buildCategorySubtasks(category, item.note)
+
             QuestEntity(
                 id = "Q-$dateId-${String.format("%03d", index + 1)}",
                 title = item.title,
-                description = if (item.deadline.isNotBlank()) "Deadline: ${item.deadline}" else "Nhiệm vụ tự động",
+                description = description,
                 type = QuestType.DAILY,
                 rank = rank,
                 category = category,
@@ -222,8 +232,11 @@ LOW [score 0-39] = Tùy chọn, không gấp:
 NGUYÊN TẮC ĐAN XEN:
 ${if (hasCritical) "⚠️ Có CRITICAL tasks → Ưu tiên đặt vào slot sáng, chia nhỏ tối đa." else ""}
 ${if (hasHigh) "⚡ Có HIGH tasks → Đặt vào peak focus window 09:00-12:00." else ""}
+- LUÔN thêm 1-2 quest fitness/thể chất (06:00-08:00) nếu skill tree có nhánh liên quan thể lực, sức khỏe, võ thuật hoặc thể thao — bất kể work plan có hay không
+- Quest fitness PHẢI có subtasks cụ thể: số reps/sets, thời gian, cách ghi kết quả — KHÔNG chung chung như "tập thể dục"
 - Sau mỗi 90 phút làm việc gấp, thêm 1 quest nhẹ (health/meditation) để recover
 - Luôn kết thúc ngày với 1 quest review/journal (21:00-21:30)
+- description của TỪNG quest PHẢI: nêu rõ cần làm GÌ, bắt đầu TỪ ĐÂU, và làm BAO NHIÊU — không được viết chung chung
 
 ════════════ BẢNG THƯỞNG CÂN BẰNG ════════════
 ${RewardConstants.toPromptTable()}
@@ -342,34 +355,132 @@ Thời gian: từ 06:00 đến 22:00. Không trùng lặp time slot.
         return result.sortedBy { it.timeStart ?: "99:99" }
     }
 
+    private fun buildCategoryDescription(category: String, title: String, deadline: String, note: String): String {
+        val base = when (category) {
+            "fitness" -> {
+                val lc = title.lowercase()
+                when {
+                    lc.contains("chạy") -> "Chạy bộ theo đúng cự ly và nhịp tim mục tiêu. Ghi lại thời gian và quãng đường."
+                    lc.contains("gym") || lc.contains("tập") -> "Tập gym theo chương trình hôm nay. Ghi số reps, sets, và cân nặng từng bài."
+                    lc.contains("yoga") -> "Thực hiện bài yoga đầy đủ, chú ý hơi thở và giữ tư thế đúng."
+                    lc.contains("bơi") -> "Bơi theo cự ly đặt ra, theo dõi kỹ thuật và thời gian hoàn thành."
+                    lc.contains("squat") -> "Hoàn thành đúng số squat: giữ lưng thẳng, đầu gối không vượt ngón chân."
+                    else -> "Thực hiện bài tập thể chất đầy đủ. Ghi lại số reps/sets/thời gian. Khởi động 5 phút trước, giãn cơ 5 phút sau."
+                }
+            }
+            "study" -> "Học tập tập trung không bị gián đoạn. Đọc tài liệu, ghi chú các điểm mấu chốt, và thực hành bài tập nếu có. Tắt mọi thông báo."
+            "coding" -> "Mở editor, đọc lại code hôm qua 5 phút, sau đó code theo task. Commit code sau mỗi tính năng nhỏ. Kiểm tra output trước khi kết thúc."
+            "language" -> "Luyện ngôn ngữ chủ động: nghe → nhắc lại → ghi từ mới. Không dịch từng chữ — tư duy trực tiếp bằng ngôn ngữ đó."
+            "health" -> "Thực hiện đúng và đều đặn. Cơ thể và tinh thần cần sự nhất quán mỗi ngày."
+            "finance" -> "Mở ứng dụng tài chính, kiểm tra số dư, ghi chép chi tiêu hôm qua nếu chưa ghi. Đặt mục tiêu tiết kiệm cho ngày mai."
+            "meditation" -> "Ngồi yên tĩnh, nhắm mắt, tập trung vào hơi thở. Khi tâm trí phân tán — nhẹ nhàng kéo về hơi thở. Không cần hoàn hảo, chỉ cần kiên trì."
+            "journal" -> "Viết nhật ký thành thật: 3 điều tốt đã xảy ra hôm nay, 1 điều muốn cải thiện, và cảm xúc hiện tại của bạn."
+            "reading" -> "Đọc chủ động — không chỉ đọc mắt. Dừng lại sau mỗi đoạn và tóm tắt bằng lời của mình. Ghi ít nhất 3 ý tưởng áp dụng được."
+            "career" -> "Hoàn thành phần việc được giao với chất lượng cao. Kiểm tra lại kết quả trước khi nộp/báo cáo."
+            else -> "Hoàn thành nhiệm vụ đúng hạn với chất lượng tốt nhất có thể. Đánh dấu hoàn thành khi đã xong thực sự."
+        }
+        val extras = buildList {
+            if (note.isNotBlank()) add("Ghi chú: $note")
+            if (deadline.isNotBlank()) add("⏰ Deadline: $deadline")
+        }
+        return if (extras.isEmpty()) base else "$base ${extras.joinToString(" | ")}"
+    }
+
+    private fun buildCategorySubtasks(category: String, note: String): String {
+        val steps = when (category) {
+            "fitness" -> listOf("Khởi động 5 phút", "Thực hiện bài tập chính", "Giãn cơ & phục hồi 5 phút", "Ghi lại kết quả (reps/thời gian)")
+            "study" -> listOf("Tắt mọi thông báo", "Đọc/xem tài liệu tập trung", "Ghi chú điểm mấu chốt", "Ôn lại nhanh những gì đã học")
+            "coding" -> listOf("Đọc lại code hôm qua 5 phút", "Viết code theo task", "Kiểm tra output / chạy test", "Commit với message rõ ràng")
+            "language" -> listOf("Nghe/đọc 10 phút", "Luyện nói/viết 10 phút", "Ghi từ/cụm từ mới", "Ôn lại từ ngày hôm trước")
+            "meditation" -> listOf("Tìm nơi yên tĩnh", "Đặt timer theo thời gian", "Tập trung vào hơi thở", "Ghi nhanh cảm nhận sau thiền")
+            "journal" -> listOf("3 điều tốt hôm nay", "1 điều muốn cải thiện", "Mục tiêu nhỏ cho ngày mai")
+            "reading" -> listOf("Đọc không bị gián đoạn", "Tóm tắt sau mỗi chương/đoạn", "Ghi 3 ý tưởng áp dụng được")
+            else -> if (note.isNotBlank()) listOf(note) else emptyList()
+        }
+        return if (steps.isEmpty()) "[]"
+        else "[${steps.joinToString(",") { "\"${it.replace("\"", "'")}\"" }}]"
+    }
+
     private fun generateFallbackQuests(dayStart: Long): List<QuestEntity> {
         val dateId = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(dayStart)
         val quests = listOf(
-            QuestEntity("Q-$dateId-001", "🌅 Morning Hydration", "Uống 500ml nước ngay khi thức dậy. Cơ thể mất nước sau 8 tiếng ngủ.",
-                QuestType.DAILY, QuestRank.E, "health", dayStart, "06:00", "06:15",
-                15, 20, 5, QuestStatus.PENDING, statPointRewards="{}", skillPointRewards="{}", priorityScore = 60),
-            QuestEntity("Q-$dateId-002", "⚔️ Morning Warrior Training", "Tập luyện thể chất buổi sáng: 20 hít đất + 30 squat + 10 phút chạy bộ.",
-                QuestType.DAILY, QuestRank.C, "fitness", dayStart, "06:30", "07:30",
-                60, 120, 40, QuestStatus.PENDING,
-                subtasks = "[\"20 hít đất\",\"30 squat\",\"10 phút chạy bộ\"]",
-                statPointRewards="{\"STR\":1}", skillPointRewards="{}", priorityScore = 70),
-            QuestEntity("Q-$dateId-003", "📖 Deep Focus: Study Session", "Tập trung học tập hoặc nghiên cứu chuyên sâu trong 90 phút, không điện thoại.",
-                QuestType.DAILY, QuestRank.B, "study", dayStart, "08:30", "10:00",
-                90, 200, 70, QuestStatus.PENDING,
-                subtasks = "[\"Tắt thông báo\",\"Đặt timer Pomodoro 25min\",\"Ghi notes\"]",
-                statPointRewards="{\"INT\":2}", skillPointRewards="{}", priorityScore = 80),
-            QuestEntity("Q-$dateId-004", "💻 Afternoon Tech Sprint", "Lập trình hoặc thực hành kỹ thuật 2 tiếng.",
-                QuestType.DAILY, QuestRank.C, "coding", dayStart, "14:00", "16:00",
-                120, 140, 50, QuestStatus.PENDING,
-                statPointRewards="{\"INT\":1}", skillPointRewards="{}", priorityScore = 65),
-            QuestEntity("Q-$dateId-005", "📚 Knowledge Seeker", "Đọc sách hoặc tài liệu 30 phút — ưu tiên sách chuyên ngành.",
-                QuestType.DAILY, QuestRank.D, "reading", dayStart, "17:00", "17:30",
-                30, 50, 18, QuestStatus.PENDING,
-                statPointRewards="{\"WIS\":1}", skillPointRewards="{}", priorityScore = 55),
-            QuestEntity("Q-$dateId-006", "🧘 Evening Reflection", "Viết nhật ký ngắn: 3 điều tốt hôm nay, 1 điều cần cải thiện.",
-                QuestType.DAILY, QuestRank.D, "journal", dayStart, "21:00", "21:30",
-                30, 40, 15, QuestStatus.PENDING,
-                statPointRewards="{\"WIS\":1}", skillPointRewards="{}", priorityScore = 60)
+            QuestEntity(
+                id = "Q-$dateId-001",
+                title = "🌅 Khởi Đầu Ngày Mới",
+                description = "Uống 500ml nước ngay khi thức dậy + 10 cái hít thở sâu. Cơ thể mất nước sau 8 tiếng ngủ — nạp năng lượng ngay!",
+                type = QuestType.DAILY, rank = QuestRank.E, category = "health",
+                date = dayStart, timeStart = "06:00", timeEnd = "06:20",
+                durationMinutes = 20, expReward = 25, goldReward = 8,
+                status = QuestStatus.PENDING,
+                subtasks = "[\"Uống 500ml nước\",\"10 hít thở sâu (4s hít - 4s giữ - 4s thở)\",\"Ghi cảm xúc buổi sáng vào nhật ký\"]",
+                statPointRewards = "{\"VIT\":1}", skillPointRewards = "{}", priorityScore = 65
+            ),
+            QuestEntity(
+                id = "Q-$dateId-002",
+                title = "⚔️ Sức Mạnh Buổi Sáng",
+                description = "Bài tập thể chất buổi sáng: 3 vòng circuit training. Không bỏ qua khởi động và giãn cơ — injury sẽ phá streak của bạn!",
+                type = QuestType.DAILY, rank = QuestRank.C, category = "fitness",
+                date = dayStart, timeStart = "06:30", timeEnd = "07:30",
+                durationMinutes = 60, expReward = 130, goldReward = 45,
+                status = QuestStatus.PENDING,
+                subtasks = "[\"Khởi động 5 phút (xoay khớp)\",\"Vòng 1: 20 hít đất + 30 squat + 20 bụng\",\"Vòng 2: 15 hít đất + 25 squat + 15 bụng\",\"Vòng 3: 10 hít đất + 20 squat + 10 bụng\",\"Giãn cơ 5 phút\",\"Ghi số reps thực tế hoàn thành\"]",
+                statPointRewards = "{\"STR\":1,\"AGI\":1}", skillPointRewards = "{}", priorityScore = 75
+            ),
+            QuestEntity(
+                id = "Q-$dateId-003",
+                title = "🏃 Chiến Binh Cardio",
+                description = "Chạy bộ hoặc đạp xe 30 phút. Duy trì nhịp tim 130-150 bpm. Nếu không ra ngoài được: 20 phút nhảy dây / tại chỗ.",
+                type = QuestType.DAILY, rank = QuestRank.C, category = "fitness",
+                date = dayStart, timeStart = "07:30", timeEnd = "08:00",
+                durationMinutes = 30, expReward = 80, goldReward = 28,
+                status = QuestStatus.PENDING,
+                subtasks = "[\"Mang giày thể thao\",\"Chạy/đạp xe 30 phút (hoặc nhảy tại chỗ)\",\"Đo nhịp tim hoặc ước tính effort\",\"Ghi quãng đường / thời gian\"]",
+                statPointRewards = "{\"AGI\":1,\"VIT\":1}", skillPointRewards = "{}", priorityScore = 70
+            ),
+            QuestEntity(
+                id = "Q-$dateId-004",
+                title = "📖 Phiên Học Tập Sâu",
+                description = "Học tập / nghiên cứu tập trung 90 phút theo kỹ thuật Pomodoro. Không điện thoại, không mạng xã hội. Đọc chủ động — ghi chú, không chỉ đọc mắt.",
+                type = QuestType.DAILY, rank = QuestRank.B, category = "study",
+                date = dayStart, timeStart = "08:30", timeEnd = "10:00",
+                durationMinutes = 90, expReward = 200, goldReward = 70,
+                status = QuestStatus.PENDING,
+                subtasks = "[\"Tắt tất cả thông báo\",\"Pomodoro 1 (25 phút): đọc & ghi chú\",\"Nghỉ 5 phút (đứng dậy, không điện thoại)\",\"Pomodoro 2 (25 phút): tiếp tục + luyện tập\",\"Ôn lại 10 phút: tóm tắt những gì đã học\"]",
+                statPointRewards = "{\"INT\":2,\"WIS\":1}", skillPointRewards = "{}", priorityScore = 82
+            ),
+            QuestEntity(
+                id = "Q-$dateId-005",
+                title = "💻 Sprint Kỹ Thuật",
+                description = "Lập trình hoặc thực hành kỹ thuật 2 tiếng. Bắt đầu bằng task nhỏ nhất để lấy đà, sau đó tackle task lớn. Commit code mỗi 30 phút.",
+                type = QuestType.DAILY, rank = QuestRank.C, category = "coding",
+                date = dayStart, timeStart = "14:00", timeEnd = "16:00",
+                durationMinutes = 120, expReward = 150, goldReward = 52,
+                status = QuestStatus.PENDING,
+                subtasks = "[\"Đọc lại code/task hôm qua 5 phút\",\"Code task nhỏ trước để khởi động\",\"Tackle task chính (đặt timer 60 phút)\",\"Review & commit code\",\"Ghi note những gì cần làm tiếp\"]",
+                statPointRewards = "{\"INT\":1}", skillPointRewards = "{}", priorityScore = 68
+            ),
+            QuestEntity(
+                id = "Q-$dateId-006",
+                title = "📚 Chiến Binh Tri Thức",
+                description = "Đọc sách 30 phút — ưu tiên sách chuyên ngành hoặc phát triển bản thân. Đọc chủ động: tóm tắt ý chính sau mỗi đoạn.",
+                type = QuestType.DAILY, rank = QuestRank.D, category = "reading",
+                date = dayStart, timeStart = "17:00", timeEnd = "17:30",
+                durationMinutes = 30, expReward = 55, goldReward = 20,
+                status = QuestStatus.PENDING,
+                subtasks = "[\"Chọn sách / chương cần đọc\",\"Đọc không bị gián đoạn 30 phút\",\"Ghi 3 ý tưởng quan trọng nhất\",\"1 điều sẽ áp dụng ngay hôm nay\"]",
+                statPointRewards = "{\"WIS\":1,\"INT\":1}", skillPointRewards = "{}", priorityScore = 58
+            ),
+            QuestEntity(
+                id = "Q-$dateId-007",
+                title = "🧘 Phục Hồi & Nhật Ký",
+                description = "Thiền 10 phút + viết nhật ký 10 phút. Xả stress, tổng kết ngày, đặt ý định cho ngày mai. Kết thúc ngày chiến binh đúng cách!",
+                type = QuestType.DAILY, rank = QuestRank.D, category = "journal",
+                date = dayStart, timeStart = "21:00", timeEnd = "21:30",
+                durationMinutes = 30, expReward = 45, goldReward = 16,
+                status = QuestStatus.PENDING,
+                subtasks = "[\"Thiền 10 phút (tập trung hơi thở)\",\"3 điều tốt đã xảy ra hôm nay\",\"1 điều muốn cải thiện ngày mai\",\"Đặt giờ ngủ và giờ thức dậy\"]",
+                statPointRewards = "{\"WIS\":1,\"VIT\":1}", skillPointRewards = "{}", priorityScore = 62
+            )
         )
         return injectHealthReminders(quests, dayStart)
     }

@@ -1,5 +1,6 @@
 package com.systemleveling.feature.quests.ui
 
+import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -54,11 +55,17 @@ fun QuestListScreen(
     val isGenerating by viewModel.isGenerating.collectAsState()
     val user by viewModel.user.collectAsState()
     var rewardToShow by remember { mutableStateOf<RewardResult?>(null) }
+    var penaltyToShow by remember { mutableStateOf<QuestViewModel.PenaltyEvent?>(null) }
     var showWorkPlanSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.rewardResult.collectLatest { result ->
             rewardToShow = result
+        }
+    }
+    LaunchedEffect(Unit) {
+        viewModel.penaltyEvent.collect { event ->
+            penaltyToShow = event
         }
     }
 
@@ -248,11 +255,11 @@ fun QuestListScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(quests, key = { it.id }) { quest ->
-                    QuestTimelineItem(quest = quest) {
-                        if (quest.status != QuestStatus.COMPLETED) {
-                            viewModel.completeQuest(quest)
-                        }
-                    }
+                    QuestTimelineItem(
+                        quest = quest,
+                        onComplete = { viewModel.completeQuest(quest) },
+                        onExpired = { viewModel.failExpiredQuest(quest) }
+                    )
                 }
                 item { Spacer(Modifier.height(8.dp)) }
             }
@@ -298,6 +305,18 @@ fun QuestListScreen(
             }
         }
 
+        // ── In-app penalty banner (slides from top when quest expires) ────────
+        AnimatedVisibility(
+            visible = penaltyToShow != null,
+            enter = slideInVertically { -it } + fadeIn(tween(220)),
+            exit = slideOutVertically { -it } + fadeOut(tween(180)),
+            modifier = Modifier.align(Alignment.TopCenter)
+        ) {
+            penaltyToShow?.let { event ->
+                PenaltyBanner(event = event, onDismiss = { penaltyToShow = null })
+            }
+        }
+
         // ── Reward dialog ─────────────────────────────────────────────────────
         rewardToShow?.let { result ->
             QuestCompleteDialog(
@@ -310,10 +329,16 @@ fun QuestListScreen(
 
 // ── Quest timeline item ────────────────────────────────────────────────────────
 @Composable
-fun QuestTimelineItem(quest: QuestEntity, onComplete: () -> Unit) {
+fun QuestTimelineItem(
+    quest: QuestEntity,
+    onComplete: () -> Unit,
+    onExpired: () -> Unit = {}
+) {
     val meta = rankMeta(quest.rank)
     val isCompleted = quest.status == QuestStatus.COMPLETED
     val isFailed = quest.status == QuestStatus.FAILED || quest.status == QuestStatus.EXPIRED
+    // Tracks real-time timer expiry before DB status updates
+    var localExpired by remember(quest.id) { mutableStateOf(false) }
 
     // Glow pulse for A/S rank pending quests
     val glowAlpha by if (meta.glow && !isCompleted) {
@@ -375,7 +400,7 @@ fun QuestTimelineItem(quest: QuestEntity, onComplete: () -> Unit) {
                 .clip(RoundedCornerShape(12.dp))
                 .background(cardBg)
                 .border(1.dp, borderColor, RoundedCornerShape(12.dp))
-                .clickable(enabled = !isCompleted && !isFailed) { onComplete() }
+                .clickable(enabled = !isCompleted && !isFailed && !localExpired) { onComplete() }
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
 
@@ -463,7 +488,14 @@ fun QuestTimelineItem(quest: QuestEntity, onComplete: () -> Unit) {
                 val timeStart = quest.timeStart
                 if (!isCompleted && !isFailed && timeStart != null) {
                     Spacer(Modifier.height(8.dp))
-                    QuestTimer(timeStart, quest.durationMinutes)
+                    QuestTimer(
+                        timeStart = timeStart,
+                        durationMinutes = quest.durationMinutes,
+                        onExpired = {
+                            localExpired = true
+                            onExpired()
+                        }
+                    )
                 }
 
                 Spacer(Modifier.height(8.dp))
@@ -510,9 +542,92 @@ private fun MiniRewardBadge(icon: String, text: String, color: Color, dimmed: Bo
     }
 }
 
+// ── Penalty banner (in-app overlay, slides from top) ─────────────────────────
+@Composable
+private fun PenaltyBanner(
+    event: QuestViewModel.PenaltyEvent,
+    onDismiss: () -> Unit
+) {
+    LaunchedEffect(event) {
+        delay(5_000)
+        onDismiss()
+    }
+
+    val pulse = rememberInfiniteTransition(label = "pb")
+    val borderAlpha by pulse.animateFloat(
+        initialValue = 0.5f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse), label = "ba"
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xF0180008))
+            .border(
+                BorderStroke(1.5.dp, Color(0xFFFF2244).copy(borderAlpha))
+            )
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Icon
+            Text("💀", fontSize = 28.sp, modifier = Modifier.padding(end = 12.dp))
+
+            // Content
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    "⚠ NHIỆM VỤ THẤT BẠI",
+                    color = Color(0xFFFF2244),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 0.1.em
+                )
+                Text(
+                    event.questTitle,
+                    color = Color.White,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "⚡ -${event.expLost} EXP",
+                        color = Color(0xFFFF6B6B),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (event.debtAdded > 0) {
+                        Text(
+                            "💔 +${event.debtAdded} Debt",
+                            color = Color(0xFFFF9800),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            // Dismiss
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(Color(0x33FF2244))
+                    .clickable(onClick = onDismiss),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("✕", color = Color(0xFFFF2244), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
 // ── Quest timer ───────────────────────────────────────────────────────────────
 @Composable
-fun QuestTimer(timeStart: String, durationMinutes: Int) {
+fun QuestTimer(timeStart: String, durationMinutes: Int, onExpired: () -> Unit = {}) {
     var remainingText by remember { mutableStateOf("--:--:--") }
     var isUrgent by remember { mutableStateOf(false) }
     var isExpired by remember { mutableStateOf(false) }
@@ -536,6 +651,7 @@ fun QuestTimer(timeStart: String, durationMinutes: Int) {
                     remainingText = "HẾT GIỜ"
                     isExpired = true
                     isUrgent = false
+                    onExpired()
                     break
                 } else {
                     val h = (diff / (1000 * 60 * 60)) % 24
