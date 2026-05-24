@@ -433,7 +433,7 @@ fun FinanceScreen(
                             modifier = Modifier.weight(1f),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(budgets) { budget ->
+                            items(budgets, key = { it.category.name }) { budget ->
                                 val spent = categorySpent[budget.category] ?: 0L
                                 BudgetCard(
                                     budget = budget,
@@ -1013,7 +1013,7 @@ private fun AddBudgetDialog(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    items(FinanceCategory.entries) { cat ->
+                    items(FinanceCategory.entries, key = { it.name }) { cat ->
                         val selected = selectedCategory == cat
                         Box(
                             modifier = Modifier

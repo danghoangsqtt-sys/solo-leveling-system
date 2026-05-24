@@ -1,6 +1,7 @@
 package com.systemleveling.core.ai
 
 import android.util.Base64
+import android.util.Log
 import com.systemleveling.core.settings.SettingsManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -104,6 +105,8 @@ class AuraRepository @Inject constructor(
         try {
             val txtFile = File(audioFile.parent, audioFile.nameWithoutExtension + ".txt")
             txtFile.writeText(text)
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            Log.w("AuraRepository", "Failed to save companion transcript for ${audioFile.name}", e)
+        }
     }
 }

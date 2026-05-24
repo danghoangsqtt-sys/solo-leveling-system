@@ -2,8 +2,11 @@ package com.systemleveling.app
 
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.BackoffPolicy
 import androidx.work.Configuration
+import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.systemleveling.core.worker.DailyQuestWorker
@@ -33,12 +36,17 @@ class SystemLevelingApp : Application(), Configuration.Provider {
 
     private fun scheduleDailyWorkers() {
         val workManager = WorkManager.getInstance(this)
+        val networkConstraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
 
         // Daily Quest Generation — runs every 24 hours, first at next midnight
         val questGenerationRequest = PeriodicWorkRequestBuilder<DailyQuestWorker>(
             24, TimeUnit.HOURS
         )
             .setInitialDelay(getDelayToNextMidnight(), TimeUnit.MILLISECONDS)
+            .setConstraints(networkConstraints)
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 15, TimeUnit.MINUTES)
             .build()
 
         workManager.enqueueUniquePeriodicWork(
@@ -52,6 +60,8 @@ class SystemLevelingApp : Application(), Configuration.Provider {
             24, TimeUnit.HOURS
         )
             .setInitialDelay(getDelayTo2200(), TimeUnit.MILLISECONDS)
+            .setConstraints(networkConstraints)
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 15, TimeUnit.MINUTES)
             .build()
 
         workManager.enqueueUniquePeriodicWork(

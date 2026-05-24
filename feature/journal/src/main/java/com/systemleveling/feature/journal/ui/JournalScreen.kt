@@ -72,7 +72,7 @@ fun JournalScreen(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(journals) { journal ->
+                items(journals, key = { it.id }) { journal ->
                     JournalCard(journal = journal)
                 }
             }

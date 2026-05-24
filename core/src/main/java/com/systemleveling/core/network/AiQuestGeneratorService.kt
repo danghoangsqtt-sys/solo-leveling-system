@@ -44,6 +44,7 @@ class AiQuestGeneratorService @Inject constructor(
 ) {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
+    @Suppress("UnusedParameter")
     suspend fun generateDailyQuests(apiKey: String, dayStart: Long): List<QuestEntity> {
         val dayEnd = dayStart + 86400000L
         val existingCount = questDao.getQuestCountByDate(dayStart, dayEnd)

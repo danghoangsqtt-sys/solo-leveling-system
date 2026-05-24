@@ -91,7 +91,9 @@ class DailySummaryService @Inject constructor(
                     val name = skill?.name ?: skillId
                     skillProgress[name] = (skillProgress[name] ?: 0) + sp
                 }
-            } catch (_: Exception) { }
+            } catch (e: Exception) {
+                android.util.Log.w("DailySummaryService", "Failed to parse skillPointRewards for quest ${quest.id}", e)
+            }
         }
 
         // 6. Generate AI Journal

@@ -259,7 +259,7 @@ fun LibraryScreen(
                 item {
                     SmallCategoryChip("🗂", "Tất cả", selectedCategory == null) { viewModel.setCategory(null) }
                 }
-                items(CourseContentType.entries) { type ->
+                items(CourseContentType.entries, key = { it.name }) { type ->
                     SmallCategoryChip(type.icon, type.label, selectedCategory == type) { viewModel.setCategory(type) }
                 }
             }

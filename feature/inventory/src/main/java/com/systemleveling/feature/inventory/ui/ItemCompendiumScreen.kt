@@ -118,7 +118,7 @@ fun ItemCompendiumScreen(
             // ── Category filter chips ──────────────────────────────────────
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val cats = listOf(null) + ItemCategory.entries
-                items(cats) { cat ->
+                items(cats, key = { it?.name ?: "ALL" }) { cat ->
                     val isSelected = selectedCategory == cat
                     FilterChip(
                         selected = isSelected,
@@ -148,7 +148,7 @@ fun ItemCompendiumScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
-                items(entries) { entry ->
+                items(entries, key = { it.template.name }) { entry ->
                     CompendiumCell(entry = entry) { selectedEntry = entry }
                 }
             }

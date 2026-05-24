@@ -61,7 +61,7 @@ fun TitleScreen(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(titles) { title ->
+                items(titles, key = { it.id }) { title ->
                     TitleCard(title = title, onEquip = { viewModel.equipTitle(title.id) })
                 }
             }

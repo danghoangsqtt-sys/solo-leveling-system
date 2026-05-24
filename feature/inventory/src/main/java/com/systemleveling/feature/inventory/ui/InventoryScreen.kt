@@ -125,7 +125,7 @@ fun InventoryScreen(
 
             // ── Category chips ─────────────────────────────────────────────
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(categories) { cat ->
+                items(categories, key = { it?.name ?: "ALL" }) { cat ->
                     val isSelected = selectedCategory == cat
                     val label = cat?.title ?: "TẤT CẢ"
                     FilterChip(
@@ -174,7 +174,7 @@ fun InventoryScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    items(displayedItems) { item ->
+                    items(displayedItems, key = { it.id }) { item ->
                         ItemCell(item = item) { selectedItem = item }
                     }
                 }

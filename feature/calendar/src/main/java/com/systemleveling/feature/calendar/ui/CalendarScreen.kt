@@ -132,7 +132,7 @@ fun CalendarScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(horizontal = 16.dp)
             ) {
-                items(days) { ts ->
+                items(days, key = { it }) { ts ->
                     val isToday = isSameDay(ts, System.currentTimeMillis())
                     val isSelected = isSameDay(ts, selectedDate)
                     DayChip(
@@ -206,7 +206,7 @@ fun CalendarScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(items) { item ->
+                    items(items, key = { when(it) { is CalendarItem.QuestItem -> "Q-${it.quest.id}"; is CalendarItem.EventItem -> "E-${it.event.id}" } }) { item ->
                         when (item) {
                             is CalendarItem.QuestItem ->
                                 CalendarQuestRow(item.quest)
@@ -559,7 +559,7 @@ fun AddEventDialog(
                 // Emoji picker
                 DialogSectionLabel("BIỂU TƯỢNG")
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(EMOJI_OPTIONS) { emoji ->
+                    items(EMOJI_OPTIONS, key = { it }) { emoji ->
                         Box(
                             modifier = Modifier
                                 .size(38.dp)
