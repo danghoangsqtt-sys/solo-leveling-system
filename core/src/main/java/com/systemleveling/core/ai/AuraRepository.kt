@@ -44,6 +44,21 @@ class AuraRepository @Inject constructor(
         return auraService.generateProactiveGreeting(apiKey, context)
     }
 
+    /** Translates user's Vietnamese [text] into [targetLanguage] with tone appropriate for [contextLabel]. */
+    suspend fun generateContextualReply(
+        text: String,
+        targetLanguage: String,
+        contextLabel: String
+    ): Result<String> {
+        return try {
+            val apiKey = settingsManager.geminiApiKey.first()
+            if (apiKey.isBlank()) return Result.failure(Exception("Chưa cài đặt Gemini API Key."))
+            auraService.generateContextualReply(apiKey, text, targetLanguage, contextLabel)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     /** Translates [text] to [targetLanguage]. Used for real-time per-sentence translation. */
     suspend fun translateText(text: String, targetLanguage: String = "Tiếng Việt"): Result<String> {
         return try {

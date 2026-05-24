@@ -71,6 +71,7 @@ fun NpcChatScreen(
     val recordMode       by viewModel.recordMode.collectAsState()
     val recordingSeconds by viewModel.recordingSeconds.collectAsState()
     val targetLanguage   by viewModel.targetLanguage.collectAsState()
+    val targetLang       by viewModel.targetLang.collectAsState()
     val processingAudio  by viewModel.processingAudio.collectAsState()
 
     // Notes transcription state (SpeechRecognizer, no API cost)
@@ -84,10 +85,18 @@ fun NpcChatScreen(
     val livePartialText   by viewModel.livePartialText.collectAsState()
     val sourceLang        by viewModel.sourceLang.collectAsState()
 
+    // Reply suggestion state
+    val replyText          by viewModel.replyText.collectAsState()
+    val replyContext       by viewModel.replyContext.collectAsState()
+    val replyResult        by viewModel.replyResult.collectAsState()
+    val isGeneratingReply  by viewModel.isGeneratingReply.collectAsState()
+    val isTtsSpeaking      by viewModel.isTtsSpeaking.collectAsState()
+    val voiceReplyDraft    by viewModel.voiceReplyDraft.collectAsState()
+    val isVoiceReplying    by viewModel.isVoiceReplying.collectAsState()
+
     var showApiKeyDialog  by remember { mutableStateOf(false) }
     var webViewRef        by remember { mutableStateOf<WebView?>(null) }
     var inputText         by remember { mutableStateOf("") }
-    var targetLangInput   by remember { mutableStateOf("Tiếng Việt") }
     val listState         = rememberLazyListState()
     val segmentsListState = rememberLazyListState()
     val notesListState    = rememberLazyListState()
@@ -138,8 +147,6 @@ fun NpcChatScreen(
     LaunchedEffect(apiKey) {
         if (apiKey.isNotBlank() && messages.isEmpty()) viewModel.triggerProactiveGreeting()
     }
-
-    LaunchedEffect(targetLanguage) { targetLangInput = targetLanguage }
 
     val isBusy = isLoading || processingAudio
     LaunchedEffect(isBusy) {
@@ -255,15 +262,31 @@ fun NpcChatScreen(
             } else if (isLiveTranslating) {
                 // ── LIVE TRANSLATION VIEW ─────────────────────────────────────
                 LiveTranslationView(
-                    modifier        = Modifier.weight(1f),
-                    segments        = liveSegments,
-                    partialText     = livePartialText,
-                    sourceLang      = sourceLang,
-                    targetLanguage  = targetLanguage,
-                    listState       = segmentsListState,
-                    onSourceChange  = { viewModel.setSourceLang(it) },
-                    onStop          = { viewModel.stopLiveTranslation() },
-                    onClear         = { viewModel.clearLiveSegments() }
+                    modifier           = Modifier.weight(1f),
+                    segments           = liveSegments,
+                    partialText        = livePartialText,
+                    sourceLang         = sourceLang,
+                    targetLanguage     = targetLanguage,
+                    listState          = segmentsListState,
+                    onSourceChange     = { viewModel.setSourceLang(it) },
+                    onStop             = { viewModel.stopLiveTranslation() },
+                    onClear            = { viewModel.clearLiveSegments() },
+                    // Reply panel
+                    replyText          = replyText,
+                    replyContext       = replyContext,
+                    replyResult        = replyResult,
+                    isGeneratingReply  = isGeneratingReply,
+                    isTtsSpeaking      = isTtsSpeaking,
+                    voiceReplyDraft    = voiceReplyDraft,
+                    isVoiceReplying    = isVoiceReplying,
+                    onReplyTextChange  = { viewModel.setReplyText(it) },
+                    onReplyContextChange = { viewModel.setReplyContext(it) },
+                    onGenerateReply    = { viewModel.generateReplySuggestion() },
+                    onSpeakReply       = { viewModel.speakReply() },
+                    onStopTts          = { viewModel.stopTts() },
+                    onStartVoiceReply  = { viewModel.startVoiceReply() },
+                    onStopVoiceReply   = { viewModel.stopVoiceReply() },
+                    onClearReply       = { viewModel.clearReply() }
                 )
             } else {
                 // ── NORMAL CHAT VIEW ──────────────────────────────────────────
@@ -335,21 +358,24 @@ fun NpcChatScreen(
                     recordMode == RecordMode.TRANSLATE -> Column(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        OutlinedTextField(
-                            value = targetLangInput,
-                            onValueChange = { targetLangInput = it; viewModel.setTargetLanguage(it) },
-                            label = { Text("Ngôn ngữ đích", color = TextMuted, fontSize = 11.sp) },
-                            placeholder = { Text("VD: Tiếng Việt, English...", color = TextMuted) },
-                            modifier = Modifier.fillMaxWidth(), singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Purple, unfocusedBorderColor = GlassBorder,
-                                focusedTextColor = Color.White, unfocusedTextColor = Color.White,
-                                focusedContainerColor = Color(0x28000000),
-                                unfocusedContainerColor = Color(0x1A000000)
-                            ),
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
-                        )
-                        // Live translation start button
+                        Text("Dịch sang:", color = TextMuted, fontSize = 11.sp)
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            items(TARGET_LANGUAGES, key = { it.bcp47 }) { lang ->
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(if (lang == targetLang) LiveGreen.copy(alpha = 0.25f) else GlassSurface)
+                                        .border(1.dp, if (lang == targetLang) LiveGreen else GlassBorder, RoundedCornerShape(16.dp))
+                                        .clickable { viewModel.setTargetLang(lang) }
+                                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Text(lang.label,
+                                        color = if (lang == targetLang) LiveGreen else TextMuted,
+                                        fontSize = 12.sp,
+                                        fontWeight = if (lang == targetLang) FontWeight.SemiBold else FontWeight.Normal)
+                                }
+                            }
+                        }
                         Button(
                             onClick = {
                                 if (apiKey.isBlank()) { showApiKeyDialog = true }
@@ -411,7 +437,23 @@ private fun LiveTranslationView(
     listState: androidx.compose.foundation.lazy.LazyListState,
     onSourceChange: (SourceLanguage) -> Unit,
     onStop: () -> Unit,
-    onClear: () -> Unit
+    onClear: () -> Unit,
+    // Reply panel
+    replyText: String,
+    replyContext: ReplyContext,
+    replyResult: String,
+    isGeneratingReply: Boolean,
+    isTtsSpeaking: Boolean,
+    voiceReplyDraft: String,
+    isVoiceReplying: Boolean,
+    onReplyTextChange: (String) -> Unit,
+    onReplyContextChange: (ReplyContext) -> Unit,
+    onGenerateReply: () -> Unit,
+    onSpeakReply: () -> Unit,
+    onStopTts: () -> Unit,
+    onStartVoiceReply: () -> Unit,
+    onStopVoiceReply: () -> Unit,
+    onClearReply: () -> Unit
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -488,6 +530,26 @@ private fun LiveTranslationView(
                 }
             }
         }
+
+        // ── Reply panel ───────────────────────────────────────────────────────
+        ReplyPanel(
+            replyText        = replyText,
+            replyContext     = replyContext,
+            replyResult      = replyResult,
+            isGenerating     = isGeneratingReply,
+            isTtsSpeaking    = isTtsSpeaking,
+            voiceReplyDraft  = voiceReplyDraft,
+            isVoiceReplying  = isVoiceReplying,
+            targetLanguage   = targetLanguage,
+            onTextChange     = onReplyTextChange,
+            onContextChange  = onReplyContextChange,
+            onGenerate       = onGenerateReply,
+            onSpeak          = onSpeakReply,
+            onStopTts        = onStopTts,
+            onStartVoice     = onStartVoiceReply,
+            onStopVoice      = onStopVoiceReply,
+            onClear          = onClearReply
+        )
 
         // Action buttons
         Row(
@@ -678,6 +740,229 @@ private fun NotesStartButton(onStart: () -> Unit) {
         Spacer(Modifier.width(10.dp))
         Text("🎙 Nhấn để ghi chú cuộc họp / học", color = Color.White,
             fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+    }
+}
+
+// ── Reply suggestion panel ─────────────────────────────────────────────────────
+@Composable
+private fun ReplyPanel(
+    replyText: String,
+    replyContext: ReplyContext,
+    replyResult: String,
+    isGenerating: Boolean,
+    isTtsSpeaking: Boolean,
+    voiceReplyDraft: String,
+    isVoiceReplying: Boolean,
+    targetLanguage: String,
+    onTextChange: (String) -> Unit,
+    onContextChange: (ReplyContext) -> Unit,
+    onGenerate: () -> Unit,
+    onSpeak: () -> Unit,
+    onStopTts: () -> Unit,
+    onStartVoice: () -> Unit,
+    onStopVoice: () -> Unit,
+    onClear: () -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val AccentReply = Color(0xFF4A9EFF)
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color(0x22FFFFFF))
+            .border(1.dp, Color(0x44FFFFFF), RoundedCornerShape(14.dp))
+    ) {
+        // Header row — always visible
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded }
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(
+                    Icons.AutoMirrored.Rounded.Chat, contentDescription = null,
+                    tint = AccentReply, modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    "Gợi ý trả lời",
+                    color = AccentReply, fontSize = 12.sp, fontWeight = FontWeight.SemiBold
+                )
+                if (replyResult.isNotBlank()) {
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(AccentReply.copy(alpha = 0.25f))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text("✓", color = AccentReply, fontSize = 10.sp)
+                    }
+                }
+            }
+            Icon(
+                if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                contentDescription = null, tint = TextMuted, modifier = Modifier.size(18.dp)
+            )
+        }
+
+        if (expanded) {
+            Column(
+                modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Context mode chips
+                Text("Ngữ cảnh:", color = TextMuted, fontSize = 11.sp)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    items(ReplyContext.values().toList(), key = { it.name }) { ctx ->
+                        val selected = ctx == replyContext
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(if (selected) AccentReply.copy(alpha = 0.25f) else GlassSurface)
+                                .border(1.dp, if (selected) AccentReply else GlassBorder, RoundedCornerShape(16.dp))
+                                .clickable { onContextChange(ctx) }
+                                .padding(horizontal = 12.dp, vertical = 5.dp)
+                        ) {
+                            Text(
+                                ctx.label,
+                                color = if (selected) AccentReply else TextMuted,
+                                fontSize = 12.sp,
+                                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        }
+                    }
+                }
+
+                // Text input (or voice draft display)
+                val fieldValue = if (isVoiceReplying && voiceReplyDraft.isNotBlank()) voiceReplyDraft else replyText
+                OutlinedTextField(
+                    value = fieldValue,
+                    onValueChange = { if (!isVoiceReplying) onTextChange(it) },
+                    placeholder = {
+                        Text(
+                            if (isVoiceReplying) "🎤 Đang nghe tiếng Việt..." else "Nhập nội dung cần dịch/trả lời...",
+                            color = TextMuted, fontSize = 13.sp
+                        )
+                    },
+                    readOnly = isVoiceReplying,
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 3,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = AccentReply,
+                        unfocusedBorderColor = if (isVoiceReplying) AccentReply.copy(alpha = 0.6f) else GlassBorder,
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedContainerColor = Color(0x1A000000),
+                        unfocusedContainerColor = Color(0x1A000000)
+                    )
+                )
+
+                // Action buttons row
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    // Voice button
+                    OutlinedButton(
+                        onClick = { if (isVoiceReplying) onStopVoice() else onStartVoice() },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = if (isVoiceReplying) RecordRed else TextMuted
+                        ),
+                        border = ButtonDefaults.outlinedButtonBorder.copy(
+                            brush = Brush.linearGradient(
+                                listOf(
+                                    if (isVoiceReplying) RecordRed.copy(alpha = 0.6f) else GlassBorder,
+                                    if (isVoiceReplying) RecordRed.copy(alpha = 0.6f) else GlassBorder
+                                )
+                            )
+                        )
+                    ) {
+                        if (isVoiceReplying) {
+                            val pulse = rememberInfiniteTransition(label = "vr")
+                            val dotAlpha by pulse.animateFloat(
+                                initialValue = 0.5f, targetValue = 1f,
+                                animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse), label = "vrd"
+                            )
+                            Icon(Icons.Rounded.FiberManualRecord, null,
+                                tint = RecordRed.copy(alpha = dotAlpha), modifier = Modifier.size(14.dp))
+                        } else {
+                            Icon(Icons.Rounded.Mic, null, modifier = Modifier.size(14.dp))
+                        }
+                        Spacer(Modifier.width(4.dp))
+                        Text(if (isVoiceReplying) "Dừng" else "Nói", fontSize = 12.sp)
+                    }
+
+                    // Generate button
+                    Button(
+                        onClick = onGenerate,
+                        enabled = !isGenerating && (replyText.isNotBlank() || voiceReplyDraft.isNotBlank()),
+                        modifier = Modifier.weight(2f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentReply.copy(alpha = 0.8f))
+                    ) {
+                        if (isGenerating) {
+                            CircularProgressIndicator(Modifier.size(14.dp), color = Color.White, strokeWidth = 2.dp)
+                        } else {
+                            Icon(Icons.Rounded.AutoAwesome, null, modifier = Modifier.size(14.dp))
+                        }
+                        Spacer(Modifier.width(4.dp))
+                        Text(if (isGenerating) "Đang dịch..." else "Dịch → $targetLanguage",
+                            fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    // Clear button
+                    Box(
+                        modifier = Modifier.size(40.dp).clip(CircleShape).background(GlassSurface)
+                            .clickable(onClick = onClear),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Rounded.Close, null, tint = TextMuted, modifier = Modifier.size(16.dp))
+                    }
+                }
+
+                // Result box
+                if (replyResult.isNotBlank()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(AccentReply.copy(alpha = 0.08f))
+                            .border(1.dp, AccentReply.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
+                            .padding(horizontal = 14.dp, vertical = 10.dp)
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                replyResult, color = Color.White,
+                                fontSize = 14.sp, fontWeight = FontWeight.SemiBold, lineHeight = 20.sp
+                            )
+                            Row(
+                                horizontalArrangement = Arrangement.End,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                // TTS speak/stop button
+                                Box(
+                                    modifier = Modifier.size(36.dp).clip(CircleShape)
+                                        .background(if (isTtsSpeaking) AccentReply.copy(alpha = 0.3f) else GlassSurface)
+                                        .border(1.dp, if (isTtsSpeaking) AccentReply else GlassBorder, CircleShape)
+                                        .clickable { if (isTtsSpeaking) onStopTts() else onSpeak() },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        if (isTtsSpeaking) Icons.AutoMirrored.Rounded.VolumeOff else Icons.AutoMirrored.Rounded.VolumeUp,
+                                        contentDescription = null,
+                                        tint = if (isTtsSpeaking) AccentReply else TextMuted,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

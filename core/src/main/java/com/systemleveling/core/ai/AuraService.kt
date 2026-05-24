@@ -310,6 +310,55 @@ class AuraService @Inject constructor(
         return Result.failure(lastError)
     }
 
+    /**
+     * Translates [userText] (in Vietnamese) into [targetLanguage] with a tone appropriate
+     * for [contextLabel] (e.g. "cuộc phỏng vấn", "họp công việc", "bạn bè vui vẻ").
+     * Returns only the translated reply, no meta-commentary.
+     */
+    suspend fun generateContextualReply(
+        apiKey: String,
+        userText: String,
+        targetLanguage: String,
+        contextLabel: String
+    ): Result<String> {
+        if (apiKey.isBlank()) return Result.failure(IllegalArgumentException("API key chưa được cài đặt"))
+        if (userText.isBlank()) return Result.success("")
+        val request = GeminiRequest(
+            systemInstruction = GeminiSystemInstruction(
+                parts = listOf(GeminiPart(text =
+                    "Bạn là phiên dịch viên chuyên nghiệp. " +
+                    "Dịch chính xác văn bản từ tiếng Việt sang $targetLanguage. " +
+                    "Hoàn cảnh giao tiếp: $contextLabel. " +
+                    "Giữ đúng phong cách/tone cho hoàn cảnh đó. " +
+                    "CHỈ trả về bản dịch, không có giải thích hay ký tự thừa."
+                ))
+            ),
+            contents = listOf(GeminiContent(role = "user", parts = listOf(GeminiPart(text = userText)))),
+            generationConfig = GeminiGenerationConfig(maxOutputTokens = 512, temperature = 0.2)
+        )
+        return try {
+            val response: HttpResponse = client.post(GEMINI_BASE_URL) {
+                contentType(ContentType.Application.Json)
+                header("x-goog-api-key", apiKey)
+                setBody(request)
+            }
+            when {
+                response.status == HttpStatusCode.OK -> {
+                    val t = response.body<GeminiResponse>()
+                        .candidates.firstOrNull()?.content?.parts?.firstOrNull()?.text?.trim()
+                        ?: userText
+                    Result.success(t)
+                }
+                response.status == HttpStatusCode.TooManyRequests ->
+                    Result.failure(Exception("Lỗi 429: API Key hết hạn mức."))
+                else ->
+                    Result.failure(Exception("Lỗi dịch thuật: ${response.status.value}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     /** Quick text-to-text translation. Returns only the translated text, no extra output. */
     suspend fun translateText(
         apiKey: String,

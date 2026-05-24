@@ -27,6 +27,16 @@ import javax.inject.Inject
 
 enum class RecordMode { CHAT, NOTES, TRANSLATE }
 
+/** Context mode for reply generation — controls tone/style of translated reply. */
+enum class ReplyContext(val label: String, val promptHint: String) {
+    NORMAL   ("Bình thường",  "giao tiếp thông thường, tự nhiên, thân thiện"),
+    MEETING  ("Cuộc họp",     "họp công việc, lịch sự và chuyên nghiệp, súc tích"),
+    INTERVIEW("Phỏng vấn",    "phỏng vấn xin việc, trang trọng, chuyên nghiệp, tự tin"),
+    CABIN    ("Dịch cabin",   "dịch thuật chính xác hoàn toàn, từng từ, không thêm bớt"),
+    FRIENDS  ("Bạn bè",       "bạn bè thân thiết, vui vẻ, thoải mái, có thể dùng tiếng lóng"),
+    FORMAL   ("Trang trọng",  "giao tiếp lịch sự, trang trọng, văn phong chuẩn mực")
+}
+
 /** Represents a single recognized sentence and its translation (live mode). */
 data class TranslationSegment(
     val original: String,
@@ -36,6 +46,9 @@ data class TranslationSegment(
 /** Source language options for the live translator. */
 data class SourceLanguage(val label: String, val locale: String)
 
+/** Target language with BCP-47 code for ML Kit and TTS. */
+data class TargetLanguage(val label: String, val bcp47: String)
+
 val SOURCE_LANGUAGES = listOf(
     SourceLanguage("Auto",  ""),
     SourceLanguage("中文",   "zh-CN"),
@@ -43,6 +56,14 @@ val SOURCE_LANGUAGES = listOf(
     SourceLanguage("English (IN)", "en-IN"),
     SourceLanguage("हिंदी",  "hi-IN"),
     SourceLanguage("한국어", "ko-KR")
+)
+
+val TARGET_LANGUAGES = listOf(
+    TargetLanguage("Tiếng Việt", "vi-VN"),
+    TargetLanguage("中文",        "zh-CN"),
+    TargetLanguage("English",    "en-US"),
+    TargetLanguage("हिंदी",      "hi-IN"),
+    TargetLanguage("한국어",      "ko-KR")
 )
 
 @HiltViewModel
@@ -77,8 +98,12 @@ class NpcChatViewModel @Inject constructor(
     private val _recordMode = MutableStateFlow(RecordMode.CHAT)
     val recordMode: StateFlow<RecordMode> = _recordMode.asStateFlow()
 
-    private val _targetLanguage = MutableStateFlow("Tiếng Việt")
-    val targetLanguage: StateFlow<String> = _targetLanguage.asStateFlow()
+    private val _targetLang = MutableStateFlow(TARGET_LANGUAGES[0])
+    val targetLang: StateFlow<TargetLanguage> = _targetLang.asStateFlow()
+    /** Convenience string label for audio transcription APIs */
+    val targetLanguage: StateFlow<String> = kotlinx.coroutines.flow.MutableStateFlow("Tiếng Việt").also { flow ->
+        viewModelScope.launch { _targetLang.collect { flow.value = it.label } }
+    }
 
     private val _processingAudio = MutableStateFlow(false)
     val processingAudio: StateFlow<Boolean> = _processingAudio.asStateFlow()
@@ -86,6 +111,37 @@ class NpcChatViewModel @Inject constructor(
     private val audioManager = AudioRecordingManager(context)
     private var recordingFile: File? = null
     private var timerJob: Job? = null
+
+    // ── ML Kit offline translation ────────────────────────────────────────────
+    private val mlKit = MlKitTranslationManager()
+
+    // ── TTS ───────────────────────────────────────────────────────────────────
+    private val _isTtsSpeaking = MutableStateFlow(false)
+    val isTtsSpeaking: StateFlow<Boolean> = _isTtsSpeaking.asStateFlow()
+
+    private val tts = AuraTtsManager(context) { speaking -> _isTtsSpeaking.value = speaking }
+
+    // ── Reply suggestion state ────────────────────────────────────────────────
+    private val _replyText = MutableStateFlow("")
+    val replyText: StateFlow<String> = _replyText.asStateFlow()
+
+    private val _replyContext = MutableStateFlow(ReplyContext.NORMAL)
+    val replyContext: StateFlow<ReplyContext> = _replyContext.asStateFlow()
+
+    private val _replyResult = MutableStateFlow("")
+    val replyResult: StateFlow<String> = _replyResult.asStateFlow()
+
+    private val _isGeneratingReply = MutableStateFlow(false)
+    val isGeneratingReply: StateFlow<Boolean> = _isGeneratingReply.asStateFlow()
+
+    /** Text captured from voice input (for confirmation before translate) */
+    private val _voiceReplyDraft = MutableStateFlow("")
+    val voiceReplyDraft: StateFlow<String> = _voiceReplyDraft.asStateFlow()
+
+    private val _isVoiceReplying = MutableStateFlow(false)
+    val isVoiceReplying: StateFlow<Boolean> = _isVoiceReplying.asStateFlow()
+
+    private var voiceReplyManager: RealtimeTranslationManager? = null
 
     // ── Live notes transcription (NOTES mode — SpeechRecognizer, no AI) ─────────
 
@@ -206,7 +262,7 @@ class NpcChatViewModel @Inject constructor(
 
     fun setRecordMode(mode: RecordMode) { _recordMode.value = mode }
 
-    fun setTargetLanguage(lang: String) { _targetLanguage.value = lang }
+    fun setTargetLang(lang: TargetLanguage) { _targetLang.value = lang }
 
     fun setSourceLang(lang: SourceLanguage) {
         _sourceLang.value = lang
@@ -258,7 +314,7 @@ class NpcChatViewModel @Inject constructor(
         }
 
         val mode = _recordMode.value
-        val targetLang = _targetLanguage.value
+        val targetLang = _targetLang.value.label
         val durationLabel = "%d:%02d".format(durationSec / 60, durationSec % 60)
 
         _processingAudio.value = true
@@ -385,9 +441,22 @@ class NpcChatViewModel @Inject constructor(
         val idx = _liveSegments.value.size
         _liveSegments.value = _liveSegments.value + TranslationSegment(original = sentence)
 
+        val sourceBcp47 = _sourceLang.value.locale
+        val targetBcp47 = _targetLang.value.bcp47
+
         viewModelScope.launch {
-            val result = auraRepository.translateText(sentence, _targetLanguage.value)
-            val translation = result.getOrElse { "…" }
+            val translation = if (mlKit.isSupported(sourceBcp47)) {
+                // Offline ML Kit — zero token cost, ~100ms
+                try {
+                    mlKit.translate(sentence, sourceBcp47, targetBcp47)
+                } catch (_: Exception) {
+                    // Fallback to Gemini if ML Kit fails (model not yet downloaded, etc.)
+                    auraRepository.translateText(sentence, _targetLang.value.label).getOrElse { "…" }
+                }
+            } else {
+                // Source = "Auto": ML Kit can't auto-detect → use Gemini
+                auraRepository.translateText(sentence, _targetLang.value.label).getOrElse { "…" }
+            }
             val current = _liveSegments.value.toMutableList()
             if (idx < current.size) {
                 current[idx] = current[idx].copy(translation = translation)
@@ -405,7 +474,7 @@ class NpcChatViewModel @Inject constructor(
 
         val segments = _liveSegments.value
         if (segments.isNotEmpty()) {
-            val targetLang = _targetLanguage.value
+            val targetLang = _targetLang.value.label
             val sourceName = _sourceLang.value.label.ifBlank { "Auto" }
             val content = buildString {
                 append("🌐 Phiên dịch trực tiếp ($sourceName → $targetLang)\n")
@@ -428,10 +497,96 @@ class NpcChatViewModel @Inject constructor(
         _livePartialText.value = ""
     }
 
+    // ── Reply suggestion + TTS ────────────────────────────────────────────────
+
+    fun setReplyText(text: String) { _replyText.value = text }
+
+    fun setReplyContext(ctx: ReplyContext) { _replyContext.value = ctx }
+
+    fun clearReply() {
+        _replyText.value = ""
+        _replyResult.value = ""
+        _voiceReplyDraft.value = ""
+    }
+
+    /**
+     * Generates a contextual translated reply for the user's Vietnamese text.
+     * Uses Gemini for tone-aware translation (the one AI call in this feature).
+     */
+    fun generateReplySuggestion() {
+        val text = _replyText.value.ifBlank { _voiceReplyDraft.value }
+        if (text.isBlank() || _isGeneratingReply.value) return
+        _isGeneratingReply.value = true
+        _replyResult.value = ""
+        viewModelScope.launch {
+            val result = auraRepository.generateContextualReply(
+                text = text,
+                targetLanguage = _targetLang.value.label,
+                contextLabel = _replyContext.value.promptHint
+            )
+            _replyResult.value = result.getOrElse { "Lỗi: ${it.message}" }
+            _isGeneratingReply.value = false
+        }
+    }
+
+    /** Reads the translated reply aloud via TTS. */
+    fun speakReply() {
+        val text = _replyResult.value
+        if (text.isBlank()) return
+        tts.speak(text, MlKitTranslationManager.toMlKitCode(_targetLang.value.bcp47))
+    }
+
+    /** Reads any text aloud in target language. */
+    fun speakText(text: String) {
+        tts.speak(text, MlKitTranslationManager.toMlKitCode(_targetLang.value.bcp47))
+    }
+
+    fun stopTts() = tts.stop()
+
+    // ── Voice reply (speak Vietnamese → confirm → translate → TTS) ────────────
+
+    /**
+     * Starts one-shot Vietnamese speech recognition for composing a reply.
+     * Result lands in [voiceReplyDraft] for user to review before sending.
+     */
+    fun startVoiceReply() {
+        if (_isVoiceReplying.value) return
+        val manager = RealtimeTranslationManager(
+            context = context,
+            onPartialResult = { partial -> _voiceReplyDraft.value = partial },
+            onSentenceComplete = { sentence ->
+                _voiceReplyDraft.value = sentence
+                _replyText.value = sentence
+                stopVoiceReply()
+            },
+            onError = { msg -> _error.value = msg; _isVoiceReplying.value = false }
+        )
+        if (!manager.isAvailable()) { _error.value = "Thiết bị không hỗ trợ nhận dạng giọng nói."; return }
+        voiceReplyManager = manager
+        _isVoiceReplying.value = true
+        _voiceReplyDraft.value = ""
+        manager.start("vi-VN")
+    }
+
+    fun stopVoiceReply() {
+        voiceReplyManager?.stop()
+        voiceReplyManager = null
+        _isVoiceReplying.value = false
+    }
+
+    /** User confirmed the draft → copy to replyText for editing before sending. */
+    fun confirmVoiceReply() {
+        _replyText.value = _voiceReplyDraft.value
+        _voiceReplyDraft.value = ""
+    }
+
     override fun onCleared() {
         super.onCleared()
         if (_isRecording.value) audioManager.cancelRecording()
         notesManager?.stop()
         liveTranslationManager?.stop()
+        voiceReplyManager?.stop()
+        mlKit.close()
+        tts.close()
     }
 }

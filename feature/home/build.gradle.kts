@@ -54,4 +54,7 @@ dependencies {
 
     // Serialization
     implementation(libs.kotlinx.serialization.json)
+
+    // ML Kit Translation (offline, zero API cost)
+    implementation(libs.mlkit.translate)
 }
