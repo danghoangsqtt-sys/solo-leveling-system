@@ -46,7 +46,7 @@ class AiQuestGeneratorService @Inject constructor(
     private val slotCalculator = QuestTimeSlotCalculator()
     private val fallbackProvider = FallbackQuestProvider(slotCalculator)
 
-    @Suppress("UnusedParameter")
+    @Suppress("UNUSED_PARAMETER")
     suspend fun generateDailyQuests(apiKey: String, dayStart: Long): List<QuestEntity> {
         val dayEnd = dayStart + 86400000L
         val existingCount = questDao.getQuestCountByDate(dayStart, dayEnd)
