@@ -44,6 +44,61 @@ class QuestTimeSlotCalculator {
     fun parseHourStart(s: String) =
         s.trim().split("-").first().trim().substringBefore(":").toIntOrNull() ?: 8
 
+    fun parseMinuteStart(s: String): Int {
+        val part = s.trim().split("-").first().trim()
+        return part.substringAfter(":", "0").toIntOrNull() ?: 0
+    }
+
     fun parseHourEnd(s: String) =
         s.trim().split("-").last().trim().substringBefore(":").toIntOrNull() ?: 17
+
+    fun parseMinuteEnd(s: String): Int {
+        val part = s.trim().split("-").last().trim()
+        return part.substringAfter(":", "0").toIntOrNull() ?: 0
+    }
+
+    /**
+     * Returns breakfast, lunch, dinner times based on user schedule.
+     * Breakfast = wakeTime + 30min
+     * Lunch = lunchTime start
+     * Dinner = workoutEnd (user rests and eats after workout)
+     */
+    data class MealTimes(
+        val breakfastStart: String, val breakfastEnd: String,
+        val lunchStart: String, val lunchEnd: String,
+        val dinnerStart: String, val dinnerEnd: String
+    )
+
+    fun getMealTimes(
+        wakeTime: String, lunchTime: String, workoutTime: String
+    ): MealTimes {
+        val wakeH = parseHourStart(wakeTime)
+        val lunchH = parseHourStart(lunchTime)
+        val workoutEndH = parseHourEnd(workoutTime)
+        val workoutEndM = parseMinuteEnd(workoutTime)
+
+        fun fmt(h: Int, m: Int = 0) = String.format("%02d:%02d", h.coerceIn(0, 23), m.coerceIn(0, 59))
+
+        return MealTimes(
+            breakfastStart = fmt(wakeH, 30),
+            breakfastEnd = fmt(wakeH + 1, 0),
+            lunchStart = fmt(lunchH, 0),
+            lunchEnd = fmt(lunchH, 45),
+            dinnerStart = fmt(workoutEndH, workoutEndM),
+            dinnerEnd = fmt(workoutEndH + 1, (workoutEndM + 30) % 60)
+        )
+    }
+
+    /**
+     * Returns the rest/dinner window after workout.
+     * Typically workoutEnd → workoutEnd + 1.5h
+     */
+    fun getDinnerRestWindow(workoutTime: String): Pair<String, String> {
+        val endH = parseHourEnd(workoutTime)
+        val endM = parseMinuteEnd(workoutTime)
+        val restEndH = if (endM + 30 >= 60) endH + 2 else endH + 1
+        val restEndM = (endM + 30) % 60
+        return String.format("%02d:%02d", endH, endM) to
+               String.format("%02d:%02d", restEndH.coerceAtMost(23), restEndM)
+    }
 }

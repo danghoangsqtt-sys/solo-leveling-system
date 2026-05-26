@@ -62,12 +62,12 @@ class AiQuestGeneratorService @Inject constructor(
             val quests = generateLocalQuests(workPlan, dayStart, wakeTime, workTime, lunchTime, workoutTime, sleepTime)
 
             if (quests.isNotEmpty()) {
-                val fullList = injectHealthReminders(quests, dayStart)
+                val fullList = injectHealthReminders(quests, dayStart, wakeTime, lunchTime, workoutTime, sleepTime)
                 questDao.insertQuests(fullList)
                 fullList
             } else {
                 val fallback = fallbackProvider.generateFallbackQuests(dayStart, wakeTime, workTime, lunchTime, workoutTime, sleepTime)
-                val fullList = injectHealthReminders(fallback, dayStart)
+                val fullList = injectHealthReminders(fallback, dayStart, wakeTime, lunchTime, workoutTime, sleepTime)
                 questDao.insertQuests(fullList)
                 fullList
             }
@@ -78,13 +78,13 @@ class AiQuestGeneratorService @Inject constructor(
             val workoutTime = try { settingsManager.workoutTime.first() } catch (_: Exception) { "17:30 - 18:30" }
             val sleepTime   = try { settingsManager.sleepTime.first() }   catch (_: Exception) { "23:00" }
             val fallback = fallbackProvider.generateFallbackQuests(dayStart, wakeTime, workTime, lunchTime, workoutTime, sleepTime)
-            val fullList = injectHealthReminders(fallback, dayStart)
+            val fullList = injectHealthReminders(fallback, dayStart, wakeTime, lunchTime, workoutTime, sleepTime)
             questDao.insertQuests(fullList)
             fullList
         }
     }
 
-    private fun generateLocalQuests(
+    private suspend fun generateLocalQuests(
         workPlan: List<WorkPlanItem>,
         dayStart: Long,
         wakeTime: String = "06:00",
@@ -96,6 +96,9 @@ class AiQuestGeneratorService @Inject constructor(
         if (workPlan.isEmpty()) return emptyList()
         val dateId = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(dayStart)
         val daySlots = slotCalculator.buildDaySlots(wakeTime, workTime, lunchTime, workoutTime, sleepTime)
+
+        // Lookup all skills from DB for SP assignment
+        val allSkills = try { skillDao.getAllSkillsSync() } catch (_: Exception) { emptyList() }
         
         return workPlan.sortedByDescending { it.workPriority.score }.mapIndexed { index, item ->
             val rank = when {
@@ -121,24 +124,48 @@ class AiQuestGeneratorService @Inject constructor(
                 lowerTitle.contains("tiếng") || lowerTitle.contains("ngôn ngữ") || lowerTitle.contains("english") -> "language"
                 else -> "creative"
             }
-            
+
+            // Clamp stat rewards based on RewardConstants
+            val rc = RewardConstants.forRank(rank)
             val statReward = when (category) {
-                "coding" -> "{\"INT\": 1}"
-                "study" -> "{\"INT\": 1, \"WIS\": 1}"
-                "fitness" -> "{\"STR\": 1, \"AGI\": 1}"
-                "health" -> "{\"VIT\": 1}"
-                "finance" -> "{\"WIS\": 1}"
-                "language" -> "{\"INT\": 1, \"CHA\": 1}"
-                else -> "{\"CHA\": 1}"
+                "coding" -> "{\"INT\": ${1.coerceAtMost(rc.statTotal.coerceAtLeast(1))}}"
+                "study" -> if (rc.statTotal >= 2) "{\"INT\": 1, \"WIS\": 1}" else "{\"INT\": 1}"
+                "fitness" -> if (rc.statTotal >= 2) "{\"STR\": 1, \"AGI\": 1}" else "{\"STR\": 1}"
+                "health" -> "{\"VIT\": ${1.coerceAtMost(rc.statTotal.coerceAtLeast(1))}}"
+                "finance" -> "{\"WIS\": ${1.coerceAtMost(rc.statTotal.coerceAtLeast(1))}}"
+                "language" -> if (rc.statTotal >= 2) "{\"INT\": 1, \"CHA\": 1}" else "{\"INT\": 1}"
+                else -> "{\"CHA\": ${1.coerceAtMost(rc.statTotal.coerceAtLeast(1))}}"
             }
+
+            // Lookup matching skills for SP rewards
+            val matchingSkills = allSkills.filter { skill ->
+                val sName = skill.name.lowercase()
+                when (category) {
+                    "coding" -> sName.contains("code") || sName.contains("lập trình") || sName.contains("dev") || sName.contains("programming")
+                    "study" -> sName.contains("học") || sName.contains("study") || sName.contains("research")
+                    "fitness" -> sName.contains("gym") || sName.contains("cardio") || sName.contains("strength") || sName.contains("thể") || sName.contains("fitness")
+                    "health" -> sName.contains("health") || sName.contains("sức khỏe") || sName.contains("meditation")
+                    "finance" -> sName.contains("finance") || sName.contains("tài chính") || sName.contains("money")
+                    "language" -> sName.contains("english") || sName.contains("tiếng") || sName.contains("language") || sName.contains("ielts")
+                    else -> sName.contains(item.title.lowercase().take(6))
+                }
+            }.take(rc.maxLinkedSkills)
+
+            val spPerSkill = ((rc.spMin + rc.spMax) / 2).coerceAtLeast(rc.spMin)
+            val skillPointRewardsStr = if (matchingSkills.isNotEmpty()) {
+                "{" + matchingSkills.joinToString(",") { "\"${it.id}\": $spPerSkill" } + "}"
+            } else "{}"
+            val relatedIds = if (matchingSkills.isNotEmpty()) {
+                "[" + matchingSkills.joinToString(",") { "\"${it.id}\"" } + "]"
+            } else "[]"
             
             val (timeStart, timeEnd) = daySlots.getOrElse(index) {
                 String.format("%02d:00", (8 + index * 2).coerceAtMost(22)) to
                 String.format("%02d:00", (9 + index * 2).coerceAtMost(23))
             }
             
-            val exp = (item.workPriority.score * 2).coerceIn(10, 500)
-            val gold = (item.workPriority.score / 2).coerceIn(5, 100)
+            val exp = (item.workPriority.score * 2).coerceIn(rc.expMin, rc.expMax)
+            val gold = (item.workPriority.score / 2).coerceIn(rc.goldMin, rc.goldMax)
             
             val description = buildCategoryDescription(category, item.title, item.deadline, item.note)
             val subtasksStr = buildCategorySubtasks(category, item.note)
@@ -158,10 +185,10 @@ class AiQuestGeneratorService @Inject constructor(
                 goldReward = gold,
                 status = QuestStatus.PENDING,
                 subtasks = subtasksStr,
-                skillPointRewards = "{}",
+                skillPointRewards = skillPointRewardsStr,
                 statPointRewards = statReward,
                 penaltyDebtPoints = if (rank == QuestRank.A || rank == QuestRank.B) 2 else 1,
-                relatedSkillIds = "[]",
+                relatedSkillIds = relatedIds,
                 isHealthReminder = false,
                 priorityScore = item.workPriority.score
             )
@@ -208,11 +235,21 @@ class AiQuestGeneratorService @Inject constructor(
         }
     }
 
-    private fun injectHealthReminders(quests: List<QuestEntity>, dayStart: Long): List<QuestEntity> {
+    private fun injectHealthReminders(
+        quests: List<QuestEntity>,
+        dayStart: Long,
+        wakeTime: String = "06:00",
+        lunchTime: String = "12:00 - 13:00",
+        workoutTime: String = "17:30 - 18:30",
+        sleepTime: String = "23:00"
+    ): List<QuestEntity> {
         val result = quests.toMutableList()
         val dateId = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(dayStart)
+        val meals = slotCalculator.getMealTimes(wakeTime, lunchTime, workoutTime)
+        val sleepH = slotCalculator.parseHourStart(sleepTime).coerceAtLeast(20)
 
-        listOf("08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00")
+        // --- Hydration reminders (5 per day, spaced out) ---
+        listOf("08:00", "10:00", "14:00", "16:00", "20:00")
             .forEachIndexed { i, time ->
                 result.add(QuestEntity(
                     id = "H-$dateId-W${i + 1}",
@@ -230,11 +267,12 @@ class AiQuestGeneratorService @Inject constructor(
                 ))
             }
 
-        listOf("10:30", "14:30", "17:00").forEachIndexed { i, time ->
+        // --- Stretch/movement reminders ---
+        listOf("10:30", "14:30").forEachIndexed { i, time ->
             result.add(QuestEntity(
                 id = "H-$dateId-S${i + 1}",
                 title = "🚶 Đứng Dậy & Vận Động",
-                description = "Đứng dậy, đi lại 5 phút, giãn cơ. Cơ thể cần vận động sau khi ngồi lâu!",
+                description = "Đứng dậy, đi lại 5 phút, giãn cơ.",
                 type = QuestType.DAILY, rank = QuestRank.E, category = "health",
                 date = dayStart, timeStart = time,
                 timeEnd = time.let {
@@ -246,6 +284,59 @@ class AiQuestGeneratorService @Inject constructor(
                 statPointRewards = "{\"VIT\":1}", skillPointRewards = "{}", priorityScore = 35
             ))
         }
+
+        // --- Meal reminders with finance tracking ---
+        // Breakfast
+        result.add(QuestEntity(
+            id = "H-$dateId-M1",
+            title = "🍳 Ăn Sáng & Ghi Chi Tiêu",
+            description = "Ăn sáng đầy đủ dinh dưỡng. Sau khi ăn, mở app Finance ghi lại chi phí bữa sáng.",
+            type = QuestType.DAILY, rank = QuestRank.E, category = "health",
+            date = dayStart, timeStart = meals.breakfastStart, timeEnd = meals.breakfastEnd,
+            durationMinutes = 30, expReward = 20, goldReward = 10,
+            status = QuestStatus.PENDING, penaltyDebtPoints = 0, isHealthReminder = true,
+            statPointRewards = "{\"VIT\":1}", skillPointRewards = "{}", priorityScore = 50,
+            subtasks = "[\"Ăn sáng (protein + carb + rau/trái cây)\",\"📱 Mở Finance → ghi chi tiêu bữa sáng\"]"
+        ))
+        // Lunch
+        result.add(QuestEntity(
+            id = "H-$dateId-M2",
+            title = "🍱 Ăn Trưa & Ghi Chi Tiêu",
+            description = "Nghỉ trưa, ăn uống bổ sung năng lượng. Ghi chi tiêu bữa trưa vào Finance.",
+            type = QuestType.DAILY, rank = QuestRank.E, category = "health",
+            date = dayStart, timeStart = meals.lunchStart, timeEnd = meals.lunchEnd,
+            durationMinutes = 45, expReward = 20, goldReward = 10,
+            status = QuestStatus.PENDING, penaltyDebtPoints = 0, isHealthReminder = true,
+            statPointRewards = "{\"VIT\":1}", skillPointRewards = "{}", priorityScore = 50,
+            subtasks = "[\"Ăn trưa đầy đủ\",\"📱 Mở Finance → ghi chi tiêu bữa trưa\",\"Nghỉ ngơi 15 phút sau ăn\"]"
+        ))
+        // Dinner
+        result.add(QuestEntity(
+            id = "H-$dateId-M3",
+            title = "🍽️ Ăn Tối & Ghi Chi Tiêu",
+            description = "Ăn tối sau luyện tập, bổ sung protein phục hồi cơ bắp. Ghi chi tiêu bữa tối.",
+            type = QuestType.DAILY, rank = QuestRank.E, category = "health",
+            date = dayStart, timeStart = meals.dinnerStart, timeEnd = meals.dinnerEnd,
+            durationMinutes = 60, expReward = 20, goldReward = 10,
+            status = QuestStatus.PENDING, penaltyDebtPoints = 0, isHealthReminder = true,
+            statPointRewards = "{\"VIT\":1}", skillPointRewards = "{}", priorityScore = 50,
+            subtasks = "[\"Ăn tối (ưu tiên protein + rau)\",\"📱 Mở Finance → ghi chi tiêu bữa tối\",\"Nghỉ ngơi, không tập nặng sau ăn\"]"
+        ))
+
+        // --- Daily Finance Wrap-up ---
+        result.add(QuestEntity(
+            id = "H-$dateId-F1",
+            title = "💰 Tổng Kết Chi Tiêu Hàng Ngày",
+            description = "Kiểm tra tất cả giao dịch hôm nay, bổ sung những khoản chưa ghi. Đánh giá chi tiêu và đặt mục tiêu ngày mai.",
+            type = QuestType.DAILY, rank = QuestRank.D, category = "finance",
+            date = dayStart,
+            timeStart = String.format("%02d:00", sleepH - 1),
+            timeEnd = String.format("%02d:15", sleepH - 1),
+            durationMinutes = 15, expReward = 40, goldReward = 25,
+            status = QuestStatus.PENDING, penaltyDebtPoints = 0, isHealthReminder = true,
+            statPointRewards = "{\"WIS\":1}", skillPointRewards = "{}", priorityScore = 60,
+            subtasks = "[\"Mở tab Finance\",\"Kiểm tra & bổ sung giao dịch chưa ghi\",\"Đánh giá: hôm nay chi tiêu hợp lý chưa?\",\"Đặt budget cho ngày mai\"]"
+        ))
 
         return result.sortedBy { it.timeStart ?: "99:99" }
     }
