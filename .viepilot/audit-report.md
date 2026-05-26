@@ -1,7 +1,7 @@
 # ViePilot Project Audit Report
 
-**Date:** 2026-05-23  
-**Target:** Solo Leveling System (Android Native Project)  
+**Date:** 2026-05-26  
+**Target:** Solo Leveling System (Android Native Project) - Focus: Quest System  
 **Status:** ⚠️ Audit Action Required (Drifts & Missing Docs Detected)
 
 ---
@@ -12,7 +12,7 @@
 |---|---|---|---|
 | **Tier 1** | State Consistency | ⚠️ Drift Detected | Missing TRACKER.md and ROADMAP.md |
 | **Tier 2** | Documentation Drift | ⚠️ Gaps Detected | Missing CHANGELOG.md and ARCHITECTURE.md |
-| **Tier 3** | Stack Best Practices | ⚠️ Compliance Issue | Sequential Room writes in RewardEngine need transactions |
+| **Tier 3** | Stack Best Practices | ⚠️ Compliance Issue | Code Smells found in Quest Module |
 | **Tier 4** | Framework Integrity | ➖ Skipped | Non-framework repository |
 
 ---
@@ -20,51 +20,50 @@
 ## 🧱 Tier 1 — ViePilot State Consistency
 
 ### Findings
-- **`HANDOFF.json`**: Present and synced to Phase 9.
-- **`phases/9/.continue-here.md`**: Present and detailed.
-- **`TRACKER.md`**: ❌ Missing. There is no central tracking of tasks.
-- **`ROADMAP.md`**: ❌ Missing. There is no milestone-level view.
-- **Git Tags**: ❌ No tags (e.g. `vp-p9-complete`) detected.
+- **`HANDOFF.json`**: Present.
+- **`TRACKER.md`**: ❌ Missing. Không có file theo dõi task trung tâm.
+- **`ROADMAP.md`**: ❌ Missing. Không có milestone lộ trình.
+- **Git Tags**: ❌ Không phát hiện git tags (ví dụ: `vp-p9-complete`).
 
 ### Action Items
-- Create `.viepilot/TRACKER.md` to define the project milestones.
-- Create `.viepilot/ROADMAP.md` to log current progress of Phase 9.
+- Cần chạy `/vp-crystallize` hoặc tự tạo `.viepilot/TRACKER.md` và `.viepilot/ROADMAP.md` để theo dõi dự án chuẩn theo quy trình.
 
 ---
 
 ## 📄 Tier 2 — Project Documentation Drift
 
 ### Findings
-- **`README.md`**: ✅ Up-to-date, centered, and contains beautiful RPG styling.
+- **`README.md`**: ✅ Đã có và khá đầy đủ chi tiết.
 - **`CHANGELOG.md`**: ❌ Missing.
 - **`ARCHITECTURE.md`**: ❌ Missing.
-- **`app/src/main/AndroidManifest.xml`**: ✅ Up-to-date (WorkManager crash bug fixed).
 
 ### Action Items
-- Create `CHANGELOG.md` to record the history of native restoration features.
-- Create `ARCHITECTURE.md` to document module relationships and architecture.
+- Tạo `CHANGELOG.md` để lưu lại quá trình phát triển tính năng.
+- Tạo `ARCHITECTURE.md` để vẽ sơ đồ module và kiến trúc hệ thống (kết hợp với thư mục `docs/`).
 
 ---
 
-## ⚡ Tier 3 — Stack Best Practices & Code Quality
+## ⚡ Tier 3 — Stack Best Practices & Code Quality (Focus: Quest System)
 
-### 1. Android & Compose UI
-- **State Handling**: ViewModels correctly collect data via StateFlow `stateIn` with `SharingStarted.WhileSubscribed(5000)`.
-- **UI Performance**: Jetpack Compose layouts are mostly clean.
+### 1. `AiQuestGeneratorService.kt` (⚠️ Vi Phạm Nguyên tắc Đơn Trách Nhiệm - SRP)
+- **Tình trạng**: File dài hơn 600 dòng. Class đang ôm đồm quá nhiều việc: gọi API (Network), xây dựng prompt rất dài (Logic AI), tính toán chia khung giờ (Time slots logic), phân tích cú pháp chuỗi JSON (Parsing), và chứa cả dữ liệu cứng (Fallback Quests).
+- **Đề xuất fix**: Tách nhỏ ra thành các class: `QuestPromptBuilder`, `QuestTimeSlotCalculator`, và `FallbackQuestProvider`.
 
-### 2. Room Database & Transactions (⚠️ Compliance Issue)
-- **Anti-Pattern**: Multi-entity writes inside `RewardEngine.processQuestCompletion(quest)` (updating user, stats, quest status, inserting dropped items) are executed as sequential independent queries.
-- **Fix**: Inject `AppDatabase` and execute them within `appDatabase.withTransaction { ... }` or annotate with `@Transaction` in a DAO helper.
-  *This is needed to avoid partial/corrupt database states if the app crashes/terminates mid-reward processing.*
+### 2. `QuestEntity.kt` & Room Database (⚠️ Anti-Pattern)
+- **Tình trạng**: Các trường như `subtasks`, `statPointRewards`, `skillPointRewards` đang được lưu dưới dạng `String` (chứa mảng hoặc object JSON) rồi mã hóa/giải mã thủ công bằng kotlinx.serialization ở mọi nơi.
+- **Đề xuất fix**: Tạo `Room TypeConverter` để tự động map `List<String>` hoặc `Map<String, Int>` sang `String` lúc lưu vào database, giữ Entities ở dạng object (POJO) sạch sẽ.
 
-### 3. Gemini AI Call & Network Safety
-- **Exception Handling**: Good. `AuraService.kt` catches exceptions and wraps them in `Result`.
-- **API Key Security**: Excellent. Dynamic fetching via DataStore `SettingsManager` prevents hardcoding of keys.
+### 3. `QuestListScreen.kt` (⚠️ Maintainability)
+- **Tình trạng**: File UI Jetpack Compose siêu dài (gần 900 dòng).
+- **Đề xuất fix**: Tách các Compose Unit như `QuestTimelineItem`, `QuestTimer`, `QuestDetailSheet` ra thành các tệp tin `ui/components/` riêng biệt.
+
+### 4. `RewardEngine.kt` (✅ Tốt)
+- **Tình trạng**: Lỗi Transaction được ghi nhận ở kỳ kiểm tra trước đã được fix. Phương thức `processQuestCompletion` hiện đang được bọc an toàn trong `database.withTransaction { ... }`.
 
 ---
 
-## 🛠️ Auto-Fix Actions Available
+## 🛠️ Lựa Chọn Tự Động Sửa Lỗi (Auto-Fix)
 
-1. **Fix Tier 1**: Generate baseline `.viepilot/TRACKER.md` and `.viepilot/ROADMAP.md` for Phase 9.
-2. **Fix Tier 2**: Generate a standard `CHANGELOG.md` and a clean `ARCHITECTURE.md` Mermaid file.
-3. **Fix Tier 3**: Refactor `RewardEngine.kt` to use `AppDatabase.withTransaction` for atomic updates.
+Bạn có thể yêu cầu tôi thực hiện:
+1. **Sửa Tier 1 & 2**: Tự động tạo `TRACKER.md`, `ROADMAP.md`, `CHANGELOG.md`, `ARCHITECTURE.md`.
+2. **Sửa Tier 3 (Refactor)**: Viết lại `QuestEntity.kt` (Thêm TypeConverters) hoặc chẻ nhỏ `QuestListScreen.kt` và `AiQuestGeneratorService.kt`.

@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -48,7 +49,14 @@ class QuestViewModel @Inject constructor(
     /** Fired when a quest expires in real-time — displayed as in-app penalty banner. */
     data class PenaltyEvent(val questTitle: String, val expLost: Int, val debtAdded: Int)
 
-    val quests: StateFlow<List<QuestEntity>> = questDao.getAllQuests()
+    private val _currentDayStart = MutableStateFlow(getTodayMidnight())
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val quests: StateFlow<List<QuestEntity>> = _currentDayStart
+        .flatMapLatest { start ->
+            val end = start + 86400000L
+            questDao.getQuestsByDate(start, end)
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val user: StateFlow<com.systemleveling.core.database.entity.UserEntity?> = userDao.getUser()
@@ -87,6 +95,7 @@ class QuestViewModel @Inject constructor(
 
     private suspend fun ensureTodayQuests() {
         val todayStart = getTodayMidnight()
+        _currentDayStart.value = todayStart
         val todayEnd = todayStart + 86400000L
         if (questDao.getQuestCountByDate(todayStart, todayEnd) == 0) {
             _isGenerating.value = true

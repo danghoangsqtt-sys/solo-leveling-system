@@ -51,10 +51,10 @@ git status --short | grep -E "\.jks|keystore\.properties|KEYSTORE-CREDENTIALS"
 
 | Thuộc tính | Giá trị |
 |---|---|
-| `versionCode` | `1` |
-| `versionName` | `"1.0"` |
-| GitHub Release tag | `v1` (chưa push lên GitHub Releases, APK đã build) |
-| Ngày cập nhật | 2026-05-23 |
+| `versionCode` | `10500` |
+| `versionName` | `"1.5.0"` |
+| GitHub Release tag | `v10500` (pending build + push) |
+| Ngày cập nhật | 2026-05-26 |
 
 ---
 
